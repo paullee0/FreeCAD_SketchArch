@@ -10,16 +10,16 @@ Short Description
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mututally as a whole'
 - Window Object also use Sketch; so Window Sketch could 'attach' to 'Layout Sketch' to fix its position
 - Examples
-  > Villa Savoye - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
-  > PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
-  > ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
+  - Villa Savoye - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
+  - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
+  - ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 - More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
-  > Different materials for wall surface on each sides
-  > Different wall joint / junction geometrical shape
+  - Different materials for wall surface on each sides
+  - Different wall joint / junction geometrical shape
   (good for IFCexport ?) Maybe Wall can support different Height for each segment? Similarly, this information be saved in the ArchSketch
-  > (good for IFCexport ?) Different materials for different wall segment?
+  - (good for IFCexport ?) Different materials for different wall segment?
 
 
 About
