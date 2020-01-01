@@ -18,7 +18,7 @@ Short Description
 - More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
-  (good for IFCexport ?) Maybe Wall can support different Height for each segment? Similarly, this information be saved in the ArchSketch
+  - (good for IFCexport ?) Maybe Wall can support different Height for each segment? Similarly, this information be saved in the ArchSketch
   - (good for IFCexport ?) Different materials for different wall segment?
 
 
