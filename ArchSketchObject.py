@@ -84,7 +84,6 @@ class ArchSketch(ArchSketchObject):
           self.Type = "ArchSketch"						
       if not hasattr(self,"widths"):						
           self.widths = {}							
-										
       if not hasattr(self,"clEdgeSameIndexFlat"):				
           self.clEdgeSameIndexFlat = []						
 										
@@ -193,9 +192,12 @@ class _CommandEditWallAlign():
         else:									
             reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch or Sketch )")	
             return								
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketch']:		
-            if Draft.getType(targetObjectBase) is 'Sketch':			
-                reply = QtGui.QMessageBox.information(None,"","Multi-Align support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose, procced now. ")	
+        print (Draft.getType(targetObjectBase))				
+        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketch']:	
+            if Draft.getType(targetObjectBase) == 'Sketch':			
+                reply = QtGui.QMessageBox.information(None,"","Multi-Align support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
+            elif Draft.getType(targetObjectBase) == 'ArchSketch':		
+                reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
@@ -210,7 +212,7 @@ class _CommandEditWallAlign():
         #    App.Console.PrintMessage("Not Implemented yet "+ "\n")		
 										
 										
-FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())			
+FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())		
 										
 										
 class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):	
@@ -220,9 +222,9 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall						
         self.targetArchSketch = targetWallBaseArchSketch			
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
-        targetWall.ViewObject.Transparency = 60					
+        targetWall.ViewObject.Transparency = 60				
         if targetWallBaseArchSketch:						
-            if Draft.getType(targetWallBaseArchSketch) == 'Sketch':		
+            if Draft.getType(self.targetArchSketch) in ['Sketch','ArchSketch']:	
                 tempOverrideAlign = self.targetWall.OverrideAlign		
                 wallAlign = targetWall.Align # use Wall's Align			
                 # filling OverrideAlign if entry is missing for a particular index	
@@ -231,27 +233,47 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                 self.targetWall.OverrideAlign = tempOverrideAlign		
 										
     def proceed(self, doc, obj, sub, pnt):					
-        self.edge = sub								
+        self.edge = sub							
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
 										
         if self.targetArchSketch is not None:					
             if Draft.getType(self.targetArchSketch) == 'Sketch':		
                 print (" It is a Sketch")					
-                tempOverrideAlign = self.targetWall.OverrideAlign		
                 curAlign = self.targetWall.OverrideAlign[subIndex]		
                 if curAlign == 'Left':						
                     curAlign = 'Right'						
                 elif curAlign == 'Right':					
-                    curAlign = 'Center'						
+                    curAlign = 'Center'					
                 elif curAlign == 'Center':					
                     curAlign = 'Left'						
                 else:	# 'Center' or else?					
                     curAlign = 'Right'						
+                # Save information in ArchWall					
+                tempOverrideAlign = self.targetWall.OverrideAlign		
                 tempOverrideAlign[subIndex] = curAlign				
                 self.targetWall.OverrideAlign = tempOverrideAlign		
+            elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+                print (" It is an ArchSketch")					
+                print (" Full Support not added currently yet !")		
+                print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
+                # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
+                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):						
+                    curAlign = self.targetWall.OverrideAlign[subIndex]		
+                if curAlign == 'Left':						
+                    curAlign = 'Right'						
+                elif curAlign == 'Right':					
+                    curAlign = 'Center'					
+                elif curAlign == 'Center':					
+                    curAlign = 'Left'						
+                # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
+                # Save information in ArchWall												
+                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):						
+                    tempOverrideAlign = self.targetWall.OverrideAlign		
+                    tempOverrideAlign[subIndex] = curAlign			
+                self.targetWall.OverrideAlign = tempOverrideAlign		
             self.targetArchSketch.recompute()					
-        else:  									
+        else:  								
             # nothing implemented if self.targetArchSketch is None		
             pass								
         self.targetWall.recompute()						
@@ -293,21 +315,23 @@ class _CommandEditWallWidth():
             reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch or Sketch )")	
             return								
         if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketch']:	
-            if Draft.getType(targetObjectBase) is 'Sketch':			
-                reply = QtGui.QMessageBox.information(None,"","Multi-Width support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose, procced now. ")	
+            if Draft.getType(targetObjectBase) == 'Sketch':			
+                reply = QtGui.QMessageBox.information(None,"","Multi-Width support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
+            elif Draft.getType(targetObjectBase) == 'ArchSketch':		
+                reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
-            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
+            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
             Gui.ActiveDocument.setEdit(targetObjectBase)			
             App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to Edit the corresponding Wall Segment Width "+ "\n")	
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallWidthObserver(sel0, targetObjectBase)			
             self.observer = s							
-            FreeCADGui.Selection.addObserver(s)					
+            FreeCADGui.Selection.addObserver(s)				
 										
-        elif Draft.getType(targetObjectBase) == 'Wire':				
+        elif Draft.getType(targetObjectBase) == 'Wire':			
             reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
 										
-FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())			
+FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())		
 										
 										
 class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):	
@@ -319,7 +343,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
         targetWall.ViewObject.Transparency = 60					
         if targetWallBaseArchSketch:						
-            if Draft.getType(targetWallBaseArchSketch) == 'Sketch':		
+            if Draft.getType(self.targetArchSketch) in ['Sketch','ArchSketch']:	
                 tempOverrideWidth = self.targetWall.OverrideWidth		
                 wallWidth = targetWall.Width.Value # use Wall's Width			
                 # filling OverrideWidth if entry is missing for a particular index	
@@ -328,29 +352,40 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 self.targetWall.OverrideWidth = tempOverrideWidth		
 										
     def proceed(self, doc, obj, sub, pnt):					
-        self.edge = sub								
+        self.edge = sub							
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
         reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment")	
-        if reply[1]:  # user clicked OK						
+        if reply[1]:  # user clicked OK					
             replyWidth = float(reply[0])					
         else:  # user clicked not OK, i.e. Cancel ?				
-            return None								
+            return None							
         if self.targetArchSketch is not None:					
             if Draft.getType(self.targetArchSketch) == 'Sketch':		
+                # Save information in ArchWall					
                 tempOverrideWidth = self.targetWall.OverrideWidth		
                 tempOverrideWidth[subIndex] = replyWidth			
                 self.targetWall.OverrideWidth = tempOverrideWidth		
+            elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+                print (" It is an ArchSketch")					
+                print (" Full Support not added currently yet !")		
+                print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
+                # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
+                # Save information in ArchWall												
+                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):						
+                    tempOverrideWidth = self.targetWall.OverrideWidth		
+                    tempOverrideWidth[subIndex] = replyWidth			
+                self.targetWall.OverrideWidth = tempOverrideWidth		
             self.targetArchSketch.recompute()					
-            self.targetWall.recompute()						
-        else:  									
+        else:  								
             # nothing implemented if self.targetArchSketch is None		
             pass								
+        self.targetWall.recompute()						
 										
     def escape(self,info):							
         k=info['Key']								
-        if k=="ESCAPE":								
+        if k=="ESCAPE":							
             self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
         SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
