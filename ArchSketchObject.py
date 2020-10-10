@@ -111,43 +111,56 @@ class ArchSketch(ArchSketchObject):
                       orgFp.addProperty("App::PropertyPythonObject", i)	
                       setattr(orgFp, i, str())					
 										
-      ''' Referenced Sketches '''						
+      ''' Referenced Object '''						
 										
       if "MasterSketch" not in prop:																					
-          fp.addProperty("App::PropertyLink","MasterSketch","Referenced Sketches and Axis","Master Sketch to Attach on")										
-      if "AttachToAxisOrSketch" not in prop:																				
-          fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Sketches and Axis","Select Object Type to Attach on ")								
-          setattr(fp, "AttachToAxisOrSketch", [ "Hosts", "Master Sketch", "Placement Axis" ])														
-      #setattr(fp, "AttachToAxisOrSketch", [ "Hosts", "Master Sketch", "Placement Axis" ])														
+          fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")												
       if "MasterSketchSubelement" not in prop:																				
-          fp.addProperty("App::PropertyString","MasterSketchSubelement","Referenced Sketches and Axis","Master Sketch Sub-Element to Attach on")							
+          fp.addProperty("App::PropertyString","MasterSketchSubelement","Referenced Object","Master Sketch Sub-Element to Attach on")									
       if "MasterSketchSubelementOffset" not in prop:																			
-          fp.addProperty("App::PropertyDistance","MasterSketchSubelementOffset","Referenced Sketches and Axis","Master Sketch Sub-Element Attached Offset from Startpoint")				
+          fp.addProperty("App::PropertyDistance","MasterSketchSubelementOffset","Referenced Object","Master Sketch Sub-Element Attached Offset from Startpoint")					
 																									
       if "MasterSketchIntersectingSubelement" not in prop:																		
           fp.addProperty("App::PropertyString","MasterSketchIntersectingSubelement",															
-                         "Referenced Sketches and Axis","Master Sketch Subelement Intersecting the Sub-Element Attached on")										
+                         "Referenced Object","Master Sketch Subelement Intersecting the Sub-Element Attached on")											
       if "AttachToSubelementOrOffset" not in prop:																			
-          fp.addProperty("App::PropertyEnumeration","AttachToSubelementOrOffset","Referenced Sketches and Axis","Select MasterSketch Subelement or Specify Offset to Attach")				
+          fp.addProperty("App::PropertyEnumeration","AttachToSubelementOrOffset","Referenced Object","Select MasterSketch Subelement or Specify Offset to Attach")					
           fp.AttachToSubelementOrOffset = [ "Attach To Edge & Alignment", "Attach to Edge", "Follow Only Offset XYZ & Rotation" ]									
       if "AttachmentOffsetXyzAndRotation" not in prop:																			
-          fp.addProperty("App::PropertyPlacement","AttachmentOffsetXyzAndRotation","Referenced Sketches and Axis","Specify XYZ and Rotation Offset")							
+          fp.addProperty("App::PropertyPlacement","AttachmentOffsetXyzAndRotation","Referenced Object","Specify XYZ and Rotation Offset")								
       if "AttachmentOffsetExtraRotation" not in prop:																			
-          fp.addProperty("App::PropertyEnumeration","AttachmentOffsetExtraRotation","Referenced Sketches and Axis","Extra Rotation about X, Y or Z Axis")						
+          fp.addProperty("App::PropertyEnumeration","AttachmentOffsetExtraRotation","Referenced Object","Extra Rotation about X, Y or Z Axis")								
           fp.AttachmentOffsetExtraRotation = [ "None", "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", "Y-Axis CW90", "Y-Axis CCW90", "Y-Axis CW180","Z-Axis CW90", "Z-Axis CCW90", "Z-Axis CW180"]	
       if "FlipOffsetOriginToOtherEnd" not in prop:																			
-          fp.addProperty("App::PropertyBool","FlipOffsetOriginToOtherEnd","Referenced Sketches and Axis","Flip Offset Origin to Other End of Edge / Wall ")						
+          fp.addProperty("App::PropertyBool","FlipOffsetOriginToOtherEnd","Referenced Object","Flip Offset Origin to Other End of Edge / Wall ")							
       if "Flip180Degree" not in prop:																					
-          fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Sketches and Axis","Flip Orientation 180 Degree / Inside-Outside / Front-Back")						
+          fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Object","Flip Orientation 180 Degree / Inside-Outside / Front-Back")								
       if "OffsetFromIntersectingSubelement" not in prop:																		
           fp.addProperty("App::PropertyBool","OffsetFromIntersectingSubelement",															
-                         "Referenced Sketches and Axis","Offset from the Master Sketch Subelement Intersecting the Sub-Element to Attached on")							
+                         "Referenced Object","Offset from the Master Sketch Subelement Intersecting the Sub-Element to Attached on")									
       if "AttachmentAlignment" not in prop:																				
-          fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Sketches and Axis","If AttachToEdge&Alignment, Set EdgeGroupWidthLeft/Right to alignt to EdgeGroupWidth ")	
+          fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set EdgeGroupWidthLeft/Right to alignt to EdgeGroupWidth ")			
           fp.AttachmentAlignment = [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]														
           fp.AttachmentAlignment = "EdgeGroupWidthRight"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows									
       if "AttachmentAlignmentOffset" not in prop:																			
-          fp.addProperty("App::PropertyDistance","AttachmentAlignmentOffset","Referenced Sketches and Axis","Set Offset from Edge / EdgeGroupWidth +ve Right / -ve Left")				
+          fp.addProperty("App::PropertyDistance","AttachmentAlignmentOffset","Referenced Object","Set Offset from Edge / EdgeGroupWidth +ve Right / -ve Left")						
+																									
+      attachToAxisOrSketchExisting = None																				
+      fpLinkedObject = fp.getLinkedObject()																				
+      if "AttachToAxisOrSketch" in prop:																				
+          attachToAxisOrSketchExisting = fp.AttachToAxisOrSketch																	
+      else:  # elif "AttachToAxisOrSketch" not in prop:																		
+          fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Object","Select Object Type to Attach on ")									
+      if fpLinkedObject.Proxy.Type == "ArchSketch":																			
+          fp.AttachToAxisOrSketch = [ "Master Sketch", "Placement Axis" ]																
+      else:  # i.e. other ArchObjects																					
+          fp.AttachToAxisOrSketch = [ "None", "Hosts", "Master Sketch", "Placement Axis" ]														
+      if attachToAxisOrSketchExisting is not None:																			
+          fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting																	
+      elif fpLinkedObject.Proxy.Type == "ArchSketch":																			
+          fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch															
+      else:  # elif fpLinkedObject.Proxy.Type != "ArchSketch":																		
+          fp.AttachToAxisOrSketch = "None"  # default option for ArchObject (ArchWindow)														
 																									
 										
   def execute(self, fp):							
@@ -581,7 +594,7 @@ def updateAttachmentOffset(fp, linkFp=None):
                         none, masterSketchSubelementEdgeGroupWidth, none,none,align = ArchSketch.getEdgesIndexAndWidthInEdgeGroup(hostSketch.Proxy, hostSketch, None, None, masterSketchSubelementIndex, None)	
                     elif hostWall:																						
                         try:																							
-                            masterSketchSubelementEdgeGroupWidth = hostWall.OverrideWidth[masterSketchSubelementIndex]*MM												
+                            masterSketchSubelementEdgeGroupWidth = hostWall.OverrideWidth[masterSketchSubelementIndex]*MM											
                         except:																						
                             masterSketchSubelementEdgeGroupWidth = hostWall.Width																
                         try:																							
@@ -592,6 +605,7 @@ def updateAttachmentOffset(fp, linkFp=None):
                         print (" something wrong ?")																				
 																										
                 if True:																							
+                    offsetValue = 0																						
                     if (masterSketchSubelementEdgeGroupWidth is not None) and (masterSketchSubelementEdgeGroupWidth.Value != 0):										
                         offsetValue = masterSketchSubelementEdgeGroupWidth.Value/2 # + attachmentAlignmentOffset.Value												
 																										
@@ -608,15 +622,42 @@ def updateAttachmentOffset(fp, linkFp=None):
                         tempAttachmentOffset.Base = tempAttachmentOffset.Base.add(DraftVecUtils.scale(vOffsetH,1))												
 																										
             if linkFp or hostWall:												
-                    hostSketchPl = hostSketch.Placement									
+                hostSketchPl = hostSketch.Placement										
+                if hostWall:													
                     hostWallPl = hostWall.Placement										
                     tempAttachmentOffset = (hostWallPl.multiply(hostSketchPl)).multiply(tempAttachmentOffset)			
+                else:														
+                    tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)						
+                    print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
             if edgeAngle:													
                 edgeAngleRotationPl = FreeCAD.Placement()									
                 edgeAngleRotationPl.Rotation.Angle = edgeAngle									
                 tempAttachmentOffset = tempAttachmentOffset.multiply(edgeAngleRotationPl)					
 																
             extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,0)) #, 0)					
+            if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90)) #, 0)				
+            elif fp.AttachmentOffsetExtraRotation == "X-Axis CW90":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,-90))					
+            elif fp.AttachmentOffsetExtraRotation == "X-Axis CW180":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,180))					
+																
+            elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW90":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,90,0))					
+            elif fp.AttachmentOffsetExtraRotation == "Y-Axis CCW90":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,-90,0))					
+            elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW180":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,180,0))					
+																
+            elif fp.AttachmentOffsetExtraRotation == "Z-Axis CCW90":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(90,0,0))					
+            elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW90":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(-90,0,0))					
+            elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW180":								
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(180,0,0))					
+																
+            tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)						
+																
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
                 fp.Placement = tempAttachmentOffset										
             else:														
@@ -635,6 +676,7 @@ def makeArchSketch(grp=None, label="ArchSketch__NAME", attachToAxisOrSketch=None
       archSketch=App.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)	
   archSketch.Label = label							
   archSketchInsta=ArchSketch(archSketch)					
+  archSketch.AttachToAxisOrSketch = "Master Sketch"				
   return archSketch								
 										
 										
