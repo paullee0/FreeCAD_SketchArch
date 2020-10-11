@@ -16,7 +16,8 @@ Short Description
   - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
     <br>   Model - https://github.com/paullee0/FreeCAD_Carpenter-Center
 - Discussion / Announcement
-  - Intuitive Automatic Windows/Doors Placement (Adding Features to Arch Windows / Doors) - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
+  - Intuitive Automatic Windows/Doors Placement - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
+  <br> (Adding Features to Arch Windows / Doors) 
   - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
   - ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
   
