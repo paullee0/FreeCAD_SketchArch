@@ -7,13 +7,14 @@ Short Description
 - Leverage Sketch and/or SketchObjectPython inherent features to help building Architectural Models
 - So Sketch Layout + Arch Wall = Building Layout
 - Sketch have geometric and dimensional constraints to help making and editing 'single-line sketch layouts'
-- Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mututally as a whole'
-- Window Object also use Sketch; so Window Sketch could 'attach' to 'Layout Sketch' to fix its position
+- Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
+- Window could 'attach' to 'Layout Sketch' to fix its position
+<br> (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch ?)
 - Examples
   - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
-  - Villa Savoye Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
+              <br>               Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
   - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
-  - Carpenter Center Model      - https://github.com/paullee0/FreeCAD_Carpenter-Center
+    <br>   Model - https://github.com/paullee0/FreeCAD_Carpenter-Center
 - Discussion / Announcement
   - Intuitive Automatic Windows/Doors Placement (Adding Features to Arch Windows / Doors) - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
   - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
