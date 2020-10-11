@@ -519,9 +519,9 @@ def updateAttachmentOffset(fp, linkFp=None):
         hostWall = None							
         if hasattr(fp, "Hosts"):  # Arch Window				
             if fp.Hosts:							
-                hostWall = fp.Hosts[0]						
+                hostWall = fp.Hosts[0]  # Can just take 1st Host wall		
                 if fp.Hosts[0].Base.isDerivedFrom("Sketcher::SketchObject"):	
-                    hostSketch = fp.Hosts[0].Base				
+                    hostSketch = fp.Hosts[0].Base  # Host wall's base Sketch	
         if not hostSketch and hasattr(fp, "MasterSketch"):			
             hostSketch = fp.MasterSketch					
         if not hostSketch:							
@@ -564,9 +564,8 @@ def updateAttachmentOffset(fp, linkFp=None):
             masterSketchSubelementEdge = "Edge1"  # default be 1					
         masterSketchSubelementIndex = int(masterSketchSubelementEdge.lstrip('Edge'))-1			
 													
-        if hostSketch:								
 										
-          if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: # == "Master Sketch":										
+        if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: # == "Master Sketch":										
             tempAttachmentOffset = FreeCAD.Placement()														
             if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ) and masterSketchSubelementEdge is not None:			
                 masterSketchIntersectingSubelementEdge = None													
@@ -576,10 +575,10 @@ def updateAttachmentOffset(fp, linkFp=None):
 																										
                 if attachToSubelementOrOffset == "Attach To Edge & Alignment":																	
                     edgeAngle = getSketchEdgeAngle(hostSketch, masterSketchSubelementEdge)															
-                    if flip180Degree:																						
-                        edgeAngle = edgeAngle + math.pi																			
+                    tempAttachmentOffset.Rotation.Angle = edgeAngle																		
                 else:																								
-                    edgeAngle = attachmentOffsetXyzAndRotation.Rotation.Angle																	
+                    tempAttachmentOffset.Rotation.Angle = attachmentOffsetXyzAndRotation.Rotation.Angle													
+                    #edgeAngle = attachmentOffsetXyzAndRotation.Rotation.Angle																	
 																										
                 tempAttachmentOffset.Base= edgeOffsetPointVector																		
 																										
@@ -621,6 +620,8 @@ def updateAttachmentOffset(fp, linkFp=None):
                         vOffsetH = DraftVecUtils.scaleTo(masterSketchSubelementEdgeVec.cross(Vector(0,0,1)), offsetValue)											
                         tempAttachmentOffset.Base = tempAttachmentOffset.Base.add(DraftVecUtils.scale(vOffsetH,1))												
 																										
+            elif attachToSubelementOrOffset == "Follow Only Offset XYZ & Rotation":																
+                tempAttachmentOffset = attachmentOffsetXyzAndRotation																		
             if linkFp or hostWall:												
                 hostSketchPl = hostSketch.Placement										
                 if hostWall:													
@@ -629,10 +630,10 @@ def updateAttachmentOffset(fp, linkFp=None):
                 else:														
                     tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)						
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
-            if edgeAngle:													
-                edgeAngleRotationPl = FreeCAD.Placement()									
-                edgeAngleRotationPl.Rotation.Angle = edgeAngle									
-                tempAttachmentOffset = tempAttachmentOffset.multiply(edgeAngleRotationPl)					
+            #if edgeAngle:													
+            #    edgeAngleRotationPl = FreeCAD.Placement()									
+            #    edgeAngleRotationPl.Rotation.Angle = edgeAngle									
+            #    tempAttachmentOffset = tempAttachmentOffset.multiply(edgeAngleRotationPl)					
 																
             extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,0)) #, 0)					
             if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
