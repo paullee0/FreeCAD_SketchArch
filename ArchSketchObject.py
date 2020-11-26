@@ -472,7 +472,12 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment")	
+        #if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+        if hasattr(self.targetArchSketch, 'getEdgeTagDictSyncWidth'):		
+            curWidth = self.getEdgeTagDictSyncWidth(fp, None, subIndex)	
+        else:									
+            curWidth = self.targetWall.OverrideWidth[subIndex]			
+        reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))	
         if reply[1]:  # user clicked OK					
             if reply[0]:							
                 replyWidth = float(reply[0])					
@@ -492,7 +497,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
                 # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
                 # Save information in ArchWall												
-                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):						
+                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncWidth"):						
                     tempOverrideWidth = self.targetWall.OverrideWidth		
                     tempOverrideWidth[subIndex] = replyWidth			
                 self.targetWall.OverrideWidth = tempOverrideWidth		
