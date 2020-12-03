@@ -563,6 +563,7 @@ def updateAttachmentOffset(fp, linkFp=None):
             print (" fp is re-directed to linkFp...  ")			
         hostSketch = None							
         hostWall = None							
+        objectSketch = None							
 										
         if hasattr(fp, "Hosts"):  # Arch Window				
             if fp.Hosts:							
@@ -590,10 +591,10 @@ def updateAttachmentOffset(fp, linkFp=None):
         masterSketchSubelementTag = None					
         masterSketchIntersectingSubelementTag = None				
         msSubelementEdge = None						
-        masterSketchSubelementIndex = None					
+        msSubelementIndex = None						
         msIntersectingSubelementEdge = None					
 										
-        if hasattr(fp, "Proxy"):  # ArchSketch / Arch Objects			
+        if hasattr(fp, "Proxy"):  # ArchSketch/ Arch Objects(Window/Equipment)	
             if fp.Proxy.Type == "ArchSketch":					
                 msSubelementEdge = masterSketchSubelement			
             else:								
@@ -609,15 +610,15 @@ def updateAttachmentOffset(fp, linkFp=None):
             msSubelementEdge = masterSketchSubelement							
             msIntersectingSubelementEdge = msIntersectingSubelement					
 													
-													
-        if not msSubelementEdge:									
-            msSubelementEdge = "Edge1"  # default be 1							
-        masterSketchSubelementIndex = int(msSubelementEdge.lstrip('Edge'))-1				
-													
 										
-        if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: # == "Master Sketch":										
-            tempAttachmentOffset = FreeCAD.Placement()														
-            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ) and msSubelementEdge is not None:				
+        if not msSubelementEdge:						
+            msSubelementEdge = "Edge1"  # default be 1				
+        msSubelementIndex = int(msSubelementEdge.lstrip('Edge'))-1		
+										
+										
+        if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: 		
+            tempAttachmentOffset = FreeCAD.Placement()				
+            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):								
                 edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
                                                                        attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,								
                                                                        attachToSubelementOrOffset, msIntersectingSubelementEdge)  # offsetFromIntersectingSubelement, 						
@@ -626,9 +627,9 @@ def updateAttachmentOffset(fp, linkFp=None):
 																										
                 if attachToSubelementOrOffset == "Attach To Edge & Alignment":																	
                     edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementEdge)																
-                    tempAttachmentOffset.Rotation.Angle = edgeAngle																		
                     if (flip180Degree and not flipOffsetOriginToOtherEnd) or (not flip180Degree and flipOffsetOriginToOtherEnd):										
-                        tempAttachmentOffset.Rotation.Angle = tempAttachmentOffset.Rotation.Angle + math.pi													
+                        edgeAngle = edgeAngle + math.pi																			
+                    tempAttachmentOffset.Rotation.Angle = edgeAngle																		
                 else:																								
                     tempAttachmentOffset.Rotation.Angle = attachmentOffsetXyzAndRotation.Rotation.Angle													
 																										
@@ -640,14 +641,15 @@ def updateAttachmentOffset(fp, linkFp=None):
                 if attachmentAlignment in ["EdgeGroupWidthLeft", "EdgeGroupWidthRight"]:															
 																										
                     if hasattr(ArchSketch, "getEdgesIndexAndWidthInEdgeGroup") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
-                        none, masterSketchSubelementEdgeGroupWidth,none,none,align = ArchSketch.getEdgesIndexAndWidthInEdgeGroup(hostSketch.Proxy, hostSketch, None, None, masterSketchSubelementIndex, None)	
+                    #if hasattr(hostSketch, "getEdgesIndexAndWidthInEdgeGroup") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
+                        none, masterSketchSubelementEdgeGroupWidth,none,none,align = ArchSketch.getEdgesIndexAndWidthInEdgeGroup(hostSketch.Proxy, hostSketch, None, None, msSubelementIndex, None)	
                     elif hostWall:																						
                         try:																							
-                            masterSketchSubelementEdgeGroupWidth = hostWall.OverrideWidth[masterSketchSubelementIndex]*MM											
+                            masterSketchSubelementEdgeGroupWidth = hostWall.OverrideWidth[msSubelementIndex]*MM											
                         except:																						
                             masterSketchSubelementEdgeGroupWidth = hostWall.Width																
                         try:																							
-                            align = hostWall.OverrideAlign[masterSketchSubelementIndex]															
+                            align = hostWall.OverrideAlign[msSubelementIndex]															
                         except:																						
                             align = hostWall.Align																				
                     else:																							
@@ -674,16 +676,19 @@ def updateAttachmentOffset(fp, linkFp=None):
                 tempAttachmentOffset = attachmentOffsetXyzAndRotation																		
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
                 hostSketchPl = hostSketch.Placement										
+                # Reset Window's placement to factor out base sketch's placement						
+                if Draft.getType(fp.getLinkedObject()) == 'Window':								
+                    winSketchPl = fp.Base.Placement										
+                    extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90))					
+                    tempAttachmentOffset = tempAttachmentOffset.multiply(winSketchPl.inverse())				
+                    # make the placement 'upright' again									
+                    tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)					
                 if hostWall:													
                     hostWallPl = hostWall.Placement										
-                    tempAttachmentOffset = (hostWallPl.multiply(hostSketchPl)).multiply(tempAttachmentOffset)			
+                    tempAttachmentOffset = (hostSketchPl.multiply(hostWallPl)).multiply(tempAttachmentOffset)			
                 else:														
                     tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)						
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
-            #if edgeAngle:													
-            #    edgeAngleRotationPl = FreeCAD.Placement()									
-            #    edgeAngleRotationPl.Rotation.Angle = edgeAngle									
-            #    tempAttachmentOffset = tempAttachmentOffset.multiply(edgeAngleRotationPl)					
 																
             extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,0)) #, 0)					
             if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
