@@ -618,6 +618,7 @@ def updateAttachmentOffset(fp, linkFp=None):
 										
         if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: 		
             tempAttachmentOffset = FreeCAD.Placement()				
+            winSketchPl = FreeCAD.Placement()					
             if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):								
                 edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
                                                                        attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,								
@@ -674,12 +675,16 @@ def updateAttachmentOffset(fp, linkFp=None):
 																										
             elif attachToSubelementOrOffset == "Follow Only Offset XYZ & Rotation":																
                 tempAttachmentOffset = attachmentOffsetXyzAndRotation																		
+																
+            # ArchObjects, link of ArchSketch, link of ArchObjects								
+            # Not ArchSketch													
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
                 hostSketchPl = hostSketch.Placement										
                 # Reset Window's placement to factor out base sketch's placement						
                 if Draft.getType(fp.getLinkedObject()) == 'Window':								
                     winSketchPl = fp.Base.Placement										
-                    extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90))					
+                    # rotation at center of placement of winSketchPl, rather than global (0,0,0)				
+                    extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90), winSketchPl.Base)		
                     tempAttachmentOffset = tempAttachmentOffset.multiply(winSketchPl.inverse())				
                     # make the placement 'upright' again									
                     tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)					
@@ -691,26 +696,27 @@ def updateAttachmentOffset(fp, linkFp=None):
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
 																
             extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,0)) #, 0)					
+            # rotation at center of placement of winSketchPl, rather than global (0,0,0)					
             if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90)) #, 0)				
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90),winSketchPl.Base) #, 0)		
             elif fp.AttachmentOffsetExtraRotation == "X-Axis CW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,-90))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,-90),winSketchPl.Base)			
             elif fp.AttachmentOffsetExtraRotation == "X-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,180))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,180),winSketchPl.Base)			
 																
             elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,90,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,90,0),winSketchPl.Base)			
             elif fp.AttachmentOffsetExtraRotation == "Y-Axis CCW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,-90,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,-90,0),winSketchPl.Base)			
             elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,180,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,180,0),winSketchPl.Base)			
 																
             elif fp.AttachmentOffsetExtraRotation == "Z-Axis CCW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(90,0,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(90,0,0),winSketchPl.Base)			
             elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(-90,0,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(-90,0,0),winSketchPl.Base)			
             elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(180,0,0))					
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(180,0,0),winSketchPl.Base)			
 																
             tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)						
 																
