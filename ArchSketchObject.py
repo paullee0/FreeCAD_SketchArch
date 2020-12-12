@@ -123,6 +123,10 @@ class ArchSketch(ArchSketchObject):
 										
       ''' Referenced Object '''						
 										
+      if Draft.getType(fp.getLinkedObject()) not in ['Window', 'ArchSketch']:  # Not to be added for ArchSketch, nor for Arch Windows also which already has "Hosts"					
+          if "Host" not in prop:																					
+              fp.addProperty("App::PropertyLink","Host","Referenced Object","The object that host this object / this object attach to")								
+																									
       if "MasterSketch" not in prop:																					
           fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")												
       if "MasterSketchSubelement" not in prop:																				
@@ -415,7 +419,6 @@ class _CommandEditWallWidth():
             return								
         targetObjectBase = None						
         if Draft.getType(sel0) not in ["Wall","ArchSketch"]:			
-        #if Draft.getType(sel0) != "Wall":					
             reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
             return								
         if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
@@ -557,30 +560,35 @@ def detachFromMasterSketch(fp):
 #def updateAttachment(fp, linkFp=None):					
 def updateAttachmentOffset(fp, linkFp=None):					
 										
+    if fp.AttachToAxisOrSketch != "None":					
         fpOrgSelf = fp.Proxy							
         if linkFp:								
             fp = linkFp							
             print (" fp is re-directed to linkFp...  ")			
         hostSketch = None							
         hostWall = None							
-        objectSketch = None							
+        hostObject = None							
 										
         if hasattr(fp, "Hosts"):  # Arch Window				
             if fp.Hosts:							
                 hostWall = fp.Hosts[0]  # Can just take 1st Host wall		
                 if fp.Hosts[0].Base.isDerivedFrom("Sketcher::SketchObject"):	
                     hostSketch = fp.Hosts[0].Base  # Host wall's base Sketch	
+        elif hasattr(fp, "Host"):  # Other Arch Objects (except ArchSketch)	
+            if fp.Host:							
+                hostObject = fp.Host						
         if not hostSketch and hasattr(fp, "MasterSketch"):			
             hostSketch = fp.MasterSketch					
-        if not hostSketch:							
-            return  # if found no Sketch to 'attach' to / calculate placement	
 										
+        attachToSubelementOrOffset = fp.AttachToSubelementOrOffset		
+        if not hostSketch:											
+            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):		
+            #if attachToSubelementOrOffset != "Follow Only Offset XYZ & Rotation":				
+                return  # if found no Sketch to 'attach' to / calculate placement				
         masterSketchSubelement = fp.MasterSketchSubelement			
         msSubelementOffset = fp.MasterSketchSubelementOffset			
         msIntersectingSubelement = fp.MasterSketchIntersectingSubelement	
 										
-        attachToAxisOrSketch = fp.AttachToAxisOrSketch				
-        attachToSubelementOrOffset = fp.AttachToSubelementOrOffset		
         attachmentAlignment = fp.AttachmentAlignment				
         attachmentAlignmentOffset = fp.AttachmentAlignmentOffset		
         attachmentOffsetXyzAndRotation = fp.AttachmentOffsetXyzAndRotation	
@@ -616,7 +624,8 @@ def updateAttachmentOffset(fp, linkFp=None):
         msSubelementIndex = int(msSubelementEdge.lstrip('Edge'))-1		
 										
 										
-        if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: 		
+        #if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: 		
+        if True:						 		
             tempAttachmentOffset = FreeCAD.Placement()				
             winSketchPl = FreeCAD.Placement()					
             if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):								
@@ -702,8 +711,9 @@ def updateAttachmentOffset(fp, linkFp=None):
             # ArchObjects, link of ArchSketch, link of ArchObjects								
             # i.e. Not ArchSketch												
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
-                hostSketchPl = hostSketch.Placement										
+                hostSketchPl = FreeCAD.Placement()  # 										
                 if Draft.getType(fp.getLinkedObject()) == 'Window':								
+                    hostSketchPl = hostSketch.Placement									
                     winSketchPl = fp.Base.Placement										
                     # Reset Window's placement to factor out base sketch's placement						
                     invWinSketchPl = winSketchPl.inverse()									
@@ -713,7 +723,10 @@ def updateAttachmentOffset(fp, linkFp=None):
                 if hostWall:													
                     hostWallPl = hostWall.Placement										
                     tempAttachmentOffset = (hostSketchPl.multiply(hostWallPl)).multiply(tempAttachmentOffset)			
-                else:														
+                elif hostObject:												
+                    hostObjectPl = hostObject.Placement									
+                    tempAttachmentOffset = (hostSketchPl.multiply(hostObjectPl)).multiply(tempAttachmentOffset)		
+                else:  # WOULD HAPPEN ?											
                     tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)						
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
