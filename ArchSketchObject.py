@@ -569,6 +569,8 @@ def updateAttachmentOffset(fp, linkFp=None):
         hostWall = None							
         hostObject = None							
 										
+        # Currently Host(Wall's base Sketch) take precedence over MasterSketch	
+										
         if hasattr(fp, "Hosts"):  # Arch Window				
             if fp.Hosts:							
                 hostWall = fp.Hosts[0]  # Can just take 1st Host wall		
@@ -577,14 +579,18 @@ def updateAttachmentOffset(fp, linkFp=None):
         elif hasattr(fp, "Host"):  # Other Arch Objects (except ArchSketch)	
             if fp.Host:							
                 hostObject = fp.Host						
+                if hasattr(fp.Host, "Base"):  # Arch Wall ?			
+                    if fp.Host.Base.isDerivedFrom("Sketcher::SketchObject"):	
+                        hostSketch = fp.Host.Base  # Host wall's base Sketch	
         if not hostSketch and hasattr(fp, "MasterSketch"):			
             hostSketch = fp.MasterSketch					
 										
         attachToSubelementOrOffset = fp.AttachToSubelementOrOffset		
-        if not hostSketch:											
-            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):		
-            #if attachToSubelementOrOffset != "Follow Only Offset XYZ & Rotation":				
-                return  # if found no Sketch to 'attach' to / calculate placement				
+        # if no hostSketch, no Edge to attach, but still attach to 'origin' of host				
+        #if not hostSketch:											
+        #    if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):		
+        #    #if attachToSubelementOrOffset != "Follow Only Offset XYZ & Rotation":				
+        #        return  # if found no Sketch to 'attach' to / calculate placement				
         masterSketchSubelement = fp.MasterSketchSubelement			
         msSubelementOffset = fp.MasterSketchSubelementOffset			
         msIntersectingSubelement = fp.MasterSketchIntersectingSubelement	
@@ -602,7 +608,7 @@ def updateAttachmentOffset(fp, linkFp=None):
         msSubelementIndex = None						
         msIntersectingSubelementEdge = None					
 										
-        if hasattr(fp, "Proxy"):  # ArchSketch/ Arch Objects(Window/Equipment)	
+        if hasattr(fp, "Proxy"):  # ArchSketch/ ArchObjects (Window/Equipment)	
             if fp.Proxy.Type == "ArchSketch":					
                 msSubelementEdge = masterSketchSubelement			
             else:								
@@ -628,13 +634,20 @@ def updateAttachmentOffset(fp, linkFp=None):
         if True:						 		
             tempAttachmentOffset = FreeCAD.Placement()				
             winSketchPl = FreeCAD.Placement()					
-            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):								
+																										
+            # Calculate the Position & Rotation (of the point of the edge to attach to)															
+																										
+            if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):														
+																										
+              if hostSketch:  # only calculate 'offset' if hostSketch, otherwise, still proceed but 'offset' is kept to 'origin' of host									
+																										
+                # Calculate the position of the point of the edge to attach to																	
                 edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
                                                                        attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,								
                                                                        attachToSubelementOrOffset, msIntersectingSubelementEdge)  # offsetFromIntersectingSubelement, 						
-																										
                 tempAttachmentOffset.Base= edgeOffsetPointVector																		
 																										
+                # Calculate the rotation of the edge																				
                 if attachToSubelementOrOffset == "Attach To Edge & Alignment":																	
                     edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementEdge)																
                     if (flip180Degree and not flipOffsetOriginToOtherEnd) or (not flip180Degree and flipOffsetOriginToOtherEnd):										
@@ -684,6 +697,8 @@ def updateAttachmentOffset(fp, linkFp=None):
 																										
             elif attachToSubelementOrOffset == "Follow Only Offset XYZ & Rotation":																
                 tempAttachmentOffset = attachmentOffsetXyzAndRotation																		
+																										
+            # Extra Rotation as user input											
 																
             extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,0)) #, 0)					
             if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
@@ -712,13 +727,16 @@ def updateAttachmentOffset(fp, linkFp=None):
             # i.e. Not ArchSketch												
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
                 hostSketchPl = FreeCAD.Placement()  # 										
-                if Draft.getType(fp.getLinkedObject()) == 'Window':								
+                if hostSketch:													
                     hostSketchPl = hostSketch.Placement									
+                if Draft.getType(fp.getLinkedObject()) == 'Window':								
                     winSketchPl = fp.Base.Placement										
                     # Reset Window's placement to factor out base sketch's placement						
                     invWinSketchPl = winSketchPl.inverse()									
                     # make the placement 'upright' again									
                     winSkRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90))					
+                    ## TODO - 2020.12.14 : Debugging										
+                    #tempAttachmentOffset = tempAttachmentOffset.multiply(winSkRotation).multiply(invWinSketchPl)		
                     tempAttachmentOffset = tempAttachmentOffset.multiply(winSkRotation).multiply(invWinSketchPl)		
                 if hostWall:													
                     hostWallPl = hostWall.Placement										
