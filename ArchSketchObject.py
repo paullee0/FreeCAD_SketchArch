@@ -735,15 +735,23 @@ def updateAttachmentOffset(fp, linkFp=None):
                     invWinSketchPl = winSketchPl.inverse()									
                     # make the placement 'upright' again									
                     winSkRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90))					
-                    ## TODO - 2020.12.14 : Debugging										
-                    #tempAttachmentOffset = tempAttachmentOffset.multiply(winSkRotation).multiply(invWinSketchPl)		
                     tempAttachmentOffset = tempAttachmentOffset.multiply(winSkRotation).multiply(invWinSketchPl)		
+                originBase = App.Vector(0,0,0)						  					
                 if hostWall:													
                     hostWallPl = hostWall.Placement										
-                    tempAttachmentOffset = (hostSketchPl.multiply(hostWallPl)).multiply(tempAttachmentOffset)			
+                    hostWallRotation = FreeCAD.Placement(App.Vector(0,0,0),hostWallPl.Rotation,originBase)			
+                    #tempBaseOffset = hostSketchPl.multiply(hostWallRotation)							
+                    tempBaseOffset = hostWallRotation.multiply(hostSketchPl)							
+                    tempBaseOffset.Base = tempBaseOffset.Base.add(hostWallPl.Base)						
+                    tempAttachmentOffset = tempBaseOffset.multiply(tempAttachmentOffset)					
                 elif hostObject:												
                     hostObjectPl = hostObject.Placement									
-                    tempAttachmentOffset = (hostSketchPl.multiply(hostObjectPl)).multiply(tempAttachmentOffset)		
+                    #tempAttachmentOffset = (hostSketchPl.multiply(hostObjectPl)).multiply(tempAttachmentOffset)		
+                    hostObjectRotation = FreeCAD.Placement(App.Vector(0,0,0),hostObjectPl.Rotation,originBase)			
+                    #tempBaseOffset = hostSketchPl.multiply(hostObjectRotation)						
+                    tempBaseOffset = hostObjectRotation.multiply(hostSketchPl)							
+                    tempBaseOffset.Base = tempBaseOffset.Base.add(hostObjectPl.Base)						
+                    tempAttachmentOffset = tempBaseOffset.multiply(tempAttachmentOffset)					
                 else:  # WOULD HAPPEN ?											
                     tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)						
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)					
