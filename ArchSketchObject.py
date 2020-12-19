@@ -559,32 +559,38 @@ def detachFromMasterSketch(fp):
 										
 #def updateAttachment(fp, linkFp=None):					
 def updateAttachmentOffset(fp, linkFp=None):					
+    fpOrgSelf = fp.Proxy							
+    if linkFp:									
+        fp = linkFp								
+        print (" fp is re-directed to linkFp...  ")				
 										
-    if fp.AttachToAxisOrSketch != "None":					
-        fpOrgSelf = fp.Proxy							
-        if linkFp:								
-            fp = linkFp							
-            print (" fp is re-directed to linkFp...  ")			
+    if fp.AttachToAxisOrSketch == "None":					
+        return									
+										
+    if True:									
         hostSketch = None							
         hostWall = None							
         hostObject = None							
+        if fp.AttachToAxisOrSketch == "Hosts":			 		
+            if hasattr(fp, "Hosts"):  # Arch Window				
+                if fp.Hosts:							
+                    hostWall = fp.Hosts[0]  # Can just take 1st Host wall	
+                    if hostWall.Base.isDerivedFrom("Sketcher::SketchObject"):	
+                        hostSketch = hostWall.Base  # Host wall's base Sketch	
+            elif hasattr(fp, "Host"):  # Other ArchObjects (except ArchSketch)	
+                if fp.Host:							
+                    hostObject = fp.Host					
+                    if hasattr(fp.Host, "Base"):  # Arch Wall ?		
+                        if hostObject.Base.isDerivedFrom("Sketcher::SketchObject"):	
+                            hostSketch = fp.Host.Base  # Host wall's base 		
+            if (not hostWall) and (not hostObject):				
+                return								
 										
-        # Currently Host(Wall's base Sketch) take precedence over MasterSketch	
-										
-        if hasattr(fp, "Hosts"):  # Arch Window				
-            if fp.Hosts:							
-                hostWall = fp.Hosts[0]  # Can just take 1st Host wall		
-                if fp.Hosts[0].Base.isDerivedFrom("Sketcher::SketchObject"):	
-                    hostSketch = fp.Hosts[0].Base  # Host wall's base Sketch	
-        elif hasattr(fp, "Host"):  # Other Arch Objects (except ArchSketch)	
-            if fp.Host:							
-                hostObject = fp.Host						
-                if hasattr(fp.Host, "Base"):  # Arch Wall ?			
-                    if fp.Host.Base.isDerivedFrom("Sketcher::SketchObject"):	
-                        hostSketch = fp.Host.Base  # Host wall's base Sketch	
-        if not hostSketch and hasattr(fp, "MasterSketch"):			
-            hostSketch = fp.MasterSketch					
-										
+        elif fp.AttachToAxisOrSketch == "Master Sketch":		 	
+            if fp.MasterSketch:						
+                hostSketch = fp.MasterSketch					
+            else:								
+                return								
         attachToSubelementOrOffset = fp.AttachToSubelementOrOffset		
         # if no hostSketch, no Edge to attach, but still attach to 'origin' of host				
         #if not hostSketch:											
@@ -726,7 +732,7 @@ def updateAttachmentOffset(fp, linkFp=None):
             # ArchObjects, link of ArchSketch, link of ArchObjects								
             # i.e. Not ArchSketch												
             if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
-                hostSketchPl = FreeCAD.Placement()  # 										
+                hostSketchPl = FreeCAD.Placement()										
                 if hostSketch:													
                     hostSketchPl = hostSketch.Placement									
                 if Draft.getType(fp.getLinkedObject()) == 'Window':								
