@@ -145,6 +145,8 @@ class ArchSketch(ArchSketchObject):
       if "AttachmentOffsetExtraRotation" not in prop:																			
           fp.addProperty("App::PropertyEnumeration","AttachmentOffsetExtraRotation","Referenced Object","Extra Rotation about X, Y or Z Axis")								
           fp.AttachmentOffsetExtraRotation = [ "None", "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", "Y-Axis CW90", "Y-Axis CCW90", "Y-Axis CW180","Z-Axis CW90", "Z-Axis CCW90", "Z-Axis CW180"]	
+      if "OriginOffsetXyzAndRotation" not in prop:																			
+          fp.addProperty("App::PropertyPlacement","OriginOffsetXyzAndRotation","Referenced Object","Specify Origin's XYZ and Rotation Offset")								
       if "FlipOffsetOriginToOtherEnd" not in prop:																			
           fp.addProperty("App::PropertyBool","FlipOffsetOriginToOtherEnd","Referenced Object","Flip Offset Origin to Other End of Edge / Wall ")							
       if "Flip180Degree" not in prop:																					
@@ -260,6 +262,11 @@ class ArchSketch(ArchSketchObject):
       return None								
 										
 										
+  def onDocumentRestored(self, fp):						
+										
+      self.setProperties(fp)							
+      self.setPropertiesLinkCommon(fp)						
+      self.initEditorMode(fp)							
 #---------------------------------------------------------------------------#	
 #             FreeCAD Commands Classes & Associated Functions               #	
 #---------------------------------------------------------------------------#	
@@ -728,6 +735,10 @@ def updateAttachmentOffset(fp, linkFp=None):
 																
             tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)						
 																
+            # Alternative OriginOffset manually input by user									
+            originOffset = fp.OriginOffsetXyzAndRotation									
+            invOriginOffset = originOffset.inverse()										
+            tempAttachmentOffset = tempAttachmentOffset.multiply(invOriginOffset)						
 																
             # ArchObjects, link of ArchSketch, link of ArchObjects								
             # i.e. Not ArchSketch												
