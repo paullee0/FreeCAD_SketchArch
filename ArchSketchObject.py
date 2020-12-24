@@ -330,14 +330,14 @@ FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())
 										
 class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):	
 										
-    def __init__(self, targetWall, targetWallBaseArchSketch):			
+    def __init__(self, targetWall, targetBaseSketch):				
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
         self.targetWall = targetWall  # maybe None				
-        self.targetArchSketch = targetWallBaseArchSketch  # maybe None		
+        self.targetArchSketch = targetBaseSketch  # maybe None			
         if self.targetWall:							
             self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
-        if targetWallBaseArchSketch:						
+        if targetBaseSketch:							
             if Draft.getType(self.targetArchSketch) in ['Sketch','ArchSketch']: 
                 if self.targetWall:						
                     tempOverrideAlign = self.targetWall.OverrideAlign		
@@ -462,32 +462,41 @@ FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())
 										
 class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):	
 										
-    def __init__(self, targetWall, targetWallBaseArchSketch):			
+    def __init__(self, targetWall, targetBaseSketch):				
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
         self.targetWall = targetWall						
-        self.targetArchSketch = targetWallBaseArchSketch			
+        self.targetArchSketch = targetBaseSketch				
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
         targetWall.ViewObject.Transparency = 60				
-        if targetWallBaseArchSketch:						
-            if Draft.getType(self.targetArchSketch) in ['Sketch','ArchSketch']:	
-                tempOverrideWidth = self.targetWall.OverrideWidth			
-                wallWidth = targetWall.Width.Value # use Wall's Width			
-                # filling OverrideWidth if entry is missing for a particular index	
-                while len(tempOverrideWidth) < len(self.targetArchSketch.Geometry):	
-                    tempOverrideWidth.append(wallWidth) #(0)			
-                self.targetWall.OverrideWidth = tempOverrideWidth		
-										
+        if targetBaseSketch:  # would be none ?				
+            tempOverrideWidth = None						
+            wallWidth = None							
+            if not wallWidth:							
+                wallWidth = targetWall.Width.Value  # use Wall's Width		
+            if Draft.getType(self.targetArchSketch) == 'ArchSketch':					
+                if hasattr(self.targetArchSketch.Proxy, "getUnsortedEdgesWidth"):			
+                    tempOverrideWidth = targetBaseSketch.Proxy.getUnsortedEdgesWidth(targetBaseSketch)	
+                    tempOverrideWidth = [i if i is not None else wallWidth for i in tempOverrideWidth]	
+            if not tempOverrideWidth:						
+                tempOverrideWidth = self.targetWall.OverrideWidth		
+                # filling OverrideWidth for geometry edges		 	
+                while len(tempOverrideWidth) < len(targetBaseSketch.Geometry):	
+                    tempOverrideWidth.append(wallWidth)  #(0)			
+                tempOverrideWidth = [i if i is not None else wallWidth for i in tempOverrideWidth]	
+            self.targetWall.OverrideWidth = tempOverrideWidth						
+													
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub							
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        #if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-        if hasattr(self.targetArchSketch, 'getEdgeTagDictSyncWidth'):		
-            curWidth = self.getEdgeTagDictSyncWidth(fp, None, subIndex)	
-        else:									
-            curWidth = self.targetWall.OverrideWidth[subIndex]			
-        reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))	
+        if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):	
+            curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
+            if not curWidth:												
+                curWidth = self.targetArchSketch.ArchSketchWidth.Value							
+        else:														
+            curWidth = self.targetWall.OverrideWidth[subIndex]								
+        reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))		
         if reply[1]:  # user clicked OK					
             if reply[0]:							
                 replyWidth = float(reply[0])					
@@ -505,11 +514,9 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 print (" It is an ArchSketch")					
                 print (" Full Support not added currently yet !")		
                 print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
-                # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
                 # Save information in ArchWall												
-                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncWidth"):						
-                    tempOverrideWidth = self.targetWall.OverrideWidth		
-                    tempOverrideWidth[subIndex] = replyWidth			
+                tempOverrideWidth = self.targetWall.OverrideWidth		
+                tempOverrideWidth[subIndex] = replyWidth			
                 self.targetWall.OverrideWidth = tempOverrideWidth		
             self.targetArchSketch.recompute()					
         else:  								
@@ -676,7 +683,7 @@ def updateAttachmentOffset(fp, linkFp=None):
 																										
                 if attachmentAlignment in ["EdgeGroupWidthLeft", "EdgeGroupWidthRight"]:															
 																										
-                    if hasattr(ArchSketch, "getEdgesIndexAndWidthInEdgeGroup") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
+                    if hasattr(ArchSketch.Proxy, "getEdgesIndexAndWidthInEdgeGroup") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
                     #if hasattr(hostSketch, "getEdgesIndexAndWidthInEdgeGroup") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
                         none, masterSketchSubelementEdgeGroupWidth,none,none,align = ArchSketch.getEdgesIndexAndWidthInEdgeGroup(hostSketch.Proxy, hostSketch, None, None, msSubelementIndex, None)		
                     elif hostWall:																						
