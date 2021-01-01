@@ -12,20 +12,21 @@ Short Description
   - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
               <br>               Model      - https://forum.freecadweb.org/download/file.php?id=137851
 
-<br> (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch ?)
-- Examples
-  - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
-              <br>               Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
-  - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
-    <br>   Model - https://github.com/paullee0/FreeCAD_Carpenter-Center
-- Discussion / Announcement
-  - Intuitive Automatic Windows/Doors Placement - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
-  <br> (Adding Features to Arch Windows / Doors) 
-  - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
-  - ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
-  
+  <br> (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch ?)
+
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
+- Examples
+    - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
+              <br>               Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
+    - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
+      <br>   Model - https://github.com/paullee0/FreeCAD_Carpenter-Center
+    - Discussion / Announcement
+      - Intuitive Automatic Windows/Doors Placement - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
+    <br> (Adding Features to Arch Windows / Doors) 
+    - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
+    - ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
+
 - More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
