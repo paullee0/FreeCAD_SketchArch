@@ -8,7 +8,10 @@ Short Description
 - So Sketch Layout + Arch Wall = Building Layout
 - Sketch have geometric and dimensional constraints to help making and editing 'single-line sketch layouts'
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
-- Window could 'attach' to 'Layout Sketch' to fix its position
+- ArchObject, e.g. Window, Equipment and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
+  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
+              <br>               Model      - https://forum.freecadweb.org/download/file.php?id=137851
+
 <br> (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch ?)
 - Examples
   - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
