@@ -16,18 +16,20 @@ Short Description
 
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
-- The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch)
+- The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 approaches
-    1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore  (Implemented but not exposed, in favour of solution 2 below)
-    sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
-    2.  Using PartGeometryExtension / SketchGeometryExtension  (Prefer approach)
-    Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
-                  <br>               Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
+    1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore
+    <br> (Implemented but not exposed, in favour of solution 2 below)
+        -  sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
+    2.  Using PartGeometryExtension / SketchGeometryExtension
+    <br> (Prefer approach)
+        - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
+        - Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
     3.  Using @Realthunder's branch
-    
-  Earlier Discussion - Unique and Persistent Skedch Edge Name
-                <br>               Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
-                <br>               Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
+       
+  <br>  Earlier Discussion : Unique and Persistent Skedch Edge Name
+          -  Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
+          -  Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
         
 - Examples
     - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
