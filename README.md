@@ -18,9 +18,9 @@ Short Description
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 - The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch)
   3 approaches
-    1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore
+    1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore  (Implemented but not exposed, in favour of solution 2 below)
     sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
-    2.  Using PartGeometryExtension / SketchGeometryExtension
+    2.  Using PartGeometryExtension / SketchGeometryExtension  (Prefer approach)
     Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
                   <br>               Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
     3.  Using @Realthunder's branch
