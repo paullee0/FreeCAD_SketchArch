@@ -28,8 +28,8 @@ Short Description
     3.  Using @Realthunder's branch
        
   <br>  Earlier Discussion : Unique and Persistent Skedch Edge Name
-          -  Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
-          -  Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
+          <br> -  Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
+          <br> -  Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
         
 - Examples
     - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
