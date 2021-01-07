@@ -93,13 +93,11 @@ class ArchSketch(ArchSketchObject):
 																	
       ''' Added ArchSketch Properties '''												
 																	
-      if not hasattr(fp,"ArchSketchWidth"):												
-          fp.addProperty("App::PropertyLength","ArchSketchWidth","Added ArchSketch Properties","ArchSketchWidth returned ")		
-          fp.ArchSketchWidth = 200 * MM  # Default											
 																	
 																	
 										
-  def setPropertiesLinkCommon(self, orgFp, linkFp=None):			
+  def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
+  # mode='init', 'ODR' for different settings					
 										
       if linkFp:								
           fp = linkFp								
@@ -169,15 +167,29 @@ class ArchSketch(ArchSketchObject):
       else:  # elif "AttachToAxisOrSketch" not in prop:																		
           fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Object","Select Object Type to Attach on ")									
       if fpLinkedObject.Proxy.Type == "ArchSketch":																			
-          fp.AttachToAxisOrSketch = [ "Master Sketch", "Placement Axis" ]																
+          fp.AttachToAxisOrSketch = [ "Host", "Master Sketch", "Placement Axis" ]															
       else:  # i.e. other ArchObjects																					
-          fp.AttachToAxisOrSketch = [ "None", "Hosts", "Master Sketch"]																
+          fp.AttachToAxisOrSketch = [ "None", "Host", "Master Sketch"]																	
+																									
+      # has existing selection																						
       if attachToAxisOrSketchExisting is not None:																			
+          if attachToAxisOrSketchExisting == "Hosts":																			
+              attachToAxisOrSketchExisting = "Host"  # Can attach to only 1 host															
           fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting																	
+																									
+      # no existing selection, ie. newly added "AttachToAxisOrSketch" attribute															
       elif fpLinkedObject.Proxy.Type == "ArchSketch":																			
           fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch + Link to ArchSketch												
-      else:  # elif fpLinkedObject.Proxy.Type != "ArchSketch":																		
-          fp.AttachToAxisOrSketch = "Hosts"  # default option for ArchObject (ArchWindow)														
+																									
+      else:  # other Arch Objects  # elif fpLinkedObject.Proxy.Type != "ArchSketch":															
+          # currently only if fp is Window and mode is 'ODR', not to attach to Host or otherwise it would relocate to 1st edge										
+          if mode == 'ODR':																						
+              if Draft.getType(fp) == 'Window':																			
+                  fp.AttachToAxisOrSketch = "None"																			
+              else: 																							
+                  pass  # currenlty no other ArchObjects use 'ODR'																	
+          else:  # default 'ODR' (or None), i.e. if 																			
+              fp.AttachToAxisOrSketch = "Host"  # default option for Arch Objects in general														
 																									
 																									
   def appLinkExecute(self, fp, linkFp, index, linkElement):			
@@ -230,12 +242,6 @@ class ArchSketch(ArchSketchObject):
       return self.getSortedClustersEdgesWidth(fp)				
 										
 										
-      '''  This method check all geometry (Not omitted construction geometry)	
-           in the order of geometry index (i.e. not SortedClusters() ), form	
-           a list of Width and return. '''					
-      '''  This method check all geometry (Not omitted construction geometry)	
-           in the order of geometry index (i.e. not SortedClusters() ), form	
-           a list of Width and return. '''					
   def getSortedClustersEdgesWidth(self, fp):					
 										
       '''  This method check the SortedClusters-isSame-(flat)List (omitted	
@@ -541,12 +547,118 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
+class _CommandEditWallAttach():						
+										
+    '''Edit ArchSketch and ArchObjects Attachment Command Definition		
+       edit attachment to Wall Segment (Underlying Arch]Sketch)'''		
+										
+    def GetResources(self):							
+        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Attach',	
+                'Accel'   : "E, T",						
+                'MenuText': "Edit Attachment Edge",				
+                'ToolTip' : "Select ArchSketch or Arch Window/Equipment to change attachment edge ",	
+                'CmdType' : "ForEdit"}							
+										
+    def IsActive(self):							
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        try:									
+            sel0 = Gui.Selection.getSelection()[0]				
+        except:								
+            reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
+            return								
+        targetHostWall = None							
+        targetBaseSketch = None						
+										
+        if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch','Window','Equipment']:									
+            reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
+            return																		
+        # Winddow has Hosts, Equipment Host					
+        if hasattr(sel0, "Host"):						
+            if sel0.Host:							
+                targetHostWall = sel0.Host					
+        elif hasattr(sel0, "Hosts"):						
+            if sel0.Hosts:							
+                targetHostWall = sel0.Hosts[0]  # TODO to scan through ?	
+        if not targetHostWall:							
+            if Draft.getType(sel0.getLinkedObject()) != 'ArchSketch':  # ArchSketch can has no hostWall / attach to (Arch)Sketch directly										
+                reply = QtGui.QMessageBox.information(None,"","Select a Window/Equipment with Host which is Arch Wall ")										
+                return																							
+        elif Draft.getType(targetHostWall) != 'Wall':																			
+            reply = QtGui.QMessageBox.information(None,"","Window/Equipment's Host needs to be a Wall to function")											
+            return																							
+        if targetHostWall:																						
+            if targetHostWall.Base:																					
+                targetBaseSketch = targetHostWall.Base																			
+        elif hasattr(sel0, "MasterSketch"):																				
+            if sel0.MasterSketch:																					
+                targetBaseSketch = sel0.MasterSketch																			
+        if not targetBaseSketch:																					
+            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")								
+            return																							
+        if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketch']:	
+            targetBaseSketch.ViewObject.HideDependent = False			
+            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
+            Gui.ActiveDocument.setEdit(targetBaseSketch)			
+            App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to attach to "+ "\n")	
+            FreeCADGui.Selection.clearSelection()								
+            s=GuiEditWallAttachObserver(sel0, targetHostWall, targetBaseSketch)				
+            self.observer = s							
+            FreeCADGui.Selection.addObserver(s)				
+        elif Draft.getType(targetBaseSketch) == 'Wire':			
+            reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
+        else:																								
+            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")									
+            return																							
+										
+										
+FreeCADGui.addCommand('EditWallAttach', _CommandEditWallAttach())		
+										
+										
+class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):	
+										
+    def __init__(self, targetObject, targetHostWall, targetBaseSketch):	
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
+        self.targetObject = targetObject									
+        self.targetWall = targetHostWall									
+        self.targetArchSketch = targetBaseSketch								
+        if self.targetWall:											
+            self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency				
+            targetHostWall.ViewObject.Transparency = 60							
+														
+    def proceed(self, doc, obj, sub, pnt):									
+        self.edge = sub							
+        self.pickedEdgePlacement = App.Vector(pnt)				
+        subElement = sub.lstrip('Edge')					
+										
+        if self.targetArchSketch is not None:					
+            if Draft.getType(self.targetArchSketch) == 'Sketch':		
+                print (" It is a Sketch")					
+            elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+                print (" It is an ArchSketch")					
+            self.targetObject.MasterSketchSubelement = subElement		
+        else:  								
+            # nothing implemented if self.targetArchSketch is None		
+            pass								
+        self.targetObject.recompute()						
+        if self.targetWall:							
+            self.targetWall.recompute()					
+										
+    def escape(self,info):							
+        k=info['Key']								
+        if k=="ESCAPE":							
+            if self.targetWall:										
+                self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy				
+        SketchArchCommands.selectObjectObserver.escape(self,info)						
+										
+										
 class _Command_ArchSketch():							
 										
     ''' ArchSketch Command Definition - Gui to make an ArchSketch '''		
 										
     def GetResources(self):							
-        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/SketchArchWorkbench.svg',	
+        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/SketchArchWorkbench.svg',			
                 'Accel' : "Alt+S",						
                 'MenuText': "New ArchSketch",					
                 'ToolTip' : "create an ArchSketch"}				
@@ -595,7 +707,7 @@ def updateAttachmentOffset(fp, linkFp=None):
     hostSketch = None								
     hostWall = None								
     hostObject = None								
-    if fp.AttachToAxisOrSketch == "Hosts":			 		
+    if fp.AttachToAxisOrSketch == "Host":			 		
             if hasattr(fp, "Hosts"):  # Arch Window				
                 if fp.Hosts:							
                     hostWall = fp.Hosts[0]  # Can just take 1st Host wall	
