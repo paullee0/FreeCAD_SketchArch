@@ -556,8 +556,8 @@ class _CommandEditWallAttach():
         return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Attach',	
                 'Accel'   : "E, T",						
                 'MenuText': "Edit Attachment Edge",				
-                'ToolTip' : "Select ArchSketch or Arch Window/Equipment to change attachment edge ",	
-                'CmdType' : "ForEdit"}							
+                'ToolTip' : "Select ArchSketch or Arch Window/Equipment (and optional a target) change attachment edge / to attach to a target ",	
+                'CmdType' : "ForEdit"}						
 										
     def IsActive(self):							
         return not FreeCAD.ActiveDocument is None				
@@ -568,26 +568,38 @@ class _CommandEditWallAttach():
         except:								
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
             return								
+        try:									
+            sel1 = Gui.Selection.getSelection()[1]				
+        except:								
+            sel1 = None							
         targetHostWall = None							
         targetBaseSketch = None						
 										
         if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch','Window','Equipment']:									
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
             return																		
-        # Winddow has Hosts, Equipment Host					
-        if hasattr(sel0, "Host"):						
+        if sel1:																							
+            if Draft.getType(sel1) != 'Wall':																				
+                reply = QtGui.QMessageBox.information(None,"","Target Object is Not Wall - Feature not supported 'Yet' ")										
+                return																							
+            else:																							
+                targetHostWall = sel1																					
+        # Window has Hosts, Equipment Host					
+        elif hasattr(sel0, "Host"):						
             if sel0.Host:							
                 targetHostWall = sel0.Host					
         elif hasattr(sel0, "Hosts"):						
             if sel0.Hosts:							
                 targetHostWall = sel0.Hosts[0]  # TODO to scan through ?	
+        									
         if not targetHostWall:							
-            if Draft.getType(sel0.getLinkedObject()) != 'ArchSketch':  # ArchSketch can has no hostWall / attach to (Arch)Sketch directly										
-                reply = QtGui.QMessageBox.information(None,"","Select a Window/Equipment with Host which is Arch Wall ")										
+            if Draft.getType(sel0.getLinkedObject()) != 'ArchSketch':  # ArchSketch can has no hostWall / attach to (Arch)Sketch directly								
+                reply = QtGui.QMessageBox.information(None,"","Select a Window/Equipment with Host which is Arch Wall (or Select a Window/Equipment with an ArchWall as 2nd selection)")		
                 return																							
         elif Draft.getType(targetHostWall) != 'Wall':																			
             reply = QtGui.QMessageBox.information(None,"","Window/Equipment's Host needs to be a Wall to function")											
             return																							
+															        									
         if targetHostWall:																						
             if targetHostWall.Base:																					
                 targetBaseSketch = targetHostWall.Base																			
@@ -595,7 +607,7 @@ class _CommandEditWallAttach():
             if sel0.MasterSketch:																					
                 targetBaseSketch = sel0.MasterSketch																			
         if not targetBaseSketch:																					
-            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")								
+            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")									
             return																							
         if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketch']:	
             targetBaseSketch.ViewObject.HideDependent = False			
@@ -626,6 +638,12 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         if self.targetWall:											
             self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency				
             targetHostWall.ViewObject.Transparency = 60							
+        if targetObject.Host != targetHostWall:  # Testing For Host first					
+            targetObject.Host = targetHostWall  # Not recompute atm to save time				
+        if targetHostWall:							
+            # check if need to assign to attach to 'Hst'			
+            if targetObject.AttachToAxisOrSketch != 'Host':			
+                targetObject.AttachToAxisOrSketch = 'Host'			
 														
     def proceed(self, doc, obj, sub, pnt):									
         self.edge = sub							
