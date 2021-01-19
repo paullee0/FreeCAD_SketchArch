@@ -28,6 +28,9 @@ import ArchSpace, ArchStairs, ArchSectionPlane
 import SketchArchIcon								
 import SketchArchCommands							
 										
+# for ArchWindows								
+from PySide.QtCore import QT_TRANSLATE_NOOP					
+										
 import math, time								
 from PySide import QtGui, QtCore						
 from FreeCAD import Vector							
@@ -122,9 +125,17 @@ class ArchSketch(ArchSketchObject):
 										
       ''' Referenced Object '''						
 										
-      if Draft.getType(fp.getLinkedObject()) not in ['Window', 'ArchSketch']:  # Not to be added for ArchSketch, nor for Arch Windows also which already has "Hosts"					
+      # "Host" for ArchSketch and Arch Equipment (currently all Objects calls except Window which has "Hosts")												
+      if Draft.getType(fp.getLinkedObject()) != 'Window':																		
+          print(" Debug - setPropertiesLinkCommon - not window" )																	
           if "Host" not in prop:																					
               fp.addProperty("App::PropertyLink","Host","Referenced Object","The object that host this object / this object attach to")								
+      # "Hosts" for Window																						
+      else:  																								
+          print(" Debug - setPropertiesLinkCommon - Window" )																		
+          if "Hosts" not in prop:																					
+              fp.addProperty("App::PropertyLinkList","Hosts","Window",QT_TRANSLATE_NOOP("App::Property","The objects that host this window"))  # Arch Window's code					
+                                               # "Referenced Object","The object that host this object / this object attach to")									
 																									
       if "MasterSketch" not in prop:																					
           fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")												
@@ -631,17 +642,27 @@ FreeCADGui.addCommand('EditWallAttach', _CommandEditWallAttach())
 class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):	
 										
     def __init__(self, targetObject, targetHostWall, targetBaseSketch):	
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
-        self.targetObject = targetObject									
-        self.targetWall = targetHostWall									
-        self.targetArchSketch = targetBaseSketch								
-        if self.targetWall:											
-            self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency				
-            targetHostWall.ViewObject.Transparency = 60							
-        if targetObject.Host != targetHostWall:  # Testing For Host first					
-            targetObject.Host = targetHostWall  # Not recompute atm to save time				
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        self.targetObject = targetObject										
+        self.targetWall = targetHostWall										
+        self.targetArchSketch = targetBaseSketch									
+        if self.targetWall:												
+            self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency					
+            targetHostWall.ViewObject.Transparency = 60								
+        if hasattr(targetObject, "Host"):										
+            if targetObject.Host != targetHostWall:  # Testing For Host first						
+                targetObject.Host = targetHostWall  # Not recompute atm to save time					
+        else:  # elif hasattr(targetObject, "Hosts"):									
+            if targetObject.Hosts:											
+                if targetObject.Hosts[0] != targetHostWall:  # Testing For Host[0]					
+                    targetObjectHosts = targetObject.Hosts								
+                    targetObjectHosts[0] = targetHostWall  # replace 1st item						
+                    targetObject.Hosts = targetObjectHosts								
+            else:													
+                targetObject.Hosts = [targetHostWall]									
+            # Not recompute atm to save time										
         if targetHostWall:							
-            # check if need to assign to attach to 'Hst'			
+            # check if need to assign to attach to 'Host'			
             if targetObject.AttachToAxisOrSketch != 'Host':			
                 targetObject.AttachToAxisOrSketch = 'Host'			
 														
