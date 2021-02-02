@@ -127,12 +127,10 @@ class ArchSketch(ArchSketchObject):
 										
       # "Host" for ArchSketch and Arch Equipment (currently all Objects calls except Window which has "Hosts")												
       if Draft.getType(fp.getLinkedObject()) != 'Window':																		
-          print(" Debug - setPropertiesLinkCommon - not window" )																	
           if "Host" not in prop:																					
               fp.addProperty("App::PropertyLink","Host","Referenced Object","The object that host this object / this object attach to")								
       # "Hosts" for Window																						
       else:  																								
-          print(" Debug - setPropertiesLinkCommon - Window" )																		
           if "Hosts" not in prop:																					
               fp.addProperty("App::PropertyLinkList","Hosts","Window",QT_TRANSLATE_NOOP("App::Property","The objects that host this window"))  # Arch Window's code					
                                                # "Referenced Object","The object that host this object / this object attach to")									
@@ -583,19 +581,31 @@ class _CommandEditWallAttach():
             sel1 = Gui.Selection.getSelection()[1]				
         except:								
             sel1 = None							
-        targetHostWall = None							
-        targetBaseSketch = None						
 										
+        # If Link is newly created and not Recomputed, the Hosts attribute is not added to the Link								
+        # Then, it the Hosts[0] is assigned to the Sel1, then it is the LinkedObject's Hosts attribute be altered						
+        # The result is, instead of the Sel0 object got new Hosts[0] and attach to it,										
+        # it is 'wrongly' the Linked Object (the 'Original') attach to new Hosts[0] !										
+        # - Check and Recompute if State is Touched														
+																				
+        if "Touched" in sel0.State: #  == "Touched":  # State is a List											
+            sel0.recompute()																	
+																				
+        targetHostWall = None																	
+        targetBaseSketch = None																
+																				
         if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch','Window','Equipment']:									
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
             return																		
+        # check if targetHostWall is selected by user																			
         if sel1:																							
             if Draft.getType(sel1) != 'Wall':																				
                 reply = QtGui.QMessageBox.information(None,"","Target Object is Not Wall - Feature not supported 'Yet' ")										
                 return																							
             else:																							
                 targetHostWall = sel1																					
-        # Window has Hosts, Equipment Host					
+        # or use Windows.Hosts / Equiptment.Host, i.e. not changing targetHostWall															
+        # Window has Hosts, Equipment Host																				
         elif hasattr(sel0, "Host"):						
             if sel0.Host:							
                 targetHostWall = sel0.Host					
@@ -665,8 +675,8 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
             # check if need to assign to attach to 'Host'			
             if targetObject.AttachToAxisOrSketch != 'Host':			
                 targetObject.AttachToAxisOrSketch = 'Host'			
-														
-    def proceed(self, doc, obj, sub, pnt):									
+															
+    def proceed(self, doc, obj, sub, pnt):										
         self.edge = sub							
         self.pickedEdgePlacement = App.Vector(pnt)				
         subElement = sub.lstrip('Edge')					
