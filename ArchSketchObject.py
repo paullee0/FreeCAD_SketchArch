@@ -97,8 +97,6 @@ class ArchSketch(ArchSketchObject):
       ''' Added ArchSketch Properties '''												
 																	
 																	
-																	
-										
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
   # mode='init', 'ODR' for different settings					
 										
@@ -292,6 +290,8 @@ class ArchSketch(ArchSketchObject):
       self.setProperties(fp)							
       self.setPropertiesLinkCommon(fp)						
       self.initEditorMode(fp)							
+										
+										
 #---------------------------------------------------------------------------#	
 #             FreeCAD Commands Classes & Associated Functions               #	
 #---------------------------------------------------------------------------#	
@@ -333,8 +333,8 @@ class _CommandEditWallAlign():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketch']:	
-            if Draft.getType(targetObjectBase) == 'Sketch':			
+        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
+            if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':			
                 reply = QtGui.QMessageBox.information(None,"","Multi-Align support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
             elif Draft.getType(targetObjectBase) == 'ArchSketch':		
                 reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
@@ -363,7 +363,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
             self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
         if targetBaseSketch:							
-            if Draft.getType(self.targetArchSketch) in ['Sketch','ArchSketch']: 
+            if Draft.getType(self.targetArchSketch) in ['Sketcher::SketchObject','ArchSketch']: 
                 if self.targetWall:						
                     tempOverrideAlign = self.targetWall.OverrideAlign		
                     wallAlign = targetWall.Align # use Wall's Align		
@@ -378,7 +378,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         subIndex = int( sub.lstrip('Edge'))-1					
 										
         if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch) == 'Sketch':		
+            if Draft.getType(self.targetArchSketch) == 'Sketcher::SketchObject':		
                 print (" It is a Sketch")					
                 curAlign = self.targetWall.OverrideAlign[subIndex]		
                 if curAlign == 'Left':						
@@ -465,8 +465,8 @@ class _CommandEditWallWidth():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketch']:	
-            if Draft.getType(targetObjectBase) == 'Sketch':			
+        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
+            if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':			
                 reply = QtGui.QMessageBox.information(None,"","Multi-Width support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
             elif Draft.getType(targetObjectBase) == 'ArchSketch':		
                 reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
@@ -515,11 +515,14 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):	
-            curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
+        #if Draft.getType(self.targetArchSketch) == 'ArchSkech':		
+        curWidth = None							
+        if hasattr(self.targetArchSketch, "Proxy"):				
+            if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):					
+                curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
             if not curWidth:												
                 curWidth = self.targetArchSketch.ArchSketchWidth.Value							
-        else:														
+        if not curWidth:												
             curWidth = self.targetWall.OverrideWidth[subIndex]								
         reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))		
         if reply[1]:  # user clicked OK					
@@ -530,7 +533,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         else:  # user clicked not OK, i.e. Cancel ?				
             return None							
         if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch) == 'Sketch':		
+            if Draft.getType(self.targetArchSketch) == 'Sketcher::SketchObject':		
                 # Save information in ArchWall					
                 tempOverrideWidth = self.targetWall.OverrideWidth		
                 tempOverrideWidth[subIndex] = replyWidth			
@@ -583,7 +586,7 @@ class _CommandEditWallAttach():
             sel1 = None							
 										
         # If Link is newly created and not Recomputed, the Hosts attribute is not added to the Link								
-        # Then, it the Hosts[0] is assigned to the Sel1, then it is the LinkedObject's Hosts attribute be altered						
+        # Now, if the Hosts[0] is assigned to the Sel1, then it is the LinkedObject's Hosts attribute be altered						
         # The result is, instead of the Sel0 object got new Hosts[0] and attach to it,										
         # it is 'wrongly' the Linked Object (the 'Original') attach to new Hosts[0] !										
         # - Check and Recompute if State is Touched														
@@ -630,7 +633,7 @@ class _CommandEditWallAttach():
         if not targetBaseSketch:																					
             reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")									
             return																							
-        if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketch']:	
+        if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketcher::SketchObject']:	
             targetBaseSketch.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
             Gui.ActiveDocument.setEdit(targetBaseSketch)			
@@ -682,7 +685,7 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         subElement = sub.lstrip('Edge')					
 										
         if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch) == 'Sketch':		
+            if Draft.getType(self.targetArchSketch)=='Sketcher::SketchObject':	
                 print (" It is a Sketch")					
             elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
                 print (" It is an ArchSketch")					
@@ -847,35 +850,39 @@ def updateAttachmentOffset(fp, linkFp=None):
                 align = None																							
 																										
                 if attachmentAlignment in ["EdgeGroupWidthLeft", "EdgeGroupWidthRight"]:															
-                    if hasattr(hostSketch.Proxy, "getEdgeTagDictSyncWidth") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):											
-                        pass																							
-                    elif hostWall:																						
-                        try:																							
-                            msSubelementWidth = hostWall.OverrideWidth[msSubelementIndex]*MM															
-                        except:																						
-                            msSubelementWidth = hostWall.Width																			
-                    elif hostObject:																						
-                        try:																							
-                            msSubelementWidth = hostObject.OverrideWidth[msSubelementIndex]*MM															
-                        except:																						
-                            msSubelementWidth = hostObject.Width																		
-                    else:																							
-                        print (" something wrong ?")																				
+                    if hasattr(hostSketch, "Proxy"):																				
+                        if hasattr(hostSketch.Proxy, "getEdgeTagDictSyncWidth") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
+                            pass																						
+                    if msSubelementWidth in [zeroMM, None]:																			
+                        if hostWall:  #elif hostWall:																				
+                            try:																						
+                                msSubelementWidth = hostWall.OverrideWidth[msSubelementIndex]*MM														
+                            except:																						
+                                msSubelementWidth = hostWall.Width																		
+                        elif hostObject:																					
+                            try:																						
+                                msSubelementWidth = hostObject.OverrideWidth[msSubelementIndex]*MM														
+                            except:																						
+                                msSubelementWidth = hostObject.Width																		
+                        else:																							
+                            print (" something wrong ?")																			
 																										
-                    if hasattr(hostSketch.Proxy, "getEdgeTagDictSyncAlign") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):											
-                        pass																							
-                    elif hostWall:																						
-                        try:																							
-                            align = hostWall.OverrideAlign[msSubelementIndex]																	
-                        except:																						
-                            align = hostWall.Align																				
-                    elif hostObject:																						
-                        try:																							
-                            align = hostObject.OverrideAlign[msSubelementIndex]																
-                        except:																						
-                            align = hostObject.Align																				
-                    else:																							
-                        print (" something wrong ?")																				
+                    if hasattr(hostSketch, "Proxy"):																				
+                        if hasattr(hostSketch.Proxy, "getEdgeTagDictSyncAlign") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
+                            pass																						
+                    if align == None:																						
+                        if hostWall:  #elif hostWall:																				
+                            try:																						
+                                align = hostWall.OverrideAlign[msSubelementIndex]																
+                            except:																						
+                                align = hostWall.Align																				
+                        elif hostObject:																					
+                            try:																						
+                                align = hostObject.OverrideAlign[msSubelementIndex]																
+                            except:																						
+                                align = hostObject.Align																			
+                        else:																							
+                            print (" something wrong ?")																			
 																										
                 offsetValue = 0																						
                 if (msSubelementWidth is not None) and (msSubelementWidth.Value != 0):  # TODO If None, latter condition will result in exception	#zeroMM is 0 -> False					
