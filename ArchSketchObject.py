@@ -837,7 +837,9 @@ def updateAttachmentOffset(fp, linkFp=None):
                 # Calculate the rotation of the edge																				
                 if attachToSubelementOrOffset == "Attach To Edge & Alignment":																	
                     edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementEdge)																
-                    if (flip180Degree and not flipOffsetOriginToOtherEnd) or (not flip180Degree and flipOffsetOriginToOtherEnd):										
+                    # switch to new convention - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&start=80#p463196											
+                    #if flip180Degree:																						
+                    if (flip180Degree and (attachmentAlignment == "EdgeGroupWidthLeft")) or (not flip180Degree and (attachmentAlignment == "EdgeGroupWidthRight")):						
                         edgeAngle = edgeAngle + math.pi																			
                     tempAttachmentOffset.Rotation.Angle = edgeAngle																		
                 else:																								
