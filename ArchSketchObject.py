@@ -1,6 +1,6 @@
 #***************************************************************************	
 #*                                                                         *	
-#*   Copyright (c) 2018 - 2020                                             *	
+#*   Copyright (c) 2018 - 2021                                             *	
 #*   Paul Lee <paullee0@gmail.com>                                         *	
 #*                                                                         *	
 #*   This program is free software; you can redistribute it and/or modify  *	
@@ -158,12 +158,23 @@ class ArchSketch(ArchSketchObject):
       if "Flip180Degree" not in prop:																					
           fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Object","Flip Orientation 180 Degree / Inside-Outside / Front-Back")								
       if "AttachmentAlignment" not in prop:																				
-          fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set EdgeGroupWidthLeft/Right to alignt to EdgeGroupWidth ")			
-          fp.AttachmentAlignment = [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]														
+          fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set (Wall)Left/Right to align to Edge of Wall")				
+          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]															
           if Draft.getType(fp.getLinkedObject()) == 'Window':  																	
-              fp.AttachmentAlignment = "EdgeGroupWidthRight"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows								
+              fp.AttachmentAlignment = "WallLeft"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows (updated from to 'left' after orientation of 'left/right' changed )	
           else:  																							
-              fp.AttachmentAlignment = "EdgeGroupWidthLeft"  # default for cases other than Windows 													
+              fp.AttachmentAlignment = "WallLeft"  # default for cases other than Windows														
+      if fp.AttachmentAlignment in [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]:														
+          curAlign = fp.AttachmentAlignment																				
+          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]															
+          if curAlign == "Edge":																					
+              fp.AttachmentAlignment = "Left"																				
+          elif curAlign == "EdgeGroupWidthLeft":																			
+              fp.AttachmentAlignment = "WallLeft"																			
+          elif curAlign == "EdgeGroupWidthRight":																			
+              fp.AttachmentAlignment = "WallRight"																			
+          else:  # Should not happen																					
+              fp.AttachmentAlignment = "Left"																				
       if "AttachmentAlignmentOffset" not in prop:																			
           fp.addProperty("App::PropertyDistance","AttachmentAlignmentOffset","Referenced Object","Set Offset from Edge / EdgeGroupWidth +ve Right / -ve Left")						
 																									
@@ -839,7 +850,7 @@ def updateAttachmentOffset(fp, linkFp=None):
                     edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementEdge)																
                     # switch to new convention - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&start=80#p463196											
                     #if flip180Degree:																						
-                    if (flip180Degree and (attachmentAlignment == "EdgeGroupWidthLeft")) or (not flip180Degree and (attachmentAlignment == "EdgeGroupWidthRight")):						
+                    if (flip180Degree and (attachmentAlignment == "WallLeft")) or (not flip180Degree and (attachmentAlignment == "WallRight")) or (flip180Degree and (attachmentAlignment == "Left")) or (not flip180Degree and (attachmentAlignment == "Right")) :																						
                         edgeAngle = edgeAngle + math.pi																			
                     tempAttachmentOffset.Rotation.Angle = edgeAngle																		
                 else:																								
@@ -851,7 +862,7 @@ def updateAttachmentOffset(fp, linkFp=None):
                 msSubelementWidth = zeroMM																					
                 align = None																							
 																										
-                if attachmentAlignment in ["EdgeGroupWidthLeft", "EdgeGroupWidthRight"]:															
+                if attachmentAlignment in ["WallLeft", "WallRight"]:																		
                     if hasattr(hostSketch, "Proxy"):																				
                         if hasattr(hostSketch.Proxy, "getEdgeTagDictSyncWidth") and hasattr(hostSketch.Proxy,"EdgeTagDictSync"):										
                             pass																						
@@ -891,14 +902,14 @@ def updateAttachmentOffset(fp, linkFp=None):
                         offsetValue = msSubelementWidth.Value # + attachmentAlignmentOffset.Value														
                 else:																								
                     print (" something wrong...")																				
-                if attachmentAlignment == "EdgeGroupWidthLeft":																		
+                if attachmentAlignment == "WallLeft":																				
                     if align == "Left":																					
                         offsetValue = attachmentAlignmentOffset.Value  # no need offsetValue (msSubelementWidth.Value)												
                     elif align == "Right":																					
                         offsetValue = offsetValue + attachmentAlignmentOffset.Value																
                     elif align == "Center":																					
                         offsetValue = offsetValue/2 + attachmentAlignmentOffset.Value																
-                elif attachmentAlignment == "EdgeGroupWidthRight":																		
+                elif attachmentAlignment == "WallRight":																		
                     if align == "Left":																					
                         offsetValue = -offsetValue+attachmentAlignmentOffset.Value																
                     elif align == "Right":																					
@@ -1189,6 +1200,8 @@ def sortSketchAlign(sketch,edgeAlignList):
     sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
     alignsList = sortAlign(edgeAlignList, sortedIndexes)			
     return alignsList								
+										
+										
 def sortAlign(edgeAlignList, sortedIndexes):					
     clEdgeSameIndexFlat = sortedIndexes[4]					
     alignsList = []								
@@ -1218,6 +1231,8 @@ def sortSketchWidth(sketch,edgeWidthList):
     sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
     widthList = sortWidth(edgeWidthList, sortedIndexes)			
     return widthList								
+										
+										
 def sortWidth(edgeWidthList, sortedIndexes):					
     clEdgeSameIndexFlat = sortedIndexes[4]					
     widthList = []								
