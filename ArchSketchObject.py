@@ -226,7 +226,7 @@ class ArchSketch(ArchSketchObject):
 										
   def updateSortedClustersEdgesOrder(self, fp):				
 										
-      clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat = getSortedClustersEdgesOrder(fp)				
+      clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat = getSketchSortedClEdgesOrder(fp)				
 										
       self.clEdgePartnerIndex = clEdgePartnerIndex				
       self.clEdgeSameIndex = clEdgeSameIndex					
@@ -1075,9 +1075,12 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelement, attachment
     return edgeOffsetPoint																					
 																								
 																								
-def getSortedClustersEdgesOrder(sketch):					
+# For All Sketch, Not Only ArchSketch						
 										
-      ''' Do Part.getSortedClusters() on geometry of a Sketch (omit		
+def getSketchSortedClEdgesOrder(sketch):					
+										
+      ''' Call getSortedClEdgesOrder() -					
+          To do Part.getSortedClusters() on geometry of a Sketch (omit		
           construction geometry), check the order of edges to return lists of	
           indexes in the order of sorted edges	 			 	
 										
@@ -1087,19 +1090,41 @@ def getSortedClustersEdgesOrder(sketch):
       '''									
 										
       skGeom = sketch.Geometry							
-      skGeomEdges = []								
-      skGeomEdgesShort = []							
+      skGeomEdgesFullSet = []							
+      skGeomEdgesSet = []							
       for c, i in enumerate(skGeom):						
           skGeomEdge = i.toShape()						
-          skGeomEdges.append(skGeomEdge)					
+          skGeomEdgesFullSet.append(skGeomEdge)				
           if hasattr(i, 'Construction'):					
               construction = i.Construction					
           elif hasattr(sketch, 'getConstruction'):				
               construction = sketch.getConstruction(c)				
           if not construction:							
-              skGeomEdgesShort.append(skGeomEdge)				
-      skGeomEdgesSorted = Part.getSortedClusters(skGeomEdgesShort)		
+              skGeomEdgesSet.append(skGeomEdge)				
+      return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
+def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):		
 										
+      ''' 0) To support getSketchSortedClEdgesOrder() on a Sketch object	
+      	     which pass a) edges not construction (skGeomEdgesSet),		
+                    and b) all edges (skGeomEdgesFullSet);			
+          1) Or, similar usecases with 2 different edges lists :		
+      	     - Do Part.getSortedClusters() on the provided skGeomEdgesSet,	
+               and check the order of edges to return lists of indexes		
+               against skGeomEdgesFullSet in the order of sorted edges	 	
+										
+      	  2) Or if skGeomEdgesFullSet is not provided;				
+      	     - simply Part.getSortedClusters() provided edges,			
+             check the order of edges to return lists of indexes		
+             against original in the order of sorted edges	 	 	
+										
+          return:								
+          - clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, and		
+          - clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat	
+      '''									
+										
+      skGeomEdgesSorted = Part.getSortedClusters(skGeomEdgesSet)		
+      if skGeomEdgesFullSet is None:						
+          skGeomEdgesFullSet = skGeomEdgesSet #  .copy()			
       ## a list of lists (not exactly array / matrix) to contain index of found matching geometry			
       clEdgePartnerIndex = []							
       clEdgeSameIndex = []							
@@ -1122,7 +1147,7 @@ def getSortedClustersEdgesOrder(sketch):
               clEdgeEqualIndex[h].append(None)					
 										
           for i, skGeomEdgesSortedI in enumerate(c):				
-              for j, skGeomEdgesI in enumerate(skGeomEdges):			
+              for j, skGeomEdgesI in enumerate(skGeomEdgesFullSet):		
                   if skGeomEdgesI: # is not None / i.e. Construction Geometry	
                       if j not in clEdgePartnerIndexFlat:			
                         if skGeomEdgesSortedI.isPartner(skGeomEdgesI):		
@@ -1161,7 +1186,10 @@ def sortSketchAlign(sketch,edgeAlignList):
         sorted by Part.getSortedClusters()					
     '''									
 										
-    sortedIndexes = getSortedClustersEdgesOrder(sketch)			
+    sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
+    alignsList = sortAlign(edgeAlignList, sortedIndexes)			
+    return alignsList								
+def sortAlign(edgeAlignList, sortedIndexes):					
     clEdgeSameIndexFlat = sortedIndexes[4]					
     alignsList = []								
     for i in clEdgeSameIndexFlat:						
@@ -1187,7 +1215,10 @@ def sortSketchWidth(sketch,edgeWidthList):
         sorted by Part.getSortedClusters()					
     '''									
 										
-    sortedIndexes = getSortedClustersEdgesOrder(sketch)			
+    sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
+    widthList = sortWidth(edgeWidthList, sortedIndexes)			
+    return widthList								
+def sortWidth(edgeWidthList, sortedIndexes):					
     clEdgeSameIndexFlat = sortedIndexes[4]					
     widthList = []								
     for i in clEdgeSameIndexFlat:						
