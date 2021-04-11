@@ -1,12 +1,18 @@
 # FreeCAD_SketchArch
-A module for Architecure and making Arch Objects with SketchObjectPython
+An experimental module for Architecure and making Arch Objects with SketchObjectPython
 
+### Short Description
 
-Short Description
+To leverage Sketch and/or SketchObjectPython inherent features to help building Architectural Models
+
+### Sketcher Capabilities
 
 - Leverage Sketch and/or SketchObjectPython inherent features to help building Architectural Models
 - So Sketch Layout + Arch Wall = Building Layout
 - Sketch have geometric and dimensional constraints to help making and editing 'single-line sketch layouts'
+
+### Attachment
+
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
 - ArchObject, e.g. Window, Equipment and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
   - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802
@@ -14,12 +20,17 @@ Short Description
 
   <br> (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch ?)
 
+### Width & Align Per Edge
+
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
+
+### TopoNaming Tolorent
+
 - The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 approaches
     1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore
-    <br> (Implemented but not exposed, in favour of solution 2 below)
+    <br> (**Implemented but not exposed, in favour of solution 2 below**)
         -  sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
     2.  Using PartGeometryExtension / SketchGeometryExtension
     <br> (Prefer approach)
@@ -30,8 +41,18 @@ Short Description
   <br>  Earlier Discussion : Unique and Persistent Skedch Edge Name
           <br> -  Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
           <br> -  Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
-        
-- Examples
+
+
+### Space / Room / Zone Definition
+
+- A Space, Room or Zone could be defined right within (Arch)Sketch itself
+- Automatic identification of each enclosed area (room) defined by edges (walls)
+- Manual assignment of Space / Zone definition identified by user
+- Naming of the Space / Room / Zone by user
+
+
+### Examples
+
     - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
               <br>               Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
     - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
@@ -42,17 +63,19 @@ Short Description
     - PR / Discussion Thread - https://forum.freecadweb.org/viewtopic.php?f=23&t=39060
     - ArchSketch + ArchWall = Building Layout - https://forum.freecadweb.org/viewtopic.php?f=23&t=38703
 
-- More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
+
+### More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
+
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
   - (good for IFCexport ?) Maybe Wall can support different Height for each segment? Similarly, this information be saved in the ArchSketch
   - (good for IFCexport ?) Different materials for different wall segment?
 
 
-About
+### About
 
 
-Prerequisites
+### Prerequisites
 - The said information (widht, align, height, material etc.) is conceived to be saved in Sketch / SketchObjectPython with Part Geometry Extensions feature - the latter currently has bug which crash FC
 - Bugs / IFC export / multi-materials etc. to support Wall base on Sketch to be fixed / implemented
 
