@@ -42,24 +42,44 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
         - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
         - Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
     3.  Using @Realthunder's branch
-       
-  <br>  Earlier Discussion : Unique and Persistent Skedch Edge Name
-          <br> -  Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
-          <br> -  Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
+
+- Earlier Discussion : Unique and Persistent Skedch Edge Name
+  - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
+  - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
 
 
-### Space / Room / Zone Definition
+### Space / Room / Zone & Cell Complex Definition
 
 - A Space, Room or Zone could be defined right within (Arch)Sketch itself
 - Automatic identification of each enclosed area (room) defined by edges (walls)
+- Automatic generation of CellComplex (see below) 
 - Manual assignment of Space / Zone definition identified by user
 - Naming of the Space / Room / Zone by user
+
+- Single Source of 'Information Rich' Sketch to build
+  - ArchWall
+  - ArchSpace / CellComplex (rooms)
+
+- CellComplex
+  - OSArch forum :  Talk on Topologic (CellComplex) https://community.osarch.org/discussion/131/talk-on-topologic#latest
+  - Built on same Sketch as ArchWall (building layout)
+  - Share same faces beteen Cells
+  - Cell faces have no thickness
+
+- Space Connectivity
+  - So 2 ArchSpace / Cells with same ArchWindow/Door is interconnected
+
+- ArchWindow/Door Attachment
+  - 'Attached' to Space / Room / Zone rather than only 'Arch Wall' (or edges)
+  - 'Grouped' under 'ArchSpace' as well
+
+Discussion
+- [Feature] Floor Area Calculation + Room Dimension https://forum.freecadweb.org/viewtopic.php?f=23&t=47905&start=70#p485618
 
 
 ### Examples
 
 Models
-
 - Villa Savoye Discussion - https://forum.freecadweb.org/viewtopic.php?f=23&t=41836
               <br>               Model      - https://github.com/paullee0/FreeCAD_Villa-Savoye
 - Carpenter Center Discussion - https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10
