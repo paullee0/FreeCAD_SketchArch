@@ -108,7 +108,8 @@ Discussion / Announcement
 About
 
 
-Install
+### Install
+- See https://wiki.freecadweb.org/Installing_more_workbenches on manual installation procedure
 
 
 Usage
