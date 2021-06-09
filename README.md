@@ -30,17 +30,25 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
 
-### TopoNaming Tolorent
+### TopoNaming Tolorant
 
 - The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
-  3 approaches
-    1.  Rebuilding Sketch.Geometry[index].Tag onDocumentRestore
-    <br> (**Implemented but not exposed, in favour of solution 2 below**)
-        -  sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
+  3 main approaches :
+  
+    1.  Using sketch.Geometry[index].Tag
+        -  Using sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
+
+        a.  On-the-fly updating Index referencing Sketch.Geometry[index].Tag on UpdateAttachmentOffset()
+            <br> (**Being Implemented**)
+            <br> (Prefer approach)
+     
+        b.  Rebuilding a Dict referencing Sketch.Geometry[index].Tag onDocumentRestore
+            <br> (**Implemented but not exposed, in favour of solution 1a below**)
+    
     2.  Using PartGeometryExtension / SketchGeometryExtension
-    <br> (Prefer approach)
         - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
         - Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
+    
     3.  Using @Realthunder's branch
 
 - Earlier Discussion : Unique and Persistent Sketch Edge Name
