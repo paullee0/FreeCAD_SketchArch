@@ -43,7 +43,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
         - Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
     3.  Using @Realthunder's branch
 
-- Earlier Discussion : Unique and Persistent Skedch Edge Name
+- Earlier Discussion : Unique and Persistent Sketch Edge Name
   - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
   - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
 
