@@ -98,7 +98,12 @@ class ArchSketch(ArchSketchObject):
 																	
 																	
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
-  # mode='init', 'ODR' for different settings					
+      '''									
+      Set properties which are :						
+          1. common to ArchSketchObject & Arch Objects, and			
+          2. required for Link of Arch Objects					
+      mode='init', 'ODR' for different settings				
+      '''									
 										
       if linkFp:								
           fp = linkFp								
@@ -205,7 +210,7 @@ class ArchSketch(ArchSketchObject):
               if Draft.getType(fp) == 'Window':																			
                   fp.AttachToAxisOrSketch = "None"																			
               else: 																							
-                  pass  # currenlty no other ArchObjects use 'ODR'																	
+                  pass  # currently no other ArchObjects use 'ODR'																	
           else:  # default 'ODR' (or None), i.e. if 																			
               fp.AttachToAxisOrSketch = "Host"  # default option for Arch Objects in general														
 																									
@@ -227,6 +232,7 @@ class ArchSketch(ArchSketchObject):
       ''' (IX or XI) - Update the order of edges by getSortedClusters '''	
 										
       self.updateSortedClustersEdgesOrder(fp)					
+										
 										
 										
       ''' (X) - Instances fp.resolve / fp.recompute - '''			
@@ -295,6 +301,32 @@ class ArchSketch(ArchSketchObject):
       '''									
       return None								
 										
+										
+  def getEdgeTagIndex(self, fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False):		
+    ''' Arguments	: fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False			
+        Return		: index, tagSync (not tagInitial nor tagArchive...yet) '''			
+													
+													
+    if tag and index is None:										
+										
+        if useEdgeTagDictSyncFindIndex == False:				
+            i = 0								
+            while True:							
+                try:								
+                    if tag == fp.Geometry[i].Tag:				
+                        return i, None						
+                except:							
+                    print (" Debug - Tag does not (/no longer) exist " + "\n")	
+                    return None, None						
+                i += 1								
+										
+    elif not tag and index is not None:					
+        try:									
+            tagSync = fp.Geometry[index].Tag					
+        except:								
+            print("DEBUG - Index does not (or no longer?) exist ")		
+            return None, None							
+        return None, tagSync							
 										
   def onDocumentRestored(self, fp):						
 										
@@ -389,9 +421,10 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         subIndex = int( sub.lstrip('Edge'))-1					
 										
         if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch) == 'Sketcher::SketchObject':		
+            if Draft.getType(self.targetArchSketch)=='Sketcher::SketchObject':	
                 print (" It is a Sketch")					
                 curAlign = self.targetWall.OverrideAlign[subIndex]		
+										
                 if curAlign == 'Left':						
                     curAlign = 'Right'						
                 elif curAlign == 'Right':					
@@ -400,16 +433,17 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                     curAlign = 'Left'						
                 else:	# 'Center' or else?					
                     curAlign = 'Right'						
+										
                 # Save information in ArchWall					
                 if self.targetWall:						
                     tempOverrideAlign = self.targetWall.OverrideAlign		
                     tempOverrideAlign[subIndex] = curAlign			
                     self.targetWall.OverrideAlign = tempOverrideAlign		
+										
             elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
                 print (" It is an ArchSketch")					
                 print (" Full Support not added currently yet !")		
-                print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
-                # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
+                # TODO Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
                 if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):						
                     curAlign = self.targetWall.OverrideAlign[subIndex]		
                 if curAlign == 'Left':						
@@ -461,9 +495,11 @@ class _CommandEditWallWidth():
             reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
             return								
         targetObjectBase = None						
+										
         if Draft.getType(sel0) not in ["Wall","ArchSketch"]:			
             reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
             return								
+										
         if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
             if sel0.Base:							
                 targetObjectBase = sel0.Base					
@@ -526,13 +562,11 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        #if Draft.getType(self.targetArchSketch) == 'ArchSkech':		
+        #if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
         curWidth = None							
         if hasattr(self.targetArchSketch, "Proxy"):				
             if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):					
                 curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
-            if not curWidth:												
-                curWidth = self.targetArchSketch.ArchSketchWidth.Value							
         if not curWidth:												
             curWidth = self.targetWall.OverrideWidth[subIndex]								
         reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))		
@@ -578,7 +612,7 @@ class _CommandEditWallAttach():
     def GetResources(self):							
         return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Attach',	
                 'Accel'   : "E, T",						
-                'MenuText': "Edit Attachment Edge",				
+                'MenuText': "Edit Attachment",					
                 'ToolTip' : "Select ArchSketch or Arch Window/Equipment (and optional a target) change attachment edge / to attach to a target ",	
                 'CmdType' : "ForEdit"}						
 										
@@ -596,8 +630,8 @@ class _CommandEditWallAttach():
         except:								
             sel1 = None							
 										
-        # If Link is newly created and not Recomputed, the Hosts attribute is not added to the Link								
-        # Now, if the Hosts[0] is assigned to the Sel1, then it is the LinkedObject's Hosts attribute be altered						
+        # If a Link is newly created and not Recomputed, its Hosts attribute is not added to the Link								
+        # Now, if its Hosts[0] is assigned to the Sel1, then it is the Linked Object's Hosts attribute be altered						
         # The result is, instead of the Sel0 object got new Hosts[0] and attach to it,										
         # it is 'wrongly' the Linked Object (the 'Original') attach to new Hosts[0] !										
         # - Check and Recompute if State is Touched														
@@ -611,13 +645,14 @@ class _CommandEditWallAttach():
         if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch','Window','Equipment']:									
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
             return																		
-        # check if targetHostWall is selected by user																			
+        # check if targetHostWall is selected by user : selection take precedence 															
         if sel1:																							
             if Draft.getType(sel1) != 'Wall':																				
                 reply = QtGui.QMessageBox.information(None,"","Target Object is Not Wall - Feature not supported 'Yet' ")										
                 return																							
             else:																							
                 targetHostWall = sel1																					
+        # if no sel1: check if it was assigned -																			
         # or use Windows.Hosts / Equiptment.Host, i.e. not changing targetHostWall															
         # Window has Hosts, Equipment Host																				
         elif hasattr(sel0, "Host"):						
@@ -642,18 +677,18 @@ class _CommandEditWallAttach():
             if sel0.MasterSketch:																					
                 targetBaseSketch = sel0.MasterSketch																			
         if not targetBaseSketch:																					
-            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")									
+            reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function; ArchSketch needs to have a MasterSketch to function")		
             return																							
-        if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketcher::SketchObject']:	
-            targetBaseSketch.ViewObject.HideDependent = False			
-            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
-            Gui.ActiveDocument.setEdit(targetBaseSketch)			
+        if Draft.getType(targetBaseSketch) in ['ArchSketch', 'Sketcher::SketchObject']:			
+            targetBaseSketch.ViewObject.HideDependent = False							
+            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")					
+            Gui.ActiveDocument.setEdit(targetBaseSketch)							
             App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to attach to "+ "\n")	
             FreeCADGui.Selection.clearSelection()								
             s=GuiEditWallAttachObserver(sel0, targetHostWall, targetBaseSketch)				
-            self.observer = s							
-            FreeCADGui.Selection.addObserver(s)				
-        elif Draft.getType(targetBaseSketch) == 'Wire':			
+            self.observer = s											
+            FreeCADGui.Selection.addObserver(s)								
+        elif Draft.getType(targetBaseSketch) == 'Wire':							
             reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
         else:																								
             reply = QtGui.QMessageBox.information(None,"","Wall needs to have Base which is to be Sketch or ArchSketch to function")									
@@ -675,10 +710,10 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
             targetHostWall.ViewObject.Transparency = 60								
         if hasattr(targetObject, "Host"):										
             if targetObject.Host != targetHostWall:  # Testing For Host first						
-                targetObject.Host = targetHostWall  # Not recompute atm to save time					
+                targetObject.Host = targetHostWall  # No recompute, save time						
         else:  # elif hasattr(targetObject, "Hosts"):									
             if targetObject.Hosts:											
-                if targetObject.Hosts[0] != targetHostWall:  # Testing For Host[0]					
+                if targetObject.Hosts[0] != targetHostWall:  # Testing Host[0]						
                     targetObjectHosts = targetObject.Hosts								
                     targetObjectHosts[0] = targetHostWall  # replace 1st item						
                     targetObject.Hosts = targetObjectHosts								
@@ -701,6 +736,16 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
             elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
                 print (" It is an ArchSketch")					
             self.targetObject.MasterSketchSubelement = subElement		
+            # The Command/Observer find and assign the MasterSketchSubelementTag (instead of doing this by onChanged(), which does not exist e.g. for Link) 	
+            geoindex = int(subElement.lstrip('Edge'))-1													
+            none, tag = self.targetArchSketch.Proxy.getEdgeTagIndex(self.targetArchSketch, None, geoindex)							
+            if not hasattr(self.targetObject, "Proxy"):  # i.e. Link		
+                self.targetObject.MasterSketchSubelementTag = tag		
+            elif self.targetObject.Proxy.Type != "ArchSketch":			
+                # ArchObjects other than ArchSketchObjects			
+                self.targetObject.MasterSketchSubelementTag = tag		
+            else:								
+                self.targetObject.Proxy.MasterSketchSubelementTag = tag	
         else:  								
             # nothing implemented if self.targetArchSketch is None		
             pass								
@@ -756,8 +801,11 @@ def detachFromMasterSketch(fp):
   fp.Support = None								
 										
 										
-#def updateAttachment(fp, linkFp=None):					
 def updateAttachmentOffset(fp, linkFp=None):					
+    '''									
+        For ArchSketch(Object), Arch Objects (with SketchArch add-on),		
+        and Links of the above.						
+    '''									
 										
     fpOrgSelf = fp.Proxy							
     if linkFp:									
@@ -770,30 +818,31 @@ def updateAttachmentOffset(fp, linkFp=None):
     hostSketch = None								
     hostWall = None								
     hostObject = None								
+										
     if fp.AttachToAxisOrSketch == "Host":			 		
-            if hasattr(fp, "Hosts"):  # Arch Window				
-                if fp.Hosts:							
-                    hostWall = fp.Hosts[0]  # Can just take 1st Host wall	
-                    if hostWall.Base.isDerivedFrom("Sketcher::SketchObject"):	
-                        hostSketch = hostWall.Base  # Host wall's base Sketch	
-            elif hasattr(fp, "Host"):  # Other ArchObjects (except ArchSketch)	
-                if fp.Host:							
-                    hostObject = fp.Host					
-                    if hasattr(fp.Host, "Base"):  # Arch Wall ?		
-                        if hostObject.Base.isDerivedFrom("Sketcher::SketchObject"):	
-                            hostSketch = fp.Host.Base  # Host wall's base 		
-            if (not hostWall) and (not hostObject):				
-                return								
+        if hasattr(fp, "Hosts"):  # Arch Window				
+            if fp.Hosts:							
+                hostWall = fp.Hosts[0]  # Can just take 1st Host wall		
+                if hostWall.Base.isDerivedFrom("Sketcher::SketchObject"):	
+                    hostSketch = hostWall.Base  # Host wall's base Sketch	
+        elif hasattr(fp, "Host"):  # Other ArchObjects (except ArchSketch)	
+            if fp.Host:							
+                hostObject = fp.Host						
+                if hasattr(fp.Host, "Base"):  # Arch Wall ?			
+                  if hostObject.Base.isDerivedFrom("Sketcher::SketchObject"):	
+                        hostSketch = fp.Host.Base  # Host wall's base 		
+        if (not hostWall) and (not hostObject):				
+            return								
 										
     elif fp.AttachToAxisOrSketch == "Master Sketch":			 	
-            if fp.MasterSketch:						
-                hostSketch = fp.MasterSketch					
-            else:								
-                return								
+        if fp.MasterSketch:							
+            hostSketch = fp.MasterSketch					
+        else:									
+            return								
 										
     attachToSubelementOrOffset = fp.AttachToSubelementOrOffset			
 										
-    masterSketchSubelement = fp.MasterSketchSubelement				
+    msSubelement = fp.MasterSketchSubelement					
     msSubelementOffset = fp.MasterSketchSubelementOffset			
     msIntersectingSubelement = fp.MasterSketchIntersectingSubelement		
 										
@@ -803,31 +852,38 @@ def updateAttachmentOffset(fp, linkFp=None):
     flip180Degree = fp.Flip180Degree						
     flipOffsetOriginToOtherEnd = fp.FlipOffsetOriginToOtherEnd			
 										
-    masterSketchSubelementTag = None						
+    msSubelementTag = None							
     msIntersectingSubelementTag = None						
     msSubelementEdge = None							
     msSubelementIndex = None							
     msIntersectingSubelementEdge = None					
 										
     if hasattr(fp, "Proxy"):  # ArchSketch/ ArchObjects (Window/Equipment)	
-            if fp.Proxy.Type == "ArchSketch":					
-                msSubelementEdge = masterSketchSubelement			
-            else:								
-                # Other Arch Objects (Windows / Doors)				
-                msSubelementEdge = masterSketchSubelement			
-            if fp.Proxy.Type == "ArchSketch":					
-                msIntersectingSubelementEdge = msIntersectingSubelement				
-            else:											
-                # Other Arch Objects (Windows / Doors)							
-                msIntersectingSubelementEdge = msIntersectingSubelement				
-													
-    else:  # Link objects (of ArchSketch or Arch Windows / Doors)					
-            msSubelementEdge = masterSketchSubelement							
-            msIntersectingSubelementEdge = msIntersectingSubelement					
-													
-    if not msSubelementEdge:							
+        if fp.Proxy.Type == "ArchSketch":					
+            msSubelementTag = fp.Proxy.MasterSketchSubelementTag		
+        else:  # Other Arch Objects (Equipment / Windows, Doors)		
+            msSubelementTag = fp.MasterSketchSubelementTag			
+										
+        if fp.Proxy.Type == "ArchSketch":					
+            msIntersectingSubelementTag = fp.Proxy.MasterSketchIntersectingSubelementTag	
+        else:  # Other Arch Objects (Equipment / Windows, Doors)		
+            msIntersectingSubelementEdge = msIntersectingSubelement		
+										
+    else:  # Link objects (of ArchSketch or Arch Windows / Doors)		
+        msSubelementTag = fp.MasterSketchSubelementTag				
+										
+        #msSubelementEdge = msSubelement					
+        msIntersectingSubelementEdge = msIntersectingSubelement		
+										
+    if msSubelementTag:							
+        msSubelementIndex, none = ArchSketch.getEdgeTagIndex(fpOrgSelf,	
+                                  hostSketch, msSubelementTag, None)		
+    if msSubelementIndex == None:  # i.e. not found corresponding index	
+        if msSubelement:							
+            msSubelementEdge = msSubelement					
+        else:									
             msSubelementEdge = "Edge1"  # default be 1				
-    msSubelementIndex = int(msSubelementEdge.lstrip('Edge'))-1			
+        msSubelementIndex = int(msSubelementEdge.lstrip('Edge'))-1		
 										
     #if attachToAxisOrSketch in ["Hosts", "Master Sketch"]: 			
     tempAttachmentOffset = FreeCAD.Placement()					
@@ -836,18 +892,17 @@ def updateAttachmentOffset(fp, linkFp=None):
     # Calculate the Position & Rotation (of the point of the edge to attach to)																
 																										
     if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):															
-																										
-            if hostSketch:  # only calculate 'offset' if hostSketch, otherwise, still proceed but 'offset' is kept to 'origin' of host										
-																										
+            if hostSketch:  # only calculate 'offset' if hostSketch, otherwise, still proceed but 'offset' is kept to 'origin'											
                 # Calculate the position of the point of the edge to attach to																	
-                edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
+                #edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
+                edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementIndex, msSubelementOffset,											
                                                                        attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,								
                                                                        attachToSubelementOrOffset, msIntersectingSubelementEdge)  # offsetFromIntersectingSubelement, 						
                 tempAttachmentOffset.Base= edgeOffsetPointVector																		
 																										
                 # Calculate the rotation of the edge																				
                 if attachToSubelementOrOffset == "Attach To Edge & Alignment":																	
-                    edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementEdge)																
+                    edgeAngle = getSketchEdgeAngle(hostSketch, msSubelementIndex)																
                     # switch to new convention - https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&start=80#p463196											
                     #if flip180Degree:																						
                     if (flip180Degree and (attachmentAlignment == "WallLeft")) or (not flip180Degree and (attachmentAlignment == "WallRight")) or (flip180Degree and (attachmentAlignment == "Left")) or (not flip180Degree and (attachmentAlignment == "Right")) :																						
@@ -857,8 +912,7 @@ def updateAttachmentOffset(fp, linkFp=None):
                     tempAttachmentOffset.Rotation.Angle = attachmentOffsetXyzAndRotation.Rotation.Angle													
 																										
                 # Offset Parallel from Line Alignment																				
-																										
-                masterSketchSubelementEdgeVec = getSketchEdgeVec(hostSketch, msSubelementEdge)															
+                masterSketchSubelementEdgeVec = getSketchEdgeVec(hostSketch, msSubelementIndex)														
                 msSubelementWidth = zeroMM																					
                 align = None																							
 																										
@@ -1033,14 +1087,14 @@ def changeAttachMode(fp, fpProp):
                       detachFromMasterSketch(fp)				
 										
 										
-def getSketchEdgeAngle(masterSketch, subelement):				
-    vec = getSketchEdgeVec(masterSketch, subelement)				
+def getSketchEdgeAngle(masterSketch, subelementIndex):				
+    vec = getSketchEdgeVec(masterSketch, subelementIndex)			
     draftAngle = -DraftVecUtils.angle(vec)					
     return draftAngle								
 										
 										
-def getSketchEdgeVec(sketch, subelement):  					
-    geoindex = int(subelement.lstrip('Edge'))-1				
+def getSketchEdgeVec(sketch, geoindex):					
+    #geoindex = int(subelement.lstrip('Edge'))-1				
     lp1=sketch.Geometry[geoindex].EndPoint					
     lp2=sketch.Geometry[geoindex].StartPoint					
     vec = lp1 - lp2								
@@ -1058,11 +1112,12 @@ def getSketchEdgeIntersection(sketch, line1Index, line2Index):
         return None								
 										
 										
-def getSketchEdgeOffsetPointVector(subject, masterSketch, subelement, attachmentOffset, zOffset, flipOffsetOriginToOtherEnd=False,								
+def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex, attachmentOffset, zOffset, flipOffsetOriginToOtherEnd=False,							
                                    flip180Degree=False, attachToSubelementOrOffset=None, masterSketchIntersectingSubelement=None): # offsetFromIntersectingSubelement=False,			
     geoindex = None																						
     geoindex2 = None																						
-    geoindex = int(subelement.lstrip('Edge'))-1																		
+    #geoindex = int(subelement.lstrip('Edge'))-1																		
+    geoindex = subelementIndex																					
     if masterSketchIntersectingSubelement:  #  and offsetFromIntersectingSubelement:  ('' empty string is not 'None ) is not None:								
         geoindex2 = int(masterSketchIntersectingSubelement.lstrip('Edge'))-1															
 																								
@@ -1113,6 +1168,8 @@ def getSketchSortedClEdgesOrder(sketch):
           if not construction:							
               skGeomEdgesSet.append(skGeomEdge)				
       return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
+										
+										
 def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):		
 										
       ''' 0) To support getSketchSortedClEdgesOrder() on a Sketch object	
