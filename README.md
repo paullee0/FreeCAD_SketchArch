@@ -109,22 +109,35 @@ Discussion / Announcement
 
 
 ### Prerequisites
+
 - The said information (widht, align, height, material etc.) is conceived to be saved in Sketch / SketchObjectPython with Part Geometry Extensions feature - the latter currently has bug which crash FC
 - Bugs / IFC export / multi-materials etc. to support Wall base on Sketch to be fixed / implemented
 
 
+### Install
+
+Assume FreeCAD is installed:-
+  - Launch FreeCAD and start the Addons Manager from menu Tools -> Addons manager
+  - Locate and install the SketchArch addon
+  - Restart FreeCAD, and switch to the SketchArch workbench
+
+Can also manually clone or download all the files from this repository in a "SketchArch" folderinside your FreeCAD Mod directory:-
+  - See https://wiki.freecadweb.org/Installing_more_workbenches on manual installation procedure
+
+
+### Feedback 
+(FreeCAD Forum thread)
+  There are a few discussion at FreeCAD discussion fourm with different topics:-
+  - Intuitive Automatic Windows/Doors + Equipment Placement : https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&sid=fd179d8d8b15b107a6c98eee7eaa88ec
+  - etc.
+
+
+### License
+  https://github.com/paullee0/FreeCAD_SketchArch/blob/master/LICENSE
+  
+  
 About
 
 
-### Install
-- See https://wiki.freecadweb.org/Installing_more_workbenches on manual installation procedure
-
 
 Usage
-
-
-Feedback
-(FC thread)
-
-
-License
