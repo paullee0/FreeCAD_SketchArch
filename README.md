@@ -28,7 +28,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
 - Extend capability to Arch Objects, e.g. Window, Equipment and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
-  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851)
+  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
   - **Note:** (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch)
 
 
@@ -44,24 +44,20 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   3 main approaches :
 
     1.  Using sketch.Geometry[index].Tag
-        -  Using sketch.Geometry[index].Tag == Unique identification survive changes? - https://forum.freecadweb.org/viewtopic.php?f=22&t=28575
+        Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=28575))
 
-        a.  On-the-fly updating Index referencing Sketch.Geometry[index].Tag on UpdateAttachmentOffset()
-            <br> (**Being Implemented**)
-            <br> (Prefer approach)
-
-        b.  Rebuilding a Dict referencing Sketch.Geometry[index].Tag onDocumentRestore
-            <br> (**Implemented but not exposed, in favour of solution 1a below**)
+        a. **WIP** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**)
+        b.  Rebuilding a Dict referencing `Sketch.Geometry[index].Tag` `onDocumentRestore` (**Implemented but not exposed. Solution 1a is preferable**)
 
     2.  Using PartGeometryExtension / SketchGeometryExtension
-        - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  -  https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767
-        - Sketcher Development - Integration of Extensions  -  https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360
+        - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  ([forum thread](https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767))
+        - Sketcher Development - Integration of Extensions  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360))
 
     3.  Using @Realthunder's branch
 
-- Earlier Discussion : Unique and Persistent Sketch Edge Name
-  - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space  -  https://forum.freecadweb.org/viewtopic.php?t=25904#p204581
-  - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  -  https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716
+- Earlier Discussions : Unique and Persistent Sketch Edge Name
+  - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space ([forum thread](https://forum.freecadweb.org/viewtopic.php?t=25904#p204581))
+  - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716))
 
 
 ### Space / Room / Zone & Cell Complex Definition
@@ -77,7 +73,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - ArchSpace / CellComplex (rooms)
 
 - CellComplex
-  - OSArch forum :  Talk on Topologic (CellComplex) https://community.osarch.org/discussion/131/talk-on-topologic#latest
+  - OSArch forum: Talk on Topologic (CellComplex) ([forum thread](https://community.osarch.org/discussion/131/talk-on-topologic#latest))
   - Built on same Sketch as ArchWall (building layout)
   - Share same faces between Cells
   - Cell faces have no thickness
