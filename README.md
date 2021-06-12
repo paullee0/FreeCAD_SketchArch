@@ -59,8 +59,9 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
     1.  Using sketch.Geometry[index].Tag
         Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=28575))
-
+        <br>
         a. **WIP** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**)
+        <br>
         b.  Rebuilding a Dict referencing `Sketch.Geometry[index].Tag` `onDocumentRestore` (**Implemented but not exposed. Solution 1a is preferable**)
 
     2.  Using PartGeometryExtension / SketchGeometryExtension
@@ -74,7 +75,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716))
 
 
-### Features in Development, Other Remarks
+#### Features in Development, Other Remarks
 
 <details>
   <summary>Click to expand!</summary>
