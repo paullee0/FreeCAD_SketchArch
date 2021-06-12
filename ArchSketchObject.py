@@ -56,7 +56,7 @@ class ArchSketchObject:
 										
 class ArchSketch(ArchSketchObject):						
 										
-  ''' ArchSketch - Sketcher::SketchObjectPython for Architectual Layout '''	
+  ''' ArchSketch - Sketcher::SketchObjectPython for Architectural Layout '''	
 										
   MasterSketchSubelementTags = [ "MasterSketchSubelementTag", "MasterSketchIntersectingSubelementTag" ]										
 										
@@ -653,7 +653,7 @@ class _CommandEditWallAttach():
             else:																							
                 targetHostWall = sel1																					
         # if no sel1: check if it was assigned -																			
-        # or use Windows.Hosts / Equiptment.Host, i.e. not changing targetHostWall															
+        # or use Windows.Hosts / Equipment.Host, i.e. not changing targetHostWall															
         # Window has Hosts, Equipment Host																				
         elif hasattr(sel0, "Host"):						
             if sel0.Host:							
