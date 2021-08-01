@@ -125,9 +125,12 @@ class ArchSketch(ArchSketchObject):
                   if i not in prop:						
                       orgFp.addProperty("App::PropertyPythonObject", i)	
                       setattr(orgFp, i, str())					
-      if "MasterSketchSubelementIndex" not in prop:																			
-          fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)			
-          fp.setEditorMode("MasterSketchSubelementIndex",2)																		
+      if "MasterSketchSubelementIndex" not in prop:																				
+          fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)				
+          fp.setEditorMode("MasterSketchSubelementIndex",2)																			
+      if "MasterSketchIntersectingSubelementIndex" not in prop:																		
+          fp.addProperty("App::PropertyInteger","MasterSketchIntersectingSubelementIndex","Referenced Object","Index of MasterSketchInteresctingSubelement to be synced on the fly.  For output only.", 8)	
+          fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)																	
 										
       ''' Referenced Object '''						
 										
@@ -139,7 +142,6 @@ class ArchSketch(ArchSketchObject):
       else:  																								
           if "Hosts" not in prop:																					
               fp.addProperty("App::PropertyLinkList","Hosts","Window",QT_TRANSLATE_NOOP("App::Property","The objects that host this window"))  # Arch Window's code					
-                                               # "Referenced Object","The object that host this object / this object attach to")									
 																									
       if "MasterSketch" not in prop:																					
           fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")												
@@ -287,8 +289,6 @@ class ArchSketch(ArchSketchObject):
               if fp == parent.Base:						
                   if parent not in foundParentArchWalls:			
                       foundParentArchWalls.append(parent)			
-      print(' foundParentArchSketchNames are - ', foundParentArchSketchNames)				
-      print(' foundParentLnkArchSketchesNames are - ', foundParentLnkArchSketchesNames)		
       # Find ArchObject parents of ArchWall (Equipment, Window)		
       for wall in foundParentArchWalls:					
           for parent in wall.InList:						
@@ -303,31 +303,24 @@ class ArchSketch(ArchSketchObject):
                           foundParentArchObjectNames.append(parent.Name)	
                           foundParentArchObjects.append(parent)		
 										
-      print(' foundParentArchObjectNames are - ', foundParentArchObjectNames)		
-      print(' foundParentArchObjects.Label are - ' )					
-      for i in foundParentArchObjects:							
-          print(i.Label)								
       # call ArchSketch parent							
       total = len(foundParentArchSketchNames)					
       for key, parentArchSketchName in enumerate(foundParentArchSketchNames):	
           parent = FreeCAD.ActiveDocument.getObject(parentArchSketchName)	
+          parent.Proxy.setPropertiesLinkCommon(parent)				
 										
           lite = True								
 										
-          print(' parentArchSketchName / Label are - ', parentArchSketchName, parent.Label)		
           if lite:								
-              print (" ", key+1, " / ", total, " to ~recompute... " + "\n")	
               updatePropertiesLinkCommonODR(parent, None)			
 										
       # call Link of ArchSketch parent						
       for lnkArchSketch in foundParentLnkArchSketches:				
-          print('lnkArchSketch.Label to ~recompute is - ',lnkArchSketch.Label)	
           linkedObj = lnkArchSketch.getLinkedObject()				
           updatePropertiesLinkCommonODR(linkedObj, lnkArchSketch)		
 										
       # call Arch Objects (Equipment, Window)					
       for archObject in foundParentArchObjects:				
-          print('archObject.Label to ~recompute~ is - ', archObject.Label)	
           if archObject.isDerivedFrom('App::Link'):				
               linkedObj = archObject.getLinkedObject()				
               updatePropertiesLinkCommonODR(linkedObj, archObject)		
@@ -892,7 +885,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
         and Links of the above.						
     '''									
 										
-    fpOrgSelf = fp.Proxy							
+    fpSelf = fp.Proxy								
     if linkFp:									
         fp = linkFp								
         print(fp.Label)							
@@ -923,123 +916,181 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             hostSketch = fp.MasterSketch					
         else:									
             return								
-    hostSkProxy = hostSketch.Proxy						
+										
+    if hostSketch:								
+        hostSkProxy = hostSketch.Proxy						
 										
     attachToSubelementOrOffset = fp.AttachToSubelementOrOffset			
 										
     msSubelement = fp.MasterSketchSubelement					
     msSubelementOffset = fp.MasterSketchSubelementOffset			
-    msIntersectingSubelement = fp.MasterSketchIntersectingSubelement		
+    msIntSubelement = fp.MasterSketchIntersectingSubelement			
 										
     attachmentAlignment = fp.AttachmentAlignment				
     attachmentAlignmentOffset = fp.AttachmentAlignmentOffset			
     attachmentOffsetXyzAndRotation = fp.AttachmentOffsetXyzAndRotation		
     flip180Degree = fp.Flip180Degree						
     flipOffsetOriginToOtherEnd = fp.FlipOffsetOriginToOtherEnd			
-										
     msSubelementTag = None							
-    msIntersectingSubelementTag = None						
+    msIntSubelementTag = None							
     msSubelementEdge = None							
     msSubelementIndex = None							
-    msIntersectingSubelementEdge = None					
+    msIntSubelementIndex = None						
+    #msIntersectingSubelementEdge = None					
 										
     newIndex = None								
     newTag = None								
-    if msSubelement:								
+										
+    if msSubelement and hostSkProxy:						
         newIndex = int(msSubelement.lstrip('Edge'))-1				
-        print (" newIndex - ", newIndex)					
         if newIndex > -1:							
             fp.MasterSketchSubelementIndex = newIndex				
-            none, newTag = ArchSketch.getEdgeTagIndex(hostSkProxy, hostSketch, None, newIndex)		
-													
-        else:  # elif newIndex <= -1:									
-            fp.MasterSketchSubelementIndex = -1							
+            none, newTag = ArchSketch.getEdgeTagIndex(hostSkProxy, hostSketch,	
+                                                      None, newIndex)		
+										
+    newIntIndex = None								
+    newIntTag = None								
+										
+    if msIntSubelement and hostSkProxy:					
+        newIntIndex = int(msIntSubelement.lstrip('Edge'))-1			
+        if newIntIndex > -1:							
+            fp.MasterSketchIntersectingSubelementIndex = newIntIndex		
+            none, newIntTag = ArchSketch.getEdgeTagIndex(hostSkProxy,		
+                                                         hostSketch, None,	
+                                                         newIntIndex)		
     if hasattr(fp, "Proxy"):  # ArchSketch/ ArchObjects (Window/Equipment)	
         if fp.Proxy.Type == "ArchSketch":					
             if newTag:  # i.e. if found new tag				
-                fp.Proxy.MasterSketchSubelementTag = newTag  # update/record	
+                fpSelf.MasterSketchSubelementTag = newTag  # update/record	
+            elif msSubelement:							
+                fp.MasterSketchSubelementIndex = -1				
+                fpSelf.MasterSketchSubelementTag = ''  # clear 		
             else:								
-                msSubelementTag = fp.Proxy.MasterSketchSubelementTag		
+                msSubelementTag = fpSelf.MasterSketchSubelementTag		
+            if newIntTag:  # i.e. if found new tag				
+                # update/record						
+                fpSelf.MasterSketchIntersectingSubelementTag = newIntTag	
+            elif msIntSubelement:						
+                fp.MasterSketchIntersectingSubelementIndex = -1		
+                fpSelf.MasterSketchIntersectingSubelementTag = ''  # clear	
+            else:								
+                msIntSubelementTag=fpSelf.MasterSketchIntersectingSubelementTag 
         else:  # Other Arch Objects (Equipment / Windows, Doors)		
             if newTag:  # i.e. if found new tag				
                 fp.MasterSketchSubelementTag = newTag  # update/record		
+            elif msSubelement:							
+                fp.MasterSketchSubelementIndex = -1				
+                fp.MasterSketchSubelementTag = ''  # clear			
             else:								
                 msSubelementTag = fp.MasterSketchSubelementTag			
 										
-        if fp.Proxy.Type == "ArchSketch":					
-            msIntersectingSubelementTag = fp.Proxy.MasterSketchIntersectingSubelementTag		
-        else:  # Other Arch Objects (Eqpt, Win/Door)							
-            msIntersectingSubelementEdge = msIntersectingSubelement		
+            if newIntTag:  # i.e. if found new tag				
+                # update/record						
+                fp.MasterSketchIntersectingSubelementTag = newIntTag		
+            elif msIntSubelement:						
+                fp.MasterSketchIntersectingSubelementIndex = -1		
+                fp.MasterSketchIntersectingSubelementTag = ''  # clear		
+            else:								
+                msIntSubelementTag=fp.MasterSketchIntersectingSubelementTag	
 										
     else:  # Link objects (of ArchSketch or Arch Windows / Doors)		
         if newTag:  # i.e. if found new tag					
             fp.MasterSketchSubelementTag = newTag  # update/record 		
+        elif msSubelement:							
+            fp.MasterSketchSubelementIndex = -1				
+            fp.MasterSketchSubelementTag = ''  # clear				
         else:									
             msSubelementTag = fp.MasterSketchSubelementTag			
-        #msSubelementEdge = msSubelement					
-        msIntersectingSubelementEdge = msIntersectingSubelement		
+        if newIntTag:  # i.e. if found new tag					
+            # update/record							
+            fp.MasterSketchIntersectingSubelementTag = newIntTag		
+        elif msIntSubelement:							
+            fp.MasterSketchIntersectingSubelementIndex = -1			
+            fp.MasterSketchIntersectingSubelementTag = ''  # clear		
+        else:									
+            msIntSubelementTag=fp.MasterSketchIntersectingSubelementTag	
 										
-    print (" debug - 2021.6.25 - newIndex is :  ", newIndex)					
-    print (" debug - 2021.6.25 - newTag is :  ", newTag)					
-    print (" debug - 2020.9.16 - msSubelementTag is :  ", msSubelementTag)			
-    if msSubelementTag:  # if has previous tag								
-      print( " if msSubelementTag:  ", msSubelementTag)						
-        # get synchronised index ('toponaming tolerent' process)					
-      if mode == 'ODR':										
-        print( " ODR ...")										
-        if False :  # TODO hasattr(hostSkProxy, "EdgeTagDictArchive"):					
-            pass											
-        else:												
-            if fp.MasterSketchSubelementIndex > -1:							
-                msSubelementIndex = fp.MasterSketchSubelementIndex					
-                print( " ODR use fp.MasterSketchSubelementIndex :  ", msSubelementIndex)		
-                none, initialTag = ArchSketch.getEdgeTagIndex(hostSkProxy,				
-                                   hostSketch, None, msSubelementIndex)				
-                if Draft.getType(fp) == "ArchSketch":						
-                    fp.Proxy.MasterSketchSubelementTag = initialTag  # update/record			
-                else:											
-                    fp.MasterSketchSubelementTag = initialTag  # update/record				
-													
-      else:  # mode != 'ODR'										
-        print( " Not ODR ...")										
-        msSubelementIndex, none = ArchSketch.getEdgeTagIndex(hostSkProxy,				
-                                  hostSketch, msSubelementTag, None)					
-        print( " msSubelementIndex is :  ", msSubelementIndex)						
-        # sync index in record ('toponaming tolerent' process)						
-        if msSubelementIndex != None:									
-            fp.MasterSketchSubelementIndex = msSubelementIndex						
-        else:  #  previous tag has no corresonding index						
-            # clear records										
-            if hasattr(fp, "Proxy"):  # ArchSketch/ ArchObjects (Window/Equipment)			
-                if fp.Proxy.Type == "ArchSketch":							
-                    fp.Proxy.MasterSketchSubelementTag =  ''						
-                else:  # Other Arch Objects (Equipment / Windows, Doors)				
-                    fp.MasterSketchSubelementTag = ''							
-                fp.MasterSketchSubelementIndex = -1							
-            else:  # Link objects (of ArchSketch or Arch Windows / Doors)				
-                fp.MasterSketchSubelementTag = ''							
-                fp.MasterSketchSubelementIndex = -1							
-													
-    elif newTag:  # if found new tag, use it								
-        msSubelementIndex = newIndex									
-    else:												
-        print (" no previous / new tag ... ")								
-    if msSubelementIndex == None:  # i.e. not found corresponding index	
-        return  # TODO no more updateAttachment then				
+    if msSubelementTag:  # if has previous tag (then should no newTag)		
+        if mode == 'ODR':							
+            if fp.MasterSketchSubelementIndex > -1:				
+                msSubelementIndex = fp.MasterSketchSubelementIndex		
+                none, initialTag = ArchSketch.getEdgeTagIndex(hostSkProxy,	
+                                   hostSketch, None, msSubelementIndex)	
+                if Draft.getType(fp) == "ArchSketch":				
+                    fp.Proxy.MasterSketchSubelementTag = initialTag		
+                else:								
+                    fp.MasterSketchSubelementTag = initialTag			
+        else:  # mode != 'ODR'							
+            msSubelementIndex, none = ArchSketch.getEdgeTagIndex(hostSkProxy,	
+                                      hostSketch, msSubelementTag, None)	
+            # sync index in record ('toponaming tolerent' process)		
+            if msSubelementIndex != None:					
+                fp.MasterSketchSubelementIndex = msSubelementIndex		
+            else:  #  previous tag has no corresonding index			
+                if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)	
+                    if fp.Proxy.Type == "ArchSketch":				
+                        fp.Proxy.MasterSketchSubelementTag =  ''		
+                    else:  # Other Arch Objects (Equipment / Windows, Doors)	
+                        fp.MasterSketchSubelementTag = ''			
+                else:  # Link objects (of ArchSketch or Arch Windows / Doors)	
+                    fp.MasterSketchSubelementTag = ''				
+                fp.MasterSketchSubelementIndex = -1				
+										
+    if msIntSubelementTag:  # if has previous tag (then should no newTag)	
+        if mode == 'ODR':							
+            if fp.MasterSketchIntersectingSubelementIndex > -1:		
+                msIntSubelementIndex= fp.MasterSketchIntersectingSubelementIndex
+                none, initialTag = ArchSketch.getEdgeTagIndex(hostSkProxy,	
+                                   hostSketch, None, msIntSubelementIndex)	
+                if Draft.getType(fp) == "ArchSketch":				
+                    fp.Proxy.MasterSketchIntersectingSubelementTag = initialTag 
+                else:								
+                    fp.MasterSketchIntersectingSubelementTag = initialTag	
+        else:  # mode != 'ODR'							
+            msIntSubelementIndex,none = ArchSketch.getEdgeTagIndex(hostSkProxy, 
+                                        hostSketch, msIntSubelementTag, None)	
+            # sync index in record ('toponaming tolerent' process)		
+            if msIntSubelementIndex != None:					
+                fp.MasterSketchIntersectingSubelementIndex = (			
+                                                          msIntSubelementIndex) 
+            else:  #  previous tag has no corresonding index			
+                if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)	
+                    if fp.Proxy.Type == "ArchSketch":				
+                        fp.Proxy.MasterSketchIntersectingSubelementTag =  ''	
+                    else:  # Other Arch Objects (Equipment / Windows, Doors)	
+                        fp.MasterSketchIntersectingSubelementTag = ''		
+                else:  # Link objects (of ArchSketch or Arch Windows / Doors)	
+                    fp.MasterSketchIntersectingSubelementTag = ''		
+                fp.MasterSketchIntersectingSubelementIndex = -1		
+										
+    if newTag:  # if found newTag, use it (Then should no msSubelementTag)	
+        msSubelementIndex = newIndex						
+    else:									
+        print (" no previous/new tag ... ")					
+										
+    if newIntTag:  # if newIntTag, use it (Then should no msIntSubelementTag)	
+        msIntSubelementIndex = newIntIndex					
+										
+    else:									
+        print (" no previous/new IntTag ... ")					
 										
     # Clear 'input'								
-    fp.MasterSketchSubelement = ''						
+    if msSubelement:								
+        fp.MasterSketchSubelement = ''						
+    if msIntSubelement:							
+        fp.MasterSketchIntersectingSubelement = ''				
     tempAttachmentOffset = FreeCAD.Placement()					
     winSketchPl = FreeCAD.Placement()						
 																										
     # Calculate the Position & Rotation (of the point of the edge to attach to)																
     if (attachToSubelementOrOffset in [ "Attach to Edge", "Attach To Edge & Alignment"] ):															
+      if msSubelementIndex != None: # Can't proceed if no index is found																	
         if hostSketch:  # only calculate 'offset' if hostSketch, otherwise, still proceed but 'offset' is kept to 'origin'											
-            # Calculate the position of the point of the edge to attach to																	
             #edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementEdge, msSubelementOffset,											
+            #                                                       attachToSubelementOrOffset, msIntersectingSubelementEdge)  # offsetFromIntersectingSubelement, 						
             edgeOffsetPointVector = getSketchEdgeOffsetPointVector(fp, hostSketch, msSubelementIndex, msSubelementOffset,											
-                                                                       attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,								
-                                                                       attachToSubelementOrOffset, msIntersectingSubelementEdge)  # offsetFromIntersectingSubelement, 						
+                                                                   attachmentOffsetXyzAndRotation, flipOffsetOriginToOtherEnd, flip180Degree,									
+                                                                   attachToSubelementOrOffset, msIntSubelementIndex)  # offsetFromIntersectingSubelement, 							
             tempAttachmentOffset.Base= edgeOffsetPointVector																			
 																										
             # Calculate the rotation of the edge																				
@@ -1099,8 +1150,6 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             if msSubelementWidth != None:					# TODO If None, latter condition will result in exception	#zeroMM is 0 ->						
                 if msSubelementWidth.Value != 0:																				
                     offsetValue = msSubelementWidth.Value # + attachmentAlignmentOffset.Value															
-            #else:																								
-            #        print (" something wrong...")																				
             if attachmentAlignment == "WallLeft":																				
                     if align == "Left":																					
                         offsetValue = attachmentAlignmentOffset.Value  # no need offsetValue (msSubelementWidth.Value)												
@@ -1257,14 +1306,14 @@ def getSketchEdgeIntersection(sketch, line1Index, line2Index):
         return None								
 										
 										
+#                                   flip180Degree=False, attachToSubelementOrOffset=None, masterSketchIntersectingSubelement=None): # offsetFromIntersectingSubelement=False,			
 def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex, attachmentOffset, zOffset, flipOffsetOriginToOtherEnd=False,							
-                                   flip180Degree=False, attachToSubelementOrOffset=None, masterSketchIntersectingSubelement=None): # offsetFromIntersectingSubelement=False,			
+                                   flip180Degree=False, attachToSubelementOrOffset=None, intersectingSubelementIndex=None): # offsetFromIntersectingSubelement=False,				
     geoindex = None																						
     geoindex2 = None																						
     #geoindex = int(subelement.lstrip('Edge'))-1																		
     geoindex = subelementIndex																					
-    if masterSketchIntersectingSubelement:  #  and offsetFromIntersectingSubelement:  ('' empty string is not 'None ) is not None:								
-        geoindex2 = int(masterSketchIntersectingSubelement.lstrip('Edge'))-1															
+    geoindex2 = intersectingSubelementIndex																			
 																								
     #if ((not flipOffsetOriginToOtherEnd) and (not offsetFromIntersectingSubelement)) or (flipOffsetOriginToOtherEnd and offsetFromIntersectingSubelement):					
     if not flipOffsetOriginToOtherEnd:																				
