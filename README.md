@@ -132,7 +132,11 @@ Models
 Automatic (recommended)
 
 * Launch FreeCAD and start the [Addons Manager](https://wiki.freecadweb.org/Addon_manager) (Tools > Addon manager)
-* Locate and install the SketchArch from the addon list
+* Press the Configure... button.
+  * The Addon manager options dialog box opens.
+  * Add the repository to the Custom repositories list - https://github.com/paullee0/FreeCAD_SketchArch
+  * Optionally choose proxy settings.
+  * Press the OK button button to close the dialog box.
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
