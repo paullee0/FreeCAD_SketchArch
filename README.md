@@ -129,7 +129,7 @@ Models
 
 ### IV. Install
 
-Automatic (recommended)
+'Semi'- Automatic (recommended)
 
 * Launch FreeCAD and start the [Addons Manager](https://wiki.freecadweb.org/Addon_manager) (Tools > Addon manager)
 * Press the Configure... button.
