@@ -75,6 +75,22 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716))
 
 
+#### 6. Voxelisation
+![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Voxel.svg)
+
+
+- https://forum.freecadweb.org/viewtopic.php?f=23&t=61158&p=535506#p535506
+- Current workflow for comment / suggestion: -
+
+1. Select the shape object to 'voxelise', click Voxel button
+2. Can select the shape of voxel, like (App::Link to) a Group w/ 4 Walls, Windows, Slab etc.
+3. Has 3 modes :-
+    a. Center : If Center of (the BoundBox of) voxel is within the Input Shape, it is shown
+    b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
+    c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
+
+
+
 #### Features in Development, Other Remarks
 
 <details>
