@@ -28,7 +28,7 @@ class SketchArchWorkbench(Workbench):
     MenuText = "SketchArch"							
     ToolTip = "SketchArch Workbench for Architecture "				
 										
-    def __init__(self):							
+    def __init__(self):								
 										
         import SketchArchIcon							
         self.__class__.Icon = SketchArchIcon.getIconPath() + "/icons/SketchArchWorkbench.svg"	
@@ -38,9 +38,9 @@ class SketchArchWorkbench(Workbench):
         ''' This function is executed when FreeCAD starts '''			
 										
         import SketchArch							
-        self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 		
-                                "EditWallWidth", "EditWallAttach" ]		
-        self.appendToolbar("Sketch Arch", self.ArchSketchTools)		
+        self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 			
+                                "EditWallWidth", "EditWallAttach", "Voxel"]	
+        self.appendToolbar("Sketch Arch", self.ArchSketchTools)			
         self.appendMenu("Sketch Arch", self.ArchSketchTools)			
 										
     def Activated(self):							

@@ -39,7 +39,7 @@ Gui = FreeCADGui
 pi = math.pi									
 zeroMM = FreeCAD.Units.Quantity('0mm')						
 MM = FreeCAD.Units.Quantity('1mm')						
-tolerance = 0.000000001							
+tolerance = 0.000000001								
 										
 										
 										
@@ -409,6 +409,134 @@ class ArchSketch(ArchSketchObject):
       self.callParentToRebuildMasterSketchTags(fp) # "Master"			
 										
 										
+										
+class Voxel:									
+										
+  def __init__(self, fp):							
+      fp.Proxy = self								
+      fp.ViewObject.Proxy=0							
+										
+      ''' call self.setProperties '''						
+      self.setProperties(fp)							
+										
+  def setProperties(self, fp):							
+      if not hasattr(fp,"InputShapeObj"):					
+          fp.addProperty("App::PropertyLink","InputShapeObj","Voxel Properties","Input Object with Shape to calculate Voxel")					
+      if not hasattr(fp,"VoxelObj"):																
+          fp.addProperty("App::PropertyLink","VoxelObj","Voxel Properties","Input VoxelObj with Shape to calculate Voxel")					
+																				
+      if not hasattr(fp,"VoxelX"):																
+          fp.addProperty("App::PropertyInteger","VoxelX","Voxel Properties","X Dimension of Voxel")								
+          fp.VoxelX = 1000																	
+      if not hasattr(fp,"VoxelY"):																
+          fp.addProperty("App::PropertyInteger","VoxelY","Voxel Properties","Y Dimension of Voxel")								
+          fp.VoxelY = 1000																	
+      if not hasattr(fp,"VoxelZ"):																
+          fp.addProperty("App::PropertyInteger","VoxelZ","Voxel Properties","Z Dimension of Voxel")								
+          fp.VoxelZ = 1000																	
+																				
+      if not hasattr(fp,"Mode"):																
+          fp.addProperty("App::PropertyEnumeration","Mode","Voxel Properties","Algorithm to deduce the disposition of Voxels in an Input Shape Object")		
+          fp.Mode = ['Center', 'AnyCorner', 'AllCorners']													
+          fp.Mode = 'Center'																	
+																				
+      if not hasattr(fp,"pList"):																
+          fp.addProperty('App::PropertyPlacementList', 'pList', 'Referenced Object', 'Placement List of Voxels as calculated', 8)				
+      if not hasattr(fp,"eCount"):																
+          fp.addProperty('App::PropertyInteger', 'eCount', 'Referenced Object', 'Element Count of Voxels as calculated', 8)					
+																				
+																				
+  def onDocumentRestored(self, fp):																
+      ''' call self.setProperties '''																
+      self.setProperties(fp)																	
+																				
+  def execute(self, fp):																	
+      if not fp.InputShapeObj:  # need a shape to calculate, otherwise no action										
+          print (" no input shape ! ")																
+          return																		
+      lx = fp.VoxelX #1000																	
+      ly = fp.VoxelY																		
+      lz = fp.VoxelZ																		
+																				
+      pList, eCount = voxelise(fp.InputShapeObj, lx, ly, lz, mode=fp.Mode)											
+      fp.pList = pList.copy() #self.pList = pList														
+      fp.eCount = eCount																	
+      boxList = []																		
+																				
+      if not fp.VoxelObj:																	
+          b = Part.makeBox(lx, ly, lz) #, i.Base)														
+          fp.Shape = b																		
+      else:  # i.e. if fp.VoxelObj:																
+          fp.Shape = fp.VoxelObj.Shape  # no need .copy()													
+																				
+																				
+def voxelise(shapeObj, lx, ly, lz, mode='Center'):														
+																				
+      if not shapeObj:  # need a shape to calculate, otherwise no action											
+          print (" no input shape ! ")																
+          return																		
+      pList = []  # reset to none																
+      objxmin = shapeObj.Shape.BoundBox.XMin															
+      objymin = shapeObj.Shape.BoundBox.YMin															
+      objzmin = shapeObj.Shape.BoundBox.ZMin															
+      objxl = shapeObj.Shape.BoundBox.XLength															
+      objyl = shapeObj.Shape.BoundBox.YLength															
+      objzl = shapeObj.Shape.BoundBox.ZLength															
+																				
+      xcount = math.ceil(objxl/lx)																
+      ycount = math.ceil(objyl/ly)																
+      zcount = math.ceil(objzl/lz)																
+																				
+      #count = 0																		
+      for xx in range (0, xcount):																
+          xp = objxmin + xx * lx																
+          for yy in range(0, ycount):																
+              yp = objymin + yy * ly																
+              for zz in range(0, zcount):															
+                  zp = objzmin + zz * lz															
+                  if testVoxel(shapeObj, xp, yp, zp, lx, ly, lz, mode):												
+                      pList.append(FreeCAD.Placement(FreeCAD.Vector(xp,yp,zp),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0)))					
+      count = len(pList)																	
+      return pList, count																	
+def testVoxel(shapeObj, xp, yp, zp, lx, ly, lz, mode='Center'):													
+    if mode == 'Center':																	
+        xpp = xp + lx/2																		
+        ypp = yp + ly/2																		
+        zpp = zp + lz/2																		
+        if shapeObj.Shape.isInside(FreeCAD.Vector(xpp,ypp,zpp),tolerance,True):											
+            return True																		
+    elif mode == 'AnyCorner':																	
+        for xc in range (0, 2):																	
+            xpp = xp + xc * lx																	
+            for yc in range (0, 2):																
+                ypp = yp + yc * ly																
+                for zc in range (0, 2):																
+                    zpp = zp + zc * lz																
+                    if shapeObj.Shape.isInside(FreeCAD.Vector(xpp,ypp,zpp),tolerance,True):									
+                        return True																
+    # Test all 8 'corners' of the 'voxel'															
+    elif mode == 'AllCorners':																	
+        for xc in range (0, 2):																	
+            xpp = xp + xc * lx																	
+            for yc in range (0, 2):																
+                ypp = yp + yc * ly																
+                for zc in range (0, 2):																
+                    zpp = zp + zc * lz																
+                    if not shapeObj.Shape.isInside(FreeCAD.Vector(xpp,ypp,zpp),tolerance,True):									
+                        return False																
+        else:  # i.e. when it is not returned above														
+            return True																		
+																				
+																				
+def makeVoxelPart(InputShapeObj, VoxelObj=None):														
+  vp = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","VoxelPart")											
+  vi = Voxel(vp)																		
+  vp.InputShapeObj = InputShapeObj																
+  if VoxelObj:																			
+      vp.VoxelObj = VoxelObj																	
+  return vp																			
+					  															
+					  															
 #---------------------------------------------------------------------------#	
 #             FreeCAD Commands Classes & Associated Functions               #	
 #---------------------------------------------------------------------------#	
@@ -586,24 +714,24 @@ class _CommandEditWallWidth():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
+        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:		
             if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':			
                 reply = QtGui.QMessageBox.information(None,"","Multi-Width support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
             elif Draft.getType(targetObjectBase) == 'ArchSketch':		
                 reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
-            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
+            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
             App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to Edit the corresponding Wall Segment Width "+ "\n")	
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallWidthObserver(sel0, targetObjectBase)			
             self.observer = s							
-            FreeCADGui.Selection.addObserver(s)				
+            FreeCADGui.Selection.addObserver(s)					
 										
-        elif Draft.getType(targetObjectBase) == 'Wire':			
+        elif Draft.getType(targetObjectBase) == 'Wire':				
             reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
 										
-FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())		
+FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())			
 										
 										
 class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):	
@@ -613,8 +741,8 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall						
         self.targetArchSketch = targetBaseSketch				
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
-        targetWall.ViewObject.Transparency = 60				
-        if targetBaseSketch:  # would be none ?				
+        targetWall.ViewObject.Transparency = 60					
+        if targetBaseSketch:  # would be none ?					
             tempOverrideWidth = None						
             wallWidth = None							
             if not wallWidth:							
@@ -678,7 +806,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
-class _CommandEditWallAttach():						
+class _CommandEditWallAttach():							
 										
     '''Edit ArchSketch and ArchObjects Attachment Command Definition		
        edit attachment to Wall Segment (Underlying Arch]Sketch)'''		
@@ -690,19 +818,19 @@ class _CommandEditWallAttach():
                 'ToolTip' : "Select ArchSketch or Arch Window/Equipment (and optional a target) change attachment edge / to attach to a target ",	
                 'CmdType' : "ForEdit"}						
 										
-    def IsActive(self):							
+    def IsActive(self):								
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
-        except:								
+        except:									
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
             return								
         try:									
             sel1 = Gui.Selection.getSelection()[1]				
-        except:								
-            sel1 = None							
+        except:									
+            sel1 = None								
 										
         # If a Link is newly created and not Recomputed, its Hosts attribute is not added to the Link								
         # Now, if its Hosts[0] is assigned to the Sel1, then it is the Linked Object's Hosts attribute be altered						
@@ -710,11 +838,11 @@ class _CommandEditWallAttach():
         # it is 'wrongly' the Linked Object (the 'Original') attach to new Hosts[0] !										
         # - Check and Recompute if State is Touched														
 																				
-        if "Touched" in sel0.State: #  == "Touched":  # State is a List											
+        if "Touched" in sel0.State: #  == "Touched":  # State is a List												
             sel0.recompute()																	
 																				
         targetHostWall = None																	
-        targetBaseSketch = None																
+        targetBaseSketch = None																	
 																				
         if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch','Window','Equipment']:									
             reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")	
@@ -811,7 +939,7 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
                 print (" It is an ArchSketch")					
             self.targetObject.MasterSketchSubelement = subElement		
             # The Command/Observer find and assign the MasterSketchSubelementTag (instead of doing this by onChanged(), which does not exist e.g. for Link) 	
-            geoindex = int(subElement.lstrip('Edge'))-1													
+            geoindex = int(subElement.lstrip('Edge'))-1														
             none, tag = self.targetArchSketch.Proxy.getEdgeTagIndex(self.targetArchSketch, None, geoindex)							
             if not hasattr(self.targetObject, "Proxy"):  # i.e. Link		
                 self.targetObject.MasterSketchSubelementTag = tag		
@@ -845,7 +973,7 @@ class _Command_ArchSketch():
                 'MenuText': "New ArchSketch",					
                 'ToolTip' : "create an ArchSketch"}				
 										
-    def IsActive(self):							
+    def IsActive(self):								
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
@@ -853,6 +981,41 @@ class _Command_ArchSketch():
         makeArchSketch()							
 										
 FreeCADGui.addCommand('ArchSketch', _Command_ArchSketch())			
+										
+										
+class _Command_Voxel():								
+										
+    ''' ArchSketch Command Definition - Gui to make Voxel '''			
+										
+    def GetResources(self):							
+        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/Voxel.svg',	
+                'Accel' : "Alt+v",						
+                'MenuText': "Create Voxel",					
+                'ToolTip' : "create Voxel"}					
+										
+    def IsActive(self):								
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        try:									
+            sel = Gui.Selection.getSelection()[0]				
+        except:									
+            reply = QtGui.QMessageBox.information(None,"","Select an object with Shape to 'voxelise' ")								
+            return																		
+        try:									
+            sel1 = Gui.Selection.getSelection()[1]				
+        except:									
+            sel1 = None								
+										
+        vp = makeVoxelPart(sel, sel1)						
+        lva = App.ActiveDocument.addObject('App::Link', "Lnk__VoxelArray")	
+        lva.ShowElement = False							
+        lva.setLink(vp)								
+        lva.setExpression('ElementCount', u''+'<<'+vp.Label+'>>'+'.eCount')	
+        lva.setExpression('PlacementList', u''+'<<'+vp.Label+'>>'+'.pList')	
+		        							
+										
+FreeCADGui.addCommand('Voxel', _Command_Voxel())				
 										
 										
 #----------------------------------------------------------------------------#	
@@ -870,7 +1033,7 @@ def attachToMasterSketch(subject, target=None, subelement=None,
       subject.Support = subject.MasterSketch					
 										
 										
-def detachFromMasterSketch(fp):						
+def detachFromMasterSketch(fp):							
   fp.MapMode = 'Deactivated'							
   fp.Support = None								
 										
@@ -879,16 +1042,16 @@ def updatePropertiesLinkCommonODR(fp, linkFp=None, hostSketch=None):
     updateAttachmentOffset(fp, linkFp, mode='ODR')				
 										
 										
-def updateAttachmentOffset(fp, linkFp=None, mode=None):			
-    '''									
+def updateAttachmentOffset(fp, linkFp=None, mode=None):				
+    '''										
         For ArchSketch(Object), Arch Objects (with SketchArch add-on),		
-        and Links of the above.						
-    '''									
+        and Links of the above.							
+    '''										
 										
     fpSelf = fp.Proxy								
     if linkFp:									
         fp = linkFp								
-        print(fp.Label)							
+        print(fp.Label)								
     if fp.AttachToAxisOrSketch == "None":					
         return									
 										
@@ -903,12 +1066,12 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                 if hostWall.Base.isDerivedFrom("Sketcher::SketchObject"):	
                     hostSketch = hostWall.Base  # Host wall's base Sketch	
         elif hasattr(fp, "Host"):  # (Lnk)Eqpt, [ ? (Lnk)ArchSketch ]		
-            if fp.Host:							
+            if fp.Host:								
                 hostObject = fp.Host						
                 if hasattr(fp.Host, "Base"):  # Arch Wall ?			
                   if hostObject.Base.isDerivedFrom("Sketcher::SketchObject"):	
                         hostSketch = fp.Host.Base  # Host wall's base 		
-        if (not hostWall) and (not hostObject):				
+        if (not hostWall) and (not hostObject):					
             return								
 										
     elif fp.AttachToAxisOrSketch == "Master Sketch":			 	
@@ -935,7 +1098,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     msIntSubelementTag = None							
     msSubelementEdge = None							
     msSubelementIndex = None							
-    msIntSubelementIndex = None						
+    msIntSubelementIndex = None							
     #msIntersectingSubelementEdge = None					
 										
     newIndex = None								
@@ -951,7 +1114,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     newIntIndex = None								
     newIntTag = None								
 										
-    if msIntSubelement and hostSkProxy:					
+    if msIntSubelement and hostSkProxy:						
         newIntIndex = int(msIntSubelement.lstrip('Edge'))-1			
         if newIntIndex > -1:							
             fp.MasterSketchIntersectingSubelementIndex = newIntIndex		
@@ -960,23 +1123,23 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                                                          newIntIndex)		
     if hasattr(fp, "Proxy"):  # ArchSketch/ ArchObjects (Window/Equipment)	
         if fp.Proxy.Type == "ArchSketch":					
-            if newTag:  # i.e. if found new tag				
+            if newTag:  # i.e. if found new tag					
                 fpSelf.MasterSketchSubelementTag = newTag  # update/record	
             elif msSubelement:							
                 fp.MasterSketchSubelementIndex = -1				
-                fpSelf.MasterSketchSubelementTag = ''  # clear 		
+                fpSelf.MasterSketchSubelementTag = ''  # clear 			
             else:								
                 msSubelementTag = fpSelf.MasterSketchSubelementTag		
             if newIntTag:  # i.e. if found new tag				
-                # update/record						
+                # update/record							
                 fpSelf.MasterSketchIntersectingSubelementTag = newIntTag	
             elif msIntSubelement:						
-                fp.MasterSketchIntersectingSubelementIndex = -1		
+                fp.MasterSketchIntersectingSubelementIndex = -1			
                 fpSelf.MasterSketchIntersectingSubelementTag = ''  # clear	
             else:								
                 msIntSubelementTag=fpSelf.MasterSketchIntersectingSubelementTag 
         else:  # Other Arch Objects (Equipment / Windows, Doors)		
-            if newTag:  # i.e. if found new tag				
+            if newTag:  # i.e. if found new tag					
                 fp.MasterSketchSubelementTag = newTag  # update/record		
             elif msSubelement:							
                 fp.MasterSketchSubelementIndex = -1				
@@ -985,10 +1148,10 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                 msSubelementTag = fp.MasterSketchSubelementTag			
 										
             if newIntTag:  # i.e. if found new tag				
-                # update/record						
+                # update/record							
                 fp.MasterSketchIntersectingSubelementTag = newIntTag		
             elif msIntSubelement:						
-                fp.MasterSketchIntersectingSubelementIndex = -1		
+                fp.MasterSketchIntersectingSubelementIndex = -1			
                 fp.MasterSketchIntersectingSubelementTag = ''  # clear		
             else:								
                 msIntSubelementTag=fp.MasterSketchIntersectingSubelementTag	
@@ -997,7 +1160,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
         if newTag:  # i.e. if found new tag					
             fp.MasterSketchSubelementTag = newTag  # update/record 		
         elif msSubelement:							
-            fp.MasterSketchSubelementIndex = -1				
+            fp.MasterSketchSubelementIndex = -1					
             fp.MasterSketchSubelementTag = ''  # clear				
         else:									
             msSubelementTag = fp.MasterSketchSubelementTag			
@@ -1008,7 +1171,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             fp.MasterSketchIntersectingSubelementIndex = -1			
             fp.MasterSketchIntersectingSubelementTag = ''  # clear		
         else:									
-            msIntSubelementTag=fp.MasterSketchIntersectingSubelementTag	
+            msIntSubelementTag=fp.MasterSketchIntersectingSubelementTag		
 										
     if msSubelementTag:  # if has previous tag (then should no newTag)		
         if mode == 'ODR':							
@@ -1038,7 +1201,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
 										
     if msIntSubelementTag:  # if has previous tag (then should no newTag)	
         if mode == 'ODR':							
-            if fp.MasterSketchIntersectingSubelementIndex > -1:		
+            if fp.MasterSketchIntersectingSubelementIndex > -1:			
                 msIntSubelementIndex= fp.MasterSketchIntersectingSubelementIndex
                 none, initialTag = ArchSketch.getEdgeTagIndex(hostSkProxy,	
                                    hostSketch, None, msIntSubelementIndex)	
@@ -1061,7 +1224,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                         fp.MasterSketchIntersectingSubelementTag = ''		
                 else:  # Link objects (of ArchSketch or Arch Windows / Doors)	
                     fp.MasterSketchIntersectingSubelementTag = ''		
-                fp.MasterSketchIntersectingSubelementIndex = -1		
+                fp.MasterSketchIntersectingSubelementIndex = -1			
 										
     if newTag:  # if found newTag, use it (Then should no msSubelementTag)	
         msSubelementIndex = newIndex						
@@ -1077,7 +1240,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     # Clear 'input'								
     if msSubelement:								
         fp.MasterSketchSubelement = ''						
-    if msIntSubelement:							
+    if msIntSubelement:								
         fp.MasterSketchIntersectingSubelement = ''				
     tempAttachmentOffset = FreeCAD.Placement()					
     winSketchPl = FreeCAD.Placement()						
@@ -1179,23 +1342,23 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     if fp.AttachmentOffsetExtraRotation == "X-Axis CCW90":  # [ "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", ]	
                 extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,90))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "X-Axis CW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,-90))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,-90))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "X-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,180))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,0,180))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW90":								
                 extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,90,0))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Y-Axis CCW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,-90,0))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,-90,0))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Y-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,180,0))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(0,180,0))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Z-Axis CCW90":								
                 extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(90,0,0))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW90":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(-90,0,0))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(-90,0,0))  #,winSketchPl.Base)		
     elif fp.AttachmentOffsetExtraRotation == "Z-Axis CW180":								
-                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(180,0,0))  #,winSketchPl.Base)	
+                extraRotation = FreeCAD.Placement(App.Vector(0,0,0),App.Rotation(180,0,0))  #,winSketchPl.Base)		
 															
-    tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)						
+    tempAttachmentOffset = tempAttachmentOffset.multiply(extraRotation)							
 															
     # Alternative OriginOffset manually input by user									
     originOffset = fp.OriginOffsetXyzAndRotation									
@@ -1207,7 +1370,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
                 hostSketchPl = FreeCAD.Placement()									
                 if hostSketch:												
-                    hostSketchPl = hostSketch.Placement								
+                    hostSketchPl = hostSketch.Placement									
                 if Draft.getType(fp.getLinkedObject()) == 'Window':							
                     winSketchPl = fp.Base.Placement									
                     # Reset Window's placement to factor out base sketch's placement					
@@ -1224,14 +1387,14 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                     tempBaseOffset.Base = tempBaseOffset.Base.add(hostWallPl.Base)					
                     tempAttachmentOffset = tempBaseOffset.multiply(tempAttachmentOffset)				
                 elif hostObject:											
-                    hostObjectPl = hostObject.Placement								
+                    hostObjectPl = hostObject.Placement									
                     #tempAttachmentOffset = (hostSketchPl.multiply(hostObjectPl)).multiply(tempAttachmentOffset)	
                     hostObjectRotation = FreeCAD.Placement(App.Vector(0,0,0),hostObjectPl.Rotation,originBase)		
-                    #tempBaseOffset = hostSketchPl.multiply(hostObjectRotation)					
+                    #tempBaseOffset = hostSketchPl.multiply(hostObjectRotation)						
                     tempBaseOffset = hostObjectRotation.multiply(hostSketchPl)						
                     tempBaseOffset.Base = tempBaseOffset.Base.add(hostObjectPl.Base)					
                     tempAttachmentOffset = tempBaseOffset.multiply(tempAttachmentOffset)				
-                else:  # WOULD HAPPEN ?										
+                else:  # WOULD HAPPEN ?											
                     tempAttachmentOffset = hostSketchPl.multiply(tempAttachmentOffset)					
                     print (" fp.Placement (superimposed) is thus ... ", tempAttachmentOffset)				
     if linkFp or not hasattr(fp, "AttachmentOffset"):  ## TODO or if hostWall ...					
@@ -1248,7 +1411,7 @@ def makeArchSketch(grp=None, label="ArchSketch__NAME", attachToAxisOrSketch=None
   name = "ArchSketch"								
   if grp:									
       archSketch = grp.newObject("Sketcher::SketchObjectPython",name)		
-  else:									
+  else:										
       archSketch=App.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)	
   archSketch.Label = label							
   archSketchInsta=ArchSketch(archSketch)					
@@ -1275,7 +1438,7 @@ def changeAttachMode(fp, fpProp):
     elif fpProp == "MasterSketch":						
               if fp.MasterSketch:						
                   if fp.AttachToAxisOrSketch == "Master Sketch":		
-                      attachToMasterSketch(fp, fp.MasterSketch)		
+                      attachToMasterSketch(fp, fp.MasterSketch)			
               else:								
                   if fp.AttachToAxisOrSketch == "Master Sketch":		
                       detachFromMasterSketch(fp)				
@@ -1287,7 +1450,7 @@ def getSketchEdgeAngle(masterSketch, subelementIndex):
     return draftAngle								
 										
 										
-def getSketchEdgeVec(sketch, geoindex):					
+def getSketchEdgeVec(sketch, geoindex):						
     #geoindex = int(subelement.lstrip('Edge'))-1				
     lp1=sketch.Geometry[geoindex].EndPoint					
     lp2=sketch.Geometry[geoindex].StartPoint					
@@ -1320,14 +1483,14 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex, attac
         #if not flip180Degree:																					
         edgeOffsetPoint = masterSketch.Geometry[geoindex].value(float(attachmentOffset))													
         if geoindex2 is not None:																				
-            intersectVec = getSketchEdgeIntersection(masterSketch, geoindex, geoindex2)													
+            intersectVec = getSketchEdgeIntersection(masterSketch, geoindex, geoindex2)														
             offsetVec = intersectVec.sub(masterSketch.Geometry[geoindex].StartPoint)														
             edgeOffsetPoint = edgeOffsetPoint.add(offsetVec)																	
     else:  # elif  flipOffsetOriginToOtherEnd:																			
         edgeLength = masterSketch.Geometry[geoindex].length()																	
         edgeOffsetPoint = masterSketch.Geometry[geoindex].value(edgeLength - float(attachmentOffset))												
         if geoindex2 is not None:																				
-            intersectVec = getSketchEdgeIntersection(masterSketch, geoindex, geoindex2)													
+            intersectVec = getSketchEdgeIntersection(masterSketch, geoindex, geoindex2)														
             offsetVec = intersectVec.sub(masterSketch.Geometry[geoindex].EndPoint)														
             edgeOffsetPoint = edgeOffsetPoint.add(offsetVec)																	
 																								
@@ -1354,13 +1517,13 @@ def getSketchSortedClEdgesOrder(sketch):
       skGeomEdgesSet = []							
       for c, i in enumerate(skGeom):						
           skGeomEdge = i.toShape()						
-          skGeomEdgesFullSet.append(skGeomEdge)				
+          skGeomEdgesFullSet.append(skGeomEdge)					
           if hasattr(i, 'Construction'):					
               construction = i.Construction					
           elif hasattr(sketch, 'getConstruction'):				
               construction = sketch.getConstruction(c)				
           if not construction:							
-              skGeomEdgesSet.append(skGeomEdge)				
+              skGeomEdgesSet.append(skGeomEdge)					
       return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
 										
 										
@@ -1395,10 +1558,10 @@ def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):
       ## a flat list containing above information - but just flat, not a list of lists ..				
       clEdgePartnerIndexFlat = []						
       clEdgeSameIndexFlat = []							
-      clEdgeEqualIndexFlat = []						
+      clEdgeEqualIndexFlat = []							
 										
-      for h, c in enumerate(skGeomEdgesSorted):				
-          clEdgePartnerIndex.append([])					
+      for h, c in enumerate(skGeomEdgesSorted):					
+          clEdgePartnerIndex.append([])						
           clEdgeSameIndex.append([])						
           clEdgeEqualIndex.append([])						
 										
@@ -1419,16 +1582,16 @@ def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):
                       if j not in clEdgeSameIndexFlat:				
                         if skGeomEdgesSortedI.isSame(skGeomEdgesI):		
                           clEdgeSameIndex[h][i] = j				
-                          clEdgeSameIndexFlat.append(j)			
+                          clEdgeSameIndexFlat.append(j)				
 										
-                      if j not in clEdgeEqualIndexFlat:			
+                      if j not in clEdgeEqualIndexFlat:				
                         if skGeomEdgesSortedI.isEqual(skGeomEdgesI):		
                           clEdgeEqualIndex[h][i] = j				
                           clEdgeEqualIndexFlat.append(j)			
 										
               if clEdgePartnerIndex[h][i] == None:				
                   clEdgePartnerIndexFlat.append(None)				
-              if clEdgeSameIndex[h][i] == None:				
+              if clEdgeSameIndex[h][i] == None:					
                   clEdgeSameIndexFlat.append(None)				
               if clEdgeEqualIndex[h][i] == None:				
                   clEdgeEqualIndexFlat.append(None)				
@@ -1437,7 +1600,7 @@ def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):
 										
 def sortSketchAlign(sketch,edgeAlignList):					
 										
-    '''									
+    '''										
         This function is primarily to support Ordinary Sketch + Arch Wall	
         to gain feature that individual edge / wall segment to have		
         individual Align setting with OverrideAlign attribute in Arch Wall	
@@ -1446,9 +1609,9 @@ def sortSketchAlign(sketch,edgeAlignList):
         - a list of Align in the order of Edge Indexes -			
         into a list of Align following the order of edges			
         sorted by Part.getSortedClusters()					
-    '''									
+    '''										
 										
-    sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
+    sortedIndexes = getSketchSortedClEdgesOrder(sketch)				
     alignsList = sortAlign(edgeAlignList, sortedIndexes)			
     return alignsList								
 										
@@ -1458,9 +1621,9 @@ def sortAlign(edgeAlignList, sortedIndexes):
     alignsList = []								
     for i in clEdgeSameIndexFlat:						
         try:									
-            curAlign = edgeAlignList[i]					
+            curAlign = edgeAlignList[i]						
         # if edgeAlignList does not cover the edge				
-        except:								
+        except:									
             curAlign = 'Left'  # default					
         alignsList.append(curAlign)						
     return alignsList								
@@ -1468,7 +1631,7 @@ def sortAlign(edgeAlignList, sortedIndexes):
 										
 def sortSketchWidth(sketch,edgeWidthList):					
 										
-    '''									
+    '''										
         This function is primarily to support Ordinary Sketch + Arch Wall	
         to gain feature that individual edge / wall segment to have		
         individual Width setting with OverrideWidth attribute in Arch Wall	
@@ -1477,10 +1640,10 @@ def sortSketchWidth(sketch,edgeWidthList):
         - a list of Width in the order of Edge Indexes -			
         into a list of Width following the order of edges			
         sorted by Part.getSortedClusters()					
-    '''									
+    '''										
 										
-    sortedIndexes = getSketchSortedClEdgesOrder(sketch)			
-    widthList = sortWidth(edgeWidthList, sortedIndexes)			
+    sortedIndexes = getSketchSortedClEdgesOrder(sketch)				
+    widthList = sortWidth(edgeWidthList, sortedIndexes)				
     return widthList								
 										
 										
@@ -1489,10 +1652,10 @@ def sortWidth(edgeWidthList, sortedIndexes):
     widthList = []								
     for i in clEdgeSameIndexFlat:						
         try:									
-            curWidth = edgeWidthList[i]					
+            curWidth = edgeWidthList[i]						
         # if edgeWidthList does not cover the edge				
-        except:								
-            curWidth = '200'  # default					
+        except:									
+            curWidth = '200'  # default						
         widthList.append(curWidth)						
     return widthList								
 										
