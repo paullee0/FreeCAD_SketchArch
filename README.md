@@ -89,8 +89,16 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
     - b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
     - c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
 
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=165334)
+What ceated ?
+1. Under the hood, pressing the button creates 2 objects
+2. First is a 'VoxelPart' object with a propertyLink to an 'Input Shape Object'
+3. Second is an App::Link which produce the Array of Voxels
+    - The VoxelPart calculates the placement of every Voxels
+    - It creates a Box, or copy the shape of 'VoxelObj' (usecase:  point to a object with Shape, or to a Link to a Group containing a numbers of objects)
+    - The  2nd Object App::Link actually create the array of Voxels according to VoxelPart calculation
 
+![alt text 6a](https://forum.freecadweb.org/download/file.php?id=165334)
+![alt text 6b](https://forum.freecadweb.org/download/file.php?id=165337)
 
 
 #### Features in Development, Other Remarks
