@@ -89,6 +89,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
     - b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
     - c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
 
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=165334)
+
 
 
 #### Features in Development, Other Remarks
