@@ -85,9 +85,9 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 1. Select the shape object to 'voxelise', click Voxel button
 2. Can select the shape of voxel, like (App::Link to) a Group w/ 4 Walls, Windows, Slab etc.
 3. Has 3 modes :-
-    a. Center : If Center of (the BoundBox of) voxel is within the Input Shape, it is shown
-    b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
-    c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
+    - a. Center : If Center of (the BoundBox of) voxel is within the Input Shape, it is shown
+    - b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
+    - c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
 
 
 
