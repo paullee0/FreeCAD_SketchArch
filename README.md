@@ -47,12 +47,25 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 #### 4. Floor Area Calculation + Room Dimension
 
 - [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=47905&start=70#p485618))
+- See below on CellComplex
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?style=10&id=150955)
 
 
 
-#### 5. Topological naming tolerant
+#### 5. CellComplex Creation [Topologic]
+![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/CellComplex.svg)
+
+- CellComplex is a Topologic concept and object : see ([OSArch discussion - Talk on Topologic: Redefining BIM through Spatial Topology, Information, and Grammars](https://community.osarch.org/discussion/131/talk-on-topologic-redefining-bim-through-spatial-topology-information-and-grammars#latest))
+- [Feature] CellComplex & ArchWall Creation on 1 ArchSketch ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=63920))
+- In addition to build ArchWall based on an ArchSketch, CellComplex can be created automatically also
+
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170539)
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170540)
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170538)
+
+
+#### 6. Topological naming tolerant
 
 - The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 main approaches :
@@ -75,7 +88,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716))
 
 
-#### 6. Voxelisation
+#### 7. Voxelisation
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Voxel.svg)
 
 
@@ -106,7 +119,7 @@ What ceated ?
 <details>
   <summary>Click to expand!</summary>
   
-#### 6. Space / Room / Zone & Cell Complex Definition
+#### 8. Space / Room / Zone & Cell Complex Definition
 
 - A Space, Room or Zone could be defined right within (Arch)Sketch itself
 - Automatic identification of each enclosed area (room) defined by edges (walls)
@@ -132,7 +145,7 @@ What ceated ?
   - 'Grouped' under 'ArchSpace' as well
 
 
-#### 7. More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
+#### 9. More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
 
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
