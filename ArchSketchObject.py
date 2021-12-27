@@ -1655,7 +1655,7 @@ def sortWidth(edgeWidthList, sortedIndexes):
             curWidth = edgeWidthList[i]						
         # if edgeWidthList does not cover the edge				
         except:									
-            curWidth = '200'  # default						
+            curWidth = 200  # default						
         widthList.append(curWidth)						
     return widthList								
 										
