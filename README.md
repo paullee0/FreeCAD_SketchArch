@@ -1,6 +1,6 @@
 ## FreeCAD SketchArch Workbench
 
-An experimental module for Architecture and making Arch Objects with SketchObjectPython
+![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/SketchArchWorkbench.svg)  An experimental add-on module to augment Arch Objects with additional feature
 
 ### I. Description
 
@@ -22,7 +22,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 2. Intuitive Automatic Arch Objects Placement
+#### 2. Parametric Placement of Arch Objects Intuitively
 
 ![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Attach.svg)
 
