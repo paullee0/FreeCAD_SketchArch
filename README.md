@@ -73,7 +73,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
     1.  Using sketch.Geometry[index].Tag
         Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=28575))
         <br>
-        a. **WIP** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**)
+        a. **Implemented** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**)
         <br>
         b.  Rebuilding a Dict referencing `Sketch.Geometry[index].Tag` `onDocumentRestore` (**Implemented but not exposed. Solution 1a is preferable**)
 
