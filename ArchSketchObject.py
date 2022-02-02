@@ -127,7 +127,7 @@ class ArchSketch(ArchSketchObject):
                       setattr(orgFp, i, str())					
       if "MasterSketchSubelementIndex" not in prop:																				
           fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)				
-          fp.setEditorMode("MasterSketchSubelementIndex",2)																			
+          fp.setEditorMode("MasterSketchSubelementIndex",1)																			
       if "MasterSketchIntersectingSubelementIndex" not in prop:																		
           fp.addProperty("App::PropertyInteger","MasterSketchIntersectingSubelementIndex","Referenced Object","Index of MasterSketchInteresctingSubelement to be synced on the fly.  For output only.", 8)	
           fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)																	
