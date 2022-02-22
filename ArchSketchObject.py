@@ -48,7 +48,7 @@ tolerance = 0.000000001
 #--------------------------------------------------------------------------#	
 										
 										
-class ArchSketchObject:							
+class ArchSketchObject:								
   def __init__(self, obj):							
       #self.Type = "ArchSketchObject"						
       pass									
@@ -66,7 +66,7 @@ class ArchSketch(ArchSketchObject):
       ''' call self.setProperties '''						
 										
       self.setProperties(obj)							
-      self.setPropertiesLinkCommon(obj)					
+      self.setPropertiesLinkCommon(obj)						
       self.initEditorMode(obj)							
       obj.ViewObject.Proxy=0							
       return None								
@@ -91,18 +91,25 @@ class ArchSketch(ArchSketchObject):
           self.Type = "ArchSketch"						
 										
       if not hasattr(self,"clEdgeSameIndexFlat"):				
-          self.clEdgeSameIndexFlat = []					
+          self.clEdgeSameIndexFlat = []						
 																	
 																	
       ''' Added ArchSketch Properties '''												
 																	
-																	
+      if not hasattr(fp,"DetectRoom"):																						
+          fp.addProperty("App::PropertyBool","DetectRoom","Added ArchSketch Properties",QT_TRANSLATE_NOOP("App::Property","Enable to detect rooms enclosed by edges/walls - For CellComplex object to work, the generated shape is not shown in the ArchSketch object, but shown by a CellComplex Object.  This make recompute of this object longer !"))												
+      if not hasattr(fp,"CellComplexElements"):																					
+          fp.addProperty('Part::PropertyPartShape', 'CellComplexElements', 'Added ArchSketch Properties', QT_TRANSLATE_NOOP("App::Property","The Shape of built CellComplexElements"),8)			
+      if not hasattr(fp,"FloorHeight"):																						
+          fp.addProperty("App::PropertyLength","FloorHeight","Added ArchSketch Properties","Global ArchSketch Floor to Next Floor Height")									
+          fp.FloorHeight = 3000 * MM  # Default																					
+																										
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
       '''									
       Set properties which are :						
           1. common to ArchSketchObject & Arch Objects, and			
           2. required for Link of Arch Objects					
-      mode='init', 'ODR' for different settings				
+      mode='init', 'ODR' for different settings					
       '''									
 										
       if linkFp:								
@@ -114,30 +121,30 @@ class ArchSketch(ArchSketchObject):
 										
       for i in ArchSketch.MasterSketchSubelementTags:				
           if linkFp:  # no Proxy						
-              if i not in prop:						
+              if i not in prop:							
                   linkFp.addProperty("App::PropertyPythonObject", i)		
                   setattr(linkFp, i, str())					
           else:  # either ArchSketch or ArchObjects, should have Proxy		
               if orgFp.Proxy.Type == "ArchSketch":				
-                  if not hasattr(fp.Proxy, i): 				
+                  if not hasattr(fp.Proxy, i): 					
                       setattr(orgFp.Proxy, i, str())				
               else:  # i.e. other ArchObjects					
                   if i not in prop:						
-                      orgFp.addProperty("App::PropertyPythonObject", i)	
+                      orgFp.addProperty("App::PropertyPythonObject", i)		
                       setattr(orgFp, i, str())					
       if "MasterSketchSubelementIndex" not in prop:																				
           fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)				
           fp.setEditorMode("MasterSketchSubelementIndex",1)																			
-      if "MasterSketchIntersectingSubelementIndex" not in prop:																		
+      if "MasterSketchIntersectingSubelementIndex" not in prop:																			
           fp.addProperty("App::PropertyInteger","MasterSketchIntersectingSubelementIndex","Referenced Object","Index of MasterSketchInteresctingSubelement to be synced on the fly.  For output only.", 8)	
-          fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)																	
+          fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)																		
 										
       ''' Referenced Object '''						
 										
       # "Host" for ArchSketch and Arch Equipment (currently all Objects calls except Window which has "Hosts")												
       if Draft.getType(fp.getLinkedObject()) != 'Window':																		
           if "Host" not in prop:																					
-              fp.addProperty("App::PropertyLink","Host","Referenced Object","The object that host this object / this object attach to")								
+              fp.addProperty("App::PropertyLink","Host","Referenced Object","The object that host this object / this object attach to")									
       # "Hosts" for Window																						
       else:  																								
           if "Hosts" not in prop:																					
@@ -169,14 +176,14 @@ class ArchSketch(ArchSketchObject):
           fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Object","Flip Orientation 180 Degree / Inside-Outside / Front-Back")								
       if "AttachmentAlignment" not in prop:																				
           fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set (Wall)Left/Right to align to Edge of Wall")				
-          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]															
-          if Draft.getType(fp.getLinkedObject()) == 'Window':  																	
+          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]																
+          if Draft.getType(fp.getLinkedObject()) == 'Window':  																		
               fp.AttachmentAlignment = "WallLeft"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows (updated from to 'left' after orientation of 'left/right' changed )	
           else:  																							
               fp.AttachmentAlignment = "WallLeft"  # default for cases other than Windows														
       if fp.AttachmentAlignment in [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]:														
           curAlign = fp.AttachmentAlignment																				
-          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]															
+          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]																
           if curAlign == "Edge":																					
               fp.AttachmentAlignment = "Left"																				
           elif curAlign == "EdgeGroupWidthLeft":																			
@@ -192,7 +199,7 @@ class ArchSketch(ArchSketchObject):
       fpLinkedObject = fp.getLinkedObject()																				
       if "AttachToAxisOrSketch" in prop:																				
           attachToAxisOrSketchExisting = fp.AttachToAxisOrSketch																	
-      else:  # elif "AttachToAxisOrSketch" not in prop:																		
+      else:  # elif "AttachToAxisOrSketch" not in prop:																			
           fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Object","Select Object Type to Attach on ")									
       if fpLinkedObject.Proxy.Type == "ArchSketch":																			
           fp.AttachToAxisOrSketch = [ "Host", "Master Sketch", "Placement Axis" ]															
@@ -205,14 +212,14 @@ class ArchSketch(ArchSketchObject):
               attachToAxisOrSketchExisting = "Host"  # Can attach to only 1 host															
           fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting																	
 																									
-      # no existing selection, ie. newly added "AttachToAxisOrSketch" attribute															
+      # no existing selection, ie. newly added "AttachToAxisOrSketch" attribute																
       elif fpLinkedObject.Proxy.Type == "ArchSketch":																			
           fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch + Link to ArchSketch												
 																									
       else:  # other Arch Objects  # elif fpLinkedObject.Proxy.Type != "ArchSketch":															
           # currently only if fp is Window and mode is 'ODR', not to attach to Host or otherwise it would relocate to 1st edge										
           if mode == 'ODR':																						
-              if Draft.getType(fp) == 'Window':																			
+              if Draft.getType(fp) == 'Window':																				
                   fp.AttachToAxisOrSketch = "None"																			
               else: 																							
                   pass  # currently no other ArchObjects use 'ODR'																	
@@ -227,7 +234,9 @@ class ArchSketch(ArchSketchObject):
 										
   def execute(self, fp):							
 										
-      ''' Features to Run in Addition to Sketcher.execute() '''		
+      ''' Features to Run in Addition to Sketcher.execute() '''			
+										
+      normal = fp.getGlobalPlacement().Rotation.multVec(FreeCAD.Vector(0,0,1))	
 										
       ''' (VII) - Update attachment angle and attachment point coordinate '''	
 										
@@ -245,8 +254,25 @@ class ArchSketch(ArchSketchObject):
       fp.solve()								
       fp.recompute()								
 										
+      if fp.DetectRoom:								
 										
-  def updateSortedClustersEdgesOrder(self, fp):				
+          bb = boundBoxShape(fp, 5000)						
+          skEdges, skEdgesF = getSketchEdges(fp)				
+          cutEdges = selfCutEdges(skEdges)					
+          fragmentEdgesL = flattenEdLst(cutEdges)				
+          import BOPTools.SplitAPI									
+          regions = BOPTools.SplitAPI.slice(bb, fragmentEdgesL, 'Standard', tolerance = 0.0)		
+          resultFaces = removeBBFace(bb, regions.SubShapes)  # assume to be faces			
+          extv = normal.multiply(fp.FloorHeight)  # WallHeight+fp.SlabThickness				
+          resultFacesRebased = []									
+          for f in resultFaces:										
+              f.Placement = f.Placement.multiply(fp.Placement)						
+              resultFacesRebased.append(f)								
+          solids = [f.extrude(extv) for f in resultFacesRebased]					
+          solidsCmpd =  Part.Compound(solids)								
+          fp.CellComplexElements = solidsCmpd								
+										
+  def updateSortedClustersEdgesOrder(self, fp):					
 										
       clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat = getSketchSortedClEdgesOrder(fp)				
 										
@@ -381,11 +407,11 @@ class ArchSketch(ArchSketchObject):
 										
         if useEdgeTagDictSyncFindIndex == False:				
             i = 0								
-            while True:							
+            while True:								
                 try:								
                     if tag == fp.Geometry[i].Tag:				
                         return i, None						
-                except:							
+                except:								
                     print (" Debug - Tag does not (/no longer) exist " + "\n")	
                     return None, None						
                 i += 1								
@@ -498,6 +524,7 @@ def voxelise(shapeObj, lx, ly, lz, mode='Center'):
                       pList.append(FreeCAD.Placement(FreeCAD.Vector(xp,yp,zp),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0)))					
       count = len(pList)																	
       return pList, count																	
+																				
 def testVoxel(shapeObj, xp, yp, zp, lx, ly, lz, mode='Center'):													
     if mode == 'Center':																	
         xpp = xp + lx/2																		
@@ -534,9 +561,47 @@ def makeVoxelPart(InputShapeObj, VoxelObj=None):
   vp.InputShapeObj = InputShapeObj																
   if VoxelObj:																			
       vp.VoxelObj = VoxelObj																	
+  vp.ViewObject.LineWidth = 1.00																
+  vp.recompute()  # seems not working																
   return vp																			
 					  															
 					  															
+										
+class CellComplex:								
+										
+  def __init__(self, fp):							
+      fp.Proxy = self								
+      fp.ViewObject.Proxy=0							
+										
+      ''' call self.setProperties '''						
+      self.setProperties(fp)							
+										
+  def setProperties(self, fp):							
+      if not hasattr(fp,"InputShapeObj"):					
+          fp.addProperty("App::PropertyLink","InputShapeObj","CellComplex Properties","Can select an Input Object with CellComplexElements before initial this command")	
+																						
+  def onDocumentRestored(self, fp):																		
+      ''' call self.setProperties '''																		
+      self.setProperties(fp)																			
+										
+  def execute(self, fp):							
+      if fp.InputShapeObj:  #							
+        if fp.InputShapeObj.CellComplexElements:				
+              sh = Part.Shape(fp.InputShapeObj.CellComplexElements)		
+              #pla = fp.InputShapeObj.Placement					
+              fp.Shape = sh							
+										
+										
+def makeCellComplex(InputShapeObj=None):					
+  cc = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","CellComplex")	
+  cci = CellComplex(cc)								
+  if InputShapeObj:								
+      cc.InputShapeObj = InputShapeObj						
+  cc.ViewObject.LineWidth = 1.00						
+  cc.ViewObject.Transparency = 60						
+  return cc									
+										
+										
 #---------------------------------------------------------------------------#	
 #             FreeCAD Commands Classes & Associated Functions               #	
 #---------------------------------------------------------------------------#	
@@ -1006,16 +1071,39 @@ class _Command_Voxel():
             sel1 = Gui.Selection.getSelection()[1]				
         except:									
             sel1 = None								
-										
         vp = makeVoxelPart(sel, sel1)						
         lva = App.ActiveDocument.addObject('App::Link', "Lnk__VoxelArray")	
         lva.ShowElement = False							
         lva.setLink(vp)								
         lva.setExpression('ElementCount', u''+'<<'+vp.Label+'>>'+'.eCount')	
         lva.setExpression('PlacementList', u''+'<<'+vp.Label+'>>'+'.pList')	
+        lva.recompute()								
 		        							
 										
 FreeCADGui.addCommand('Voxel', _Command_Voxel())				
+										
+										
+class _Command_CellComplex():							
+										
+    ''' ArchSketch Command Definition - Gui to make CellComplex '''		
+										
+    def GetResources(self):							
+        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/CellComplex.svg',		
+                'Accel' : "Alt+c",								
+                'MenuText': "Create CelllComplex",						
+                'ToolTip' : "create CelllComplex"}						
+												
+    def IsActive(self):										
+        return not FreeCAD.ActiveDocument is None						
+    def Activated(self):									
+        sel = None										
+        try:											
+            sel = Gui.Selection.getSelection()[0]						
+        except:											
+            reply = QtGui.QMessageBox.information(None,"","Select an object with Shape to get CellComplexElement ")								
+        cc = makeCellComplex(sel)																		
+										
+FreeCADGui.addCommand('CellComplex', _Command_CellComplex())			
 										
 										
 #----------------------------------------------------------------------------#	
@@ -1029,7 +1117,7 @@ def attachToMasterSketch(subject, target=None, subelement=None,
 										
   if Draft.getType(subject) == "ArchSketch":					
       subject.MapReversed = False						
-      subject.MapMode = mapMode						
+      subject.MapMode = mapMode							
       subject.Support = subject.MasterSketch					
 										
 										
@@ -1469,7 +1557,6 @@ def getSketchEdgeIntersection(sketch, line1Index, line2Index):
         return None								
 										
 										
-#                                   flip180Degree=False, attachToSubelementOrOffset=None, masterSketchIntersectingSubelement=None): # offsetFromIntersectingSubelement=False,			
 def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex, attachmentOffset, zOffset, flipOffsetOriginToOtherEnd=False,							
                                    flip180Degree=False, attachToSubelementOrOffset=None, intersectingSubelementIndex=None): # offsetFromIntersectingSubelement=False,				
     geoindex = None																						
@@ -1660,3 +1747,82 @@ def sortWidth(edgeWidthList, sortedIndexes):
     return widthList								
 										
 										
+def removeBBFace(bbFace, sliceFaces):  						
+    for i, sliceF in enumerate(sliceFaces):					
+        if len(sliceF.OuterWire.Vertexes) != 4:  # 'default' rectangler bbFace	
+            foundFace = Nonerectangle						
+            break								
+        for bbEd in bbFace.Edges:						
+            foundEd = None							
+            for sliceFEd in sliceF.Edges:					
+                if bbEd.isSame(sliceFEd):					
+                    foundEd = True						
+                    break							
+            if foundEd == None:							
+                break								
+            else:								
+                continue							
+        if foundEd == True:							
+            del sliceFaces[i]							
+            break								
+        else:									
+            continue								
+    return sliceFaces								
+										
+										
+def boundBoxShape(obj, enlarge):										
+														
+    objPl = obj.Placement 											
+    invPl = objPl.inverse()											
+    sh=obj.Shape.copy()												
+    sh.Placement=sh.Placement.multiply(invPl)									
+    bb=sh.BoundBox  #bb=obj.Shape.BoundBox									
+    p=FreeCAD.Placement()											
+    p.Base=FreeCAD.Vector(bb.XMin-enlarge, bb.YMin-enlarge, bb.ZMin)						
+    rect = Part.makePlane(bb.XLength+2*enlarge,bb.YLength+2*enlarge,p.Base, FreeCAD.Vector(0,0,1))		
+    return rect  #, objPl (no need to return as it is the original object's placement)				
+														
+														
+def getSketchEdges(sk):																
+																		
+    ''' return lists in lists '''														
+																		
+    skGeom = sk.GeometryFacadeList														
+    skGeomEdges = []																
+    skGeomEdgesFull = []															
+																		
+    for i in skGeom:																
+        if isinstance(i.Geometry, (Part.LineSegment, Part.Circle, Part.ArcOfCircle)):								
+                skGeomEdgesI = i.Geometry.toShape()												
+																		
+                if not i.Construction:														
+                    skGeomEdges.append(skGeomEdgesI)												
+                skGeomEdgesFull.append(skGeomEdgesI)												
+    return skGeomEdges, skGeomEdgesFull														
+																		
+																		
+def flattenEdLst(edgesLstInLst):							
+											
+    flattened  = [e for sublist in edgesLstInLst for e in sublist]			
+    return flattened									
+											
+											
+def selfCutEdges(edges):								
+    '''											
+        The provided edges are cut one by one against the rest,				
+        the fragments of edges are collected in a list of list,				
+        and returned.									
+    '''											
+											
+    cutEdgesList = []									
+    l = len(edges)									
+    for n in range(l):									
+        cutEdgesListI = []								
+        edgesC = edges.copy()								
+        e = edgesC.pop(n)								
+        cut = e.cut(edgesC)								
+        for cutE in cut.Edges:								
+            cutEdgesListI.append(cutE)							
+        cutEdgesList.append(cutEdgesListI)						
+    return cutEdgesList									
+											

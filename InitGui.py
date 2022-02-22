@@ -31,7 +31,7 @@ class SketchArchWorkbench(Workbench):
     def __init__(self):								
 										
         import SketchArchIcon							
-        self.__class__.Icon = SketchArchIcon.getIconPath() + "/icons/SketchArchWorkbench.svg"	
+        self.__class__.Icon = SketchArchIcon.getIconPath() + "/icons/SketchArchWorkbench.svg"				
 										
     def Initialize(self):							
 										
@@ -39,7 +39,8 @@ class SketchArchWorkbench(Workbench):
 										
         import SketchArch							
         self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 			
-                                "EditWallWidth", "EditWallAttach", "Voxel"]	
+                                "EditWallWidth", "EditWallAttach", "Voxel",	
+                                "CellComplex"]					
         self.appendToolbar("Sketch Arch", self.ArchSketchTools)			
         self.appendMenu("Sketch Arch", self.ArchSketchTools)			
 										
