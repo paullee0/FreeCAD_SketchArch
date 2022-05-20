@@ -67,7 +67,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 #### 6. Topological naming tolerant
 
-- The most import feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
+- The most important feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 main approaches :
 
     1.  Using sketch.Geometry[index].Tag
