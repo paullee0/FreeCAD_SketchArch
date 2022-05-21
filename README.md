@@ -41,9 +41,10 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
-[![IMAGE ALT TEXT 1](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Video Title_ 1")
+[![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO !")
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=104384)
+
 
 
 #### 4. Floor Area Calculation + Room Dimension
@@ -61,6 +62,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - CellComplex is a Topologic concept and object : see ([OSArch discussion - Talk on Topologic: Redefining BIM through Spatial Topology, Information, and Grammars](https://community.osarch.org/discussion/131/talk-on-topologic-redefining-bim-through-spatial-topology-information-and-grammars#latest))
 - [Feature] CellComplex & ArchWall Creation on 1 ArchSketch ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=63920))
 - In addition to build ArchWall based on an ArchSketch, CellComplex can be created automatically also
+
+[![Youtub Video](https://i9.ytimg.com/vi/1rlPwVOXWKc/mq3.jpg?sqp=CNS1opQG&rs=AOn4CLBho4vSSl9OJ3Ce44ZdC-_zjwg10g)](https://youtu.be/1rlPwVOXWKc "Click To PLAY VIDEO !")
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170539)
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170540)
