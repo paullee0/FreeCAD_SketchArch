@@ -56,7 +56,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
 (Click To PLAY VIDEO !)
-[![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO !")
+[![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO - EDIT ALIGN!")
+[![ Youtube Video](https://i9.ytimg.com/vi/UZktE6BUIJ8/mq2.jpg?sqp=CNzDopQG&rs=AOn4CLAMkiBCktSwWA6H-9ImQx5X3ubaSQ)](https://youtu.be/UZktE6BUIJ8 "Click To PLAY VIDEO - EDIT WIDTH!")
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=104384)
 
