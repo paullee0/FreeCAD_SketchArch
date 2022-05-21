@@ -36,7 +36,17 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
   - **Note:** (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch)
 
+
+(Click To PLAY VIDEO !)
+[![ Youtube Video](https://i9.ytimg.com/vi/FpdWlKFVQhg/mq3.jpg?sqp=CIS_opQG&rs=AOn4CLDg6xiu_ZOkemBpgKn9Uyt1NaHnjw)](https://youtu.be/FpdWlKFVQhg "Click To PLAY VIDEO - Placement of Arch Window(Door) !")
+[![ Youtube Video](https://i9.ytimg.com/vi/1W_-QjcQOXI/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLBzHiOve-g3uWsoN10pQi72j4_Ugw)](https://youtu.be/1W_-QjcQOXI "Click To PLAY VIDEO - Automatic (Parametric) Placement of Arch Window(Door) !")
+
+(Click To PLAY VIDEO !)
+[![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/ozZ-jl-BSjU "Click To PLAY VIDEO - Placement of Arch Equipment!")
+
 ![alt text 2a](https://forum.freecadweb.org/download/file.php?id=129408)
+
+
 
 #### 3. Width & Align Per Edge
 ![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
