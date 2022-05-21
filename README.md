@@ -41,6 +41,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
+[![IMAGE ALT TEXT 1](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Video Title_ 1")
+
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=104384)
 
 
