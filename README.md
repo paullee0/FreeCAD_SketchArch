@@ -16,6 +16,10 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - So Sketch Layout + Arch Wall = Building Layout
 - Sketcher have geometric and dimensional constraints to help making and editing 'single-line sketch layouts'
 
+(Click To PLAY VIDEO !)
+[![ Youtube Video](https://i9.ytimg.com/vi/uhf5TH3WKAc/mq2.jpg?sqp=CKy6opQG&rs=AOn4CLAvBRVX4w5_4ykpze3cDoRvkNEnZA)](https://youtu.be/uhf5TH3WKAc "Click To PLAY VIDEO !")
+[![ Youtube Video](https://i9.ytimg.com/vi/D7x-UCGlZy4/mq3.jpg?sqp=CKy6opQG&rs=AOn4CLCqVE1L0buawaqPVzXZK0zFX3o7vA)](https://youtu.be/D7x-UCGlZy4 "Click To PLAY VIDEO !")
+
 ![alt text 1a](https://forum.freecadweb.org/download/file.php?id=102600)
 
 ![alt text 1b](https://forum.freecadweb.org/download/file.php?id=102608)
@@ -41,6 +45,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 - ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
 - ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
+(Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO !")
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=104384)
