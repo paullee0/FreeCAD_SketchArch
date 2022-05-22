@@ -36,6 +36,9 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
   - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
   - **Note:** (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch)
 
+[ Special Remarks :
+-  For this feature to work, use at least the 0.20_pre-release version git 26720 (e.g. FreeCAD_weekly-builds-26720-Linux-Conda_glibc2.12-x86_64.AppImage)
+-  Otherwise, needs to follow the FreeCAD forum discussion to use the tweaked ArchWindow.py, ArchEquipment.py etc. ]
 
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/FpdWlKFVQhg/mq3.jpg?sqp=CIS_opQG&rs=AOn4CLDg6xiu_ZOkemBpgKn9Uyt1NaHnjw)](https://youtu.be/FpdWlKFVQhg "Click To PLAY VIDEO - Placement of Arch Window(Door) !")
