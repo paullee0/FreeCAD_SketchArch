@@ -1,6 +1,6 @@
 #***************************************************************************	
 #*                                                                         *	
-#*   Copyright (c) 2018 - 2021                                             *	
+#*   Copyright (c) 2018 - 2022                                             *	
 #*   Paul Lee <paullee0@gmail.com>                                         *	
 #*                                                                         *	
 #*   This program is free software; you can redistribute it and/or modify  *	
@@ -1169,7 +1169,10 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                     hostObject = fp.Hosts[0]  # Can just take 1st Host Object	
                     hostBase = hostObject.Base					
                 if Draft.getType(hostBase.getLinkedObject()) == 'ArchSketch':	
-                    hostSketch = hostBase  # HostWall/Object(Stair?) base	
+                    hostSketch = hostBase  # HostWall/Object(Stair?) base
+                else:
+                    return
+                
         elif hasattr(fp, "Host"):  # (Lnk)Eqpt, [ ? (Lnk)ArchSketch ]		
             if fp.Host:								
                 if isinstance(fp.Host.getLinkedObject().Proxy, ArchWall._Wall):			
@@ -1180,7 +1183,9 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                     hostBase = hostObject.Base					
                 if Draft.getType(hostBase.getLinkedObject()) == 'ArchSketch':	
                     hostSketch = hostBase  # HostWall/Object(Stair?) base	
-										
+                else:
+                    return
+
         if (not hostWall) and (not hostObject):					
             return								
 										
