@@ -66,7 +66,27 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 4. Floor Area Calculation + Room Dimension
+#### 4. [ Feature Preview ] - Slab, Curtain Wall, ArchWall etc. +  ArchSketch = Layout
+
+ArchSketch + ArchStructure = Slab Layout
+
+Have your ever set out your building layout in a sketch like below, and wonder if -
+
+- ArchWall would build walls based on edges in the middle part
+- ArchStructure build slab based on the outermost one, with an opening in the middle
+- ArchCurtainWall build panels based on the outermost one edges
+
+So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you just edit the same ArchSketch, you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
+
+(Click To PLAY VIDEO !)
+[![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/DjxBXsw6z2I "Click To PLAY VIDEO - ArchSketch + ArchStructure = Slab Layout !")
+
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205759)
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205758)
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205755)
+
+
+#### 5. Floor Area Calculation + Room Dimension
 
 - [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=47905&start=70#p485618))
 - See below on CellComplex
@@ -75,7 +95,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 5. CellComplex Creation [Topologic]
+#### 6. CellComplex Creation [Topologic]
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/CellComplex.svg)
 
 - CellComplex is a Topologic concept and object : see ([OSArch discussion - Talk on Topologic: Redefining BIM through Spatial Topology, Information, and Grammars](https://community.osarch.org/discussion/131/talk-on-topologic-redefining-bim-through-spatial-topology-information-and-grammars#latest))
@@ -90,7 +110,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170538)
 
 
-#### 6. Topological naming tolerant
+#### 7. Topological naming tolerant
 
 - The most important feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 main approaches :
@@ -116,7 +136,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 [![ Youtube Video](https://i9.ytimg.com/vi/Sqt2rezgPZk/mq2.jpg?sqp=CIzNopQG&rs=AOn4CLC1cDMCGaulTNjBOEkRnu0fJNmyKw)](https://youtu.be/Sqt2rezgPZk "Click To PLAY VIDEO - 'TopoNaming Tolerant' Feature !")
 
 
-#### 7. Voxelisation
+#### 8. Voxelisation
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Voxel.svg)
 
 
@@ -147,7 +167,7 @@ What ceated ?
 <details>
   <summary>Click to expand!</summary>
   
-#### 8. Space / Room / Zone & Cell Complex Definition
+#### 9. Space / Room / Zone & Cell Complex Definition
 
 - A Space, Room or Zone could be defined right within (Arch)Sketch itself
 - Automatic identification of each enclosed area (room) defined by edges (walls)
@@ -173,7 +193,7 @@ What ceated ?
   - 'Grouped' under 'ArchSpace' as well
 
 
-#### 9. More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
+#### 10. More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
 
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
