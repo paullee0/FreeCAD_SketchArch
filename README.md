@@ -66,7 +66,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 4. [ Feature Preview ] - Slab, Curtain Wall, ArchWall etc. +  ArchSketch = Layout
+#### 4. [ Feature Preview ] - ArchStructure, Curtain Wall, ArchWall etc. +  ArchSketch = Layout
 
 ArchSketch + ArchStructure = Slab Layout
 
@@ -78,12 +78,16 @@ Have your ever set out your building layout in a sketch like below, and wonder i
 
 So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you just edit the same ArchSketch, you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
 
+[FreeCAD Forum Discussion Thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=73018&sid=ba2732dd08a70b09011f667ae874e322)
+
+
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/DjxBXsw6z2I "Click To PLAY VIDEO - ArchSketch + ArchStructure = Slab Layout !")
 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205759)
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205758)
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205755)
+![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205754)
 
 
 #### 5. Floor Area Calculation + Room Dimension
