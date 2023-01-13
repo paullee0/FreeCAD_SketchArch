@@ -1,6 +1,6 @@
 #***************************************************************************	
 #*                                                                         *	
-#*   Copyright (c) 2018, 2019                                              *	
+#*   Copyright (c) 2018 - 2022                                              *	
 #*   Paul Lee <paullee0@gmail.com>                                         *	
 #*                                                                         *	
 #*   This program is free software; you can redistribute it and/or modify  *	
@@ -39,7 +39,8 @@ class SketchArchWorkbench(Workbench):
 										
         import SketchArch							
         self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 			
-                                "EditWallWidth", "EditWallAttach", "Voxel",	
+                                "EditWallWidth", "EditWallAttach",		
+                                "EditStructure", "Voxel",			
                                 "CellComplex"]					
         self.appendToolbar("Sketch Arch", self.ArchSketchTools)			
         self.appendMenu("Sketch Arch", self.ArchSketchTools)			
