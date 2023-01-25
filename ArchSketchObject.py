@@ -1100,8 +1100,8 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
 										
     def escape(self,info):							
         k=info['Key']								
-        if k=="ESCAPE":							
-            if self.targetWall:										
+        if k=="ESCAPE":								
+            if self.targetWall:											
                 self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy				
         SketchArchCommands.selectObjectObserver.escape(self,info)						
 										
@@ -1128,9 +1128,13 @@ class _CommandEditStructure():
             return								
         targetObjectBase = None							
 										
-        if Draft.getType(sel0) not in ["Structure","ArchSketch"]:		
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Structure ( with underlying Base ArchSketch Sketch ) or ArchSketch ")	
-            return								
+        if Draft.getType(sel0) not in ["Structure"]:				
+            if Draft.getType(sel0) in ["ArchSketch"]:				
+                reply = QtGui.QMessageBox.information(None,"","Select an Arch Structure (with underlying Base ArchSketch Sketch) to Edit - Editing an ArchSketch directly would be implemented in due course")	
+                return																								
+            else:																								
+                reply = QtGui.QMessageBox.information(None,"","Select an Arch Structure (with underlying Base ArchSketch Sketch) to Edit")									
+                return																								
         if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
             if sel0.Base:							
                 targetObjectBase = sel0.Base					
