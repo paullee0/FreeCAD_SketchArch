@@ -252,6 +252,8 @@ There are a few discussion on FreeCAD discussion fourm with different topics:-
   - Intuitive Automatic Windows/  Doors/ Equipment Placement ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&sid=fd179d8d8b15b107a6c98eee7eaa88ec)) 
   - PR / Discussion Thread - ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=39060))
   - ArchSketch + ArchWall = Building Layout - ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=38703))
+  - Auto-creating ArchSketch - ([forum thread](https://forum.freecad.org/viewtopic.php?t=71917))
+  - Automatic Building Generator - ([forum thread](https://forum.freecad.org/viewtopic.php?t=81285))
 
 When bugs/feature-requests are vetted on the forum they will then be tracked in the [issue queue](https://github.com/paullee0/FreeCAD_SketchArch/issues) of this repo.
 
