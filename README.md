@@ -122,15 +122,17 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
     1.  Using sketch.Geometry[index].Tag
         Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=28575))
         <br>
-        a. **Implemented** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**)
+        a. **Implemented** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**) [Need every object recompute() to keep in sync]
         <br>
         b.  Rebuilding a Dict referencing `Sketch.Geometry[index].Tag` `onDocumentRestore` (**Implemented but not exposed. Solution 1a is preferable**)
-
+        <br>
+        (As of Marh 2024, a mix use of 1a and 1b are used)
     2.  Using PartGeometryExtension / SketchGeometryExtension
+        <br>
+        **Being Implemented as of March 2024**
         - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  ([forum thread](https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767))
         - Sketcher Development - Integration of Extensions  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360))
-
-    3.  Using @Realthunder's branch
+    4.  Using @Realthunder's branch
 
 - Earlier Discussions : Unique and Persistent Sketch Edge Name
   - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space ([forum thread](https://forum.freecadweb.org/viewtopic.php?t=25904#p204581))
