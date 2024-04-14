@@ -116,6 +116,13 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 
 #### 7. Topological naming tolerant
 
+- Progress / Status of Implementation :
+  
+    1.  21.8.2021 Exposed - [Arch Object Intuitive Automatic Placement](https://forum.freecad.org/viewtopic.php?t=60034)
+    2.  ?.2024 Being Exposed - Arch Wall Width Setting for Each Wall Segment
+    3.  ?.2024 Being Exposed - Arch Wall Align Setting for Each Wall Segment
+    4.  (Above 3 Features Implementated in 2019-21)
+ 
 - The most important feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 main approaches :
 
