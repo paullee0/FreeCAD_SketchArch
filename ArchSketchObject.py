@@ -1,7 +1,6 @@
 #***************************************************************************	
 #*                                                                         *	
-#*   Copyright (c) 2018 - 2022                                             *	
-#*   Paul Lee <paullee0@gmail.com>                                         *	
+#*   Copyright (c) 2018-24 Paul Lee <paullee0@gmail.com>                   *	
 #*                                                                         *	
 #*   This program is free software; you can redistribute it and/or modify  *	
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *	
@@ -22,8 +21,7 @@
 #***************************************************************************	
 										
 import FreeCAD, FreeCADGui, Sketcher, Part, Draft, DraftVecUtils		
-import ArchComponent, ArchBuilding, ArchFloor, ArchAxis, ArchWall, ArchWindow	
-import ArchSpace, ArchStairs, ArchSectionPlane					
+import ArchWall, ArchWindow							
 										
 import SketchArchIcon								
 import SketchArchCommands							
@@ -58,8 +56,11 @@ class ArchSketch(ArchSketchObject):
 										
   ''' ArchSketch - Sketcher::SketchObjectPython for Architectural Layout '''	
 										
-  MasterSketchSubelementTags = [ "MasterSketchSubelementTag", "MasterSketchIntersectingSubelementTag" ]										
-  SnapPresetDict = {'AxisStart':0.0, '1/4':0.25, '1/3':1/3, 'MidPoint':0.5, '2/3':2/3, '3/4':3/4, 'AxisEnd':1.0}								
+  MasterSketchSubelementTags = ['MasterSketchSubelementTag', 			
+                                'MasterSketchIntersectingSubelementTag' ]	
+  SnapPresetDict = {'AxisStart':0.0, '1/4':0.25, '1/3':1/3, 'MidPoint':0.5,	
+                    '2/3':2/3, '3/4':3/4, 'AxisEnd':1.0}			
+  EdgeTagDicts=['EdgeTagDictArchive', 'EdgeTagDictInitial', 'EdgeTagDictSync']	
 										
   def __init__(self, obj):							
       ArchSketchObject.__init__(self, obj)					
@@ -90,12 +91,22 @@ class ArchSketch(ArchSketchObject):
       fp.Proxy = self								
       if not hasattr(self,"Type"):						
           self.Type = "ArchSketch"						
+      for i in ArchSketch.EdgeTagDicts:						
+        if not hasattr(self,i):							
+          setattr(self, i, {})							
 										
       if not hasattr(self,"clEdgeSameIndexFlat"):				
           self.clEdgeSameIndexFlat = []						
-																	
-																	
-      ''' Added ArchSketch Properties '''												
+										
+      ''' Added ArchSketch Properties '''					
+										
+      if not hasattr(fp,"Align"):																						
+          fp.addProperty("App::PropertyEnumeration","Align","Added ArchSketch Properties","The default alignment for the wall with this ArchSketch as its base object")						
+          fp.Align = ['Left','Right','Center']					
+          fp.Align = 'Center'							
+      if not hasattr(fp,"ArchSketchWidth"):					
+          fp.addProperty("App::PropertyLength","ArchSketchWidth","Added ArchSketch Properties","ArchSketchWidth returned ")											
+          fp.ArchSketchWidth = 200 * MM  # Default				
 																										
       if not hasattr(fp,"DetectRoom"):																						
           fp.addProperty("App::PropertyBool","DetectRoom","Added ArchSketch Properties",QT_TRANSLATE_NOOP("App::Property","Enable to detect rooms enclosed by edges/walls - For CellComplex object to work, the generated shape is not shown in the ArchSketch object, but shown by a CellComplex Object.  This make recompute of this object longer !"))												
@@ -163,7 +174,7 @@ class ArchSketch(ArchSketchObject):
           fp.MasterSketchSubelementSnapPreset = [ "AxisStart", "1/4", "1/3", "MidPoint", "2/3", "3/4", "AxisEnd", "CustomValue" ]									
       if "MasterSketchSubelementSnapCustom" not in prop:																		
           fp.addProperty("App::PropertyFloatConstraint", "MasterSketchSubelementSnapCustom", "Referenced Object", "Custom Value: 0 to 1, Start/EndPoint of Axis (Use formula for fraction e.g 2/11")	
-          fp.MasterSketchSubelementSnapCustom = (0.0, 0.0, 1.0, 0.001) # (Default, Start, Finish, Step)												
+          fp.MasterSketchSubelementSnapCustom = (0.0, 0.0, 1.0, 0.001) # (Default, Start, Finish, Step)													
       if "MasterSketchIntersectingSubelement" not in prop:																		
           fp.addProperty("App::PropertyString","MasterSketchIntersectingSubelement",															
                          "Referenced Object","Master Sketch Subelement Intersecting the Sub-Element Attached on")											
@@ -222,7 +233,7 @@ class ArchSketch(ArchSketchObject):
               attachToAxisOrSketchExisting = "Host"  # Can attach to only 1 host															
           fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting																	
 																									
-      # no existing selection, ie. newly added "AttachToAxisOrSketch" attribute																
+      # No existing selection, ie. newly added "AttachToAxisOrSketch" attribute																
       elif isinstance(fpLinkedObject.Proxy, ArchSketch):																		
           fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch + Link to ArchSketch												
 																									
@@ -249,6 +260,12 @@ class ArchSketch(ArchSketchObject):
 										
       normal = fp.getGlobalPlacement().Rotation.multVec(FreeCAD.Vector(0,0,1))	
 										
+										
+      ''' (-I) - Sync EdgeTagDictSync - ArchSketch Edge Indexes against (semi-persistant) Tags '''	
+													
+      self.syncEdgeTagDictSync(fp)						
+										
+										
       ''' (VII) - Update attachment angle and attachment point coordinate '''	
 										
       updateAttachmentOffset(fp)						
@@ -257,7 +274,6 @@ class ArchSketch(ArchSketchObject):
       ''' (IX or XI) - Update the order of edges by getSortedClusters '''	
 										
       self.updateSortedClustersEdgesOrder(fp)					
-										
 										
 										
       ''' (X) - Instances fp.resolve / fp.recompute - '''			
@@ -302,11 +318,42 @@ class ArchSketch(ArchSketchObject):
           changeAttachMode(fp, prop)						
 										
 										
+  def rebuildEdgeTagDicts(self, fp):  # To be called by Local			
+										
+      self.EdgeTagDictArchive = dict(self.EdgeTagDictSync)			
+      self.EdgeTagDictInitial = {}						
+      self.EdgeTagDictSync = {}							
+										
+      i = 0									
+      while True:								
+          try:									
+              tagI = fp.Geometry[i].Tag						
+          except:								
+              print (" try-break end, fp.Geometry[i] - i is ...  ", i)		
+              break								
+          edgeTagDictArchiveTagDict = None					
+          if self.EdgeTagDictArchive.values():					
+            if isinstance (list(self.EdgeTagDictArchive.values())[0], dict):	
+              none, tagArchive = self.getEdgeTagDictArchiveTagIndex(fp,		
+                                      tag=None, index=i)			
+              if tagArchive is not None:					
+                  edgeTagDictArchiveTagDict=self.EdgeTagDictArchive[tagArchive]	
+                  self.EdgeTagDictInitial[tagI] = edgeTagDictArchiveTagDict	
+              else:								
+                  edgeTagDictArchiveTagDict = None				
+          if not edgeTagDictArchiveTagDict:					
+                  self.EdgeTagDictInitial[tagI]={}				
+                  self.EdgeTagDictInitial[tagI]['index']=i			
+          i += 1								
+										
+      self.EdgeTagDictSync = self.EdgeTagDictInitial.copy()			
+										
+										
   def callParentToRebuildMasterSketchTags(self, fp):				
       foundParentArchSketchNames = []						
       foundParentLnkArchSketchesNames = []					
       foundParentLnkArchSketches = []						
-      foundParentArchWalls = []						
+      foundParentArchWalls = []							
       foundParentArchObjectNames = []						
       foundParentArchObjects = []						
       for parent in fp.InList:							
@@ -321,25 +368,25 @@ class ArchSketch(ArchSketchObject):
               if parent.MasterSketch == fp:					
                   if parent.Name not in foundParentLnkArchSketchesNames:	
                       foundParentLnkArchSketchesNames.append(parent.Name)	
-                      foundParentLnkArchSketches.append(parent)		
+                      foundParentLnkArchSketches.append(parent)			
           # Find ArchWall to further find parents				
           elif hasattr(parent,'Base'):						
               if fp == parent.Base:						
                   if parent not in foundParentArchWalls:			
                       foundParentArchWalls.append(parent)			
-      # Find ArchObject parents of ArchWall (Equipment, Window)		
-      for wall in foundParentArchWalls:					
+      # Find ArchObject parents of ArchWall (Equipment, Window)			
+      for wall in foundParentArchWalls:						
           for parent in wall.InList:						
               if hasattr(parent,'Hosts'):  # Windows (and others?)		
                   if wall in parent.Hosts:					
-                      if parent.Name not in foundParentArchObjectNames:	
+                      if parent.Name not in foundParentArchObjectNames:		
                           foundParentArchObjectNames.append(parent.Name)	
-                          foundParentArchObjects.append(parent)		
+                          foundParentArchObjects.append(parent)			
               elif hasattr(parent,'Host'):  # (Lnk)Eqpt/Win (Lnk)AchrSketch	
                   if wall == parent.Host:					
-                      if parent.Name not in foundParentArchObjectNames:	
+                      if parent.Name not in foundParentArchObjectNames:		
                           foundParentArchObjectNames.append(parent.Name)	
-                          foundParentArchObjects.append(parent)		
+                          foundParentArchObjects.append(parent)			
 										
       # call ArchSketch parent							
       total = len(foundParentArchSketchNames)					
@@ -377,6 +424,24 @@ class ArchSketch(ArchSketchObject):
       return self.getSortedClustersEdgesWidth(fp)				
 										
 										
+  def getUnsortedEdgesWidth(self, fp):						
+										
+      widthsList = []								
+      for j in range(0, len(fp.Geometry)):					
+          curWidthEdgeTagDictSync = self.getEdgeTagDictSyncWidth(fp, None, j)	
+          widthsList.append(curWidthEdgeTagDictSync)				
+      return widthsList								
+										
+										
+  def getUnsortedEdgesAlign(self, fp):						
+										
+      alignsList = []								
+      for j in range(0, len(fp.Geometry)):					
+          curAlignEdgeTagDictSync = self.getEdgeTagDictSyncAlign(fp, None, j)	
+          alignsList.append(curAlignEdgeTagDictSync)				
+      return alignsList								
+										
+										
   def getSortedClustersEdgesWidth(self, fp):					
 										
       '''  This method check the SortedClusters-isSame-(flat)List (omitted	
@@ -394,13 +459,45 @@ class ArchSketch(ArchSketchObject):
 										
            3rd Option - Use self.EdgeTagDictSync				
                         .... convoluted object sync, restoreOnLoad '''		
-      return None								
+										
+      widthsList = []								
+      widthsListEdgeTagDictSync = []						
+      for i in self.clEdgeSameIndexFlat:					
+										
+          curWidthEdgeTagDictSync = self.getEdgeTagDictSyncWidth(fp, None, i)	
+          if not curWidthEdgeTagDictSync:					
+              if fp.ArchSketchWidth:						
+                  curWidthEdgeTagDictSync = fp.ArchSketchWidth.Value		
+              else:								
+                  curWidthEdgeTagDictSync = 0  # 0 follow Wall's Width		
+          widthsListEdgeTagDictSync.append(curWidthEdgeTagDictSync)		
+      return widthsListEdgeTagDictSync						
+										
+										
+  def getEdgeTagDictSyncWidth(self, fp, tag=None, index=None):			
+										
+      if tag is not None:							
+          return self.EdgeTagDictSync[tag].get('width', None)			
+										
+      elif index is not None:							
+          try:  # Cases where self.EdgeTagDictSync not updated yet ?		
+              tagI = fp.Geometry[index].Tag					
+              return self.EdgeTagDictSync[tagI].get('width', None)		
+          except:								
+              self.syncEdgeTagDictSync(fp)					
+              try: # again							
+                  tagI = fp.Geometry[index].Tag					
+                  return self.EdgeTagDictSync[tagI].get('width', None)		
+              except:								
+                  return None							
+      else:									
+          return None  #pass							
 										
 										
   def getAligns(self, fp):							
   										
       ''' wrapper function for uniform format '''				
-  										
+										
       return self.getSortedClustersEdgesAlign(fp)				
 										
 										
@@ -410,7 +507,66 @@ class ArchSketch(ArchSketchObject):
            find the corresponding edgesAlign ... 				
            and make a list of (AlignX, AlignX+1 ...)				
       '''									
-      return None								
+										
+      alignsList = []								
+      for i in self.clEdgeSameIndexFlat:					
+          curAlign = self.getEdgeTagDictSyncAlign(fp, None, i)			
+          if not curAlign:							
+              curAlign = fp.Align # default Align (set up to 'Center')		
+          alignsList.append(curAlign)						
+      return alignsList								
+										
+										
+  def getEdgeTagDictSyncAlign(self, fp, tag=None, index=None):			
+      if tag is not None:							
+          return self.EdgeTagDictSync[tag].get('align', None)			
+      elif index is not None:							
+          try:									
+              tagI = fp.Geometry[index].Tag					
+              return self.EdgeTagDictSync[tagI].get('align', None)		
+          except:								
+              self.syncEdgeTagDictSync(fp)					
+              try:  # again							
+                  tagI = fp.Geometry[index].Tag					
+                  return self.EdgeTagDictSync[tagI].get('align', None)		
+              except:								
+                  return None							
+										
+										
+  def syncEdgeTagDictSync(self, fp):						
+      edgeTagDictTemp = {}							
+										
+      i = 0									
+      while True:								
+          try:									
+              tagI = fp.Geometry[i].Tag						
+          except:								
+              break								
+          try:									
+              edgeTagDictSyncTagDict = self.EdgeTagDictSync[tagI]		
+          except:								
+              edgeTagDictSyncTagDict = {}					
+          edgeTagDictTemp[tagI] = edgeTagDictSyncTagDict			
+          edgeTagDictTemp[tagI]['index']=i					
+          i += 1								
+      self.EdgeTagDictSync = edgeTagDictTemp.copy()				
+      return									
+										
+										
+  def getEdgeTagDictArchiveTagIndex(self, fp, tag=None, index=None):		
+    if tag and index is None:							
+        try:									
+            return fp.Proxy.EdgeTagDictArchive[tag]['index'], None		
+        except:									
+            return None, None							
+    elif not tag and index is not None:						
+        try:									
+            for key, value in iter(fp.Proxy.EdgeTagDictArchive.items()):	
+                if value['index'] == index:					
+                    return None, key  # i.e. tagArchive				
+            return None, None							
+        except:									
+            return None, None							
 										
 										
   def getEdgeTagIndex(self, fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False):		
@@ -514,6 +670,7 @@ class ArchSketch(ArchSketchObject):
       self.initEditorMode(fp)							
 										
       ''' Rebuilding Tags  '''							
+      self.rebuildEdgeTagDicts(fp)						
       self.callParentToRebuildMasterSketchTags(fp) # "Master"			
 										
 										
@@ -605,6 +762,7 @@ def voxelise(shapeObj, lx, ly, lz, mode='Center'):
                       pList.append(FreeCAD.Placement(FreeCAD.Vector(xp,yp,zp),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0)))					
       count = len(pList)																	
       return pList, count																	
+																				
 																				
 def testVoxel(shapeObj, xp, yp, zp, lx, ly, lz, mode='Center'):													
     if mode == 'Center':																	
@@ -753,14 +911,23 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
             self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
         if targetBaseSketch:							
-            if Draft.getType(self.targetArchSketch) in ['Sketcher::SketchObject','ArchSketch']: 
-                if self.targetWall:						
-                    tempOverrideAlign = self.targetWall.OverrideAlign		
-                    wallAlign = targetWall.Align # use Wall's Align		
-                    # filling OverrideAlign if entry is missing for a particular index		
-                    while len(tempOverrideAlign) < len(self.targetArchSketch.Geometry):	
-                        tempOverrideAlign.append(wallAlign) #('Left')		
-                    self.targetWall.OverrideAlign = tempOverrideAlign		
+            tempOverrideAlign = None						
+            wallAlign = None							
+            if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+                wallAlign = targetBaseSketch.Align				
+            if not wallAlign:							
+                wallAlign = targetWall.Align  # use Wall's Align		
+            if Draft.getType(self.targetArchSketch) == 'ArchSketch':					
+                if hasattr(self.targetArchSketch.Proxy, "getUnsortedEdgesAlign"):			
+                    tempOverrideAlign = targetBaseSketch.Proxy.getUnsortedEdgesAlign(targetBaseSketch)	
+                    tempOverrideAlign = [i if i is not None else wallAlign for i in tempOverrideAlign]	
+            if not tempOverrideAlign:						
+                tempOverrideAlign = self.targetWall.OverrideAlign		
+                # filling OverrideAlign for geometry edges		 	
+                while len(tempOverrideAlign) < len(targetBaseSketch.Geometry):	
+                    tempOverrideAlign.append(wallAlign)				
+                tempOverrideAlign = [i if i is not None else wallAlign for i in tempOverrideAlign]	
+            self.targetWall.OverrideAlign = tempOverrideAlign						
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -793,20 +960,31 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                 # TODO Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not	
                 if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):							
                     curAlign = self.targetWall.OverrideAlign[subIndex]		
+                curAlign = self.targetArchSketch.Proxy.getEdgeTagDictSyncAlign(self.targetArchSketch, None, subIndex)			
+										
                 if curAlign == 'Left':						
                     curAlign = 'Right'						
                 elif curAlign == 'Right':					
                     curAlign = 'Center'						
                 elif curAlign == 'Center':					
                     curAlign = 'Left'						
+                else:	# 'Center' or else?					
+                    curAlign = 'Right'						
+										
                 # Test if particular ArchSketch feature has been implemented or not -  Fallback to use 'Sketch workflow' if Not		
                 # Save information in ArchWall												
                 if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):							
                     if self.targetWall:						
                         tempOverrideAlign = self.targetWall.OverrideAlign	
                         tempOverrideAlign[subIndex] = curAlign			
-                if self.targetWall:						
-                    self.targetWall.OverrideAlign = tempOverrideAlign		
+                tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync				
+                tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['align'] = curAlign	
+                self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict				
+                if self.targetWall:										
+                    tempAlign = self.targetArchSketch.Align							
+                    tempOverrideAlign=self.targetArchSketch.Proxy.getUnsortedEdgesAlign(self.targetArchSketch)	
+                    tempOverrideAlign=[i if i is not None else tempAlign for i in tempOverrideAlign]		
+                    self.targetWall.OverrideAlign = tempOverrideAlign						
         else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
@@ -889,6 +1067,8 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         if targetBaseSketch:  # would be none ?					
             tempOverrideWidth = None						
             wallWidth = None							
+            if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
+                wallWidth = targetBaseSketch.ArchSketchWidth.Value		
             if not wallWidth:							
                 wallWidth = targetWall.Width.Value  # use Wall's Width		
             if Draft.getType(self.targetArchSketch) == 'ArchSketch':					
@@ -911,8 +1091,10 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         #if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
         curWidth = None								
         if hasattr(self.targetArchSketch, "Proxy"):				
-            if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):					
+            if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):						
                 curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
+            if not curWidth:							
+                curWidth = self.targetArchSketch.ArchSketchWidth.Value		
         if not curWidth:												
             curWidth = self.targetWall.OverrideWidth[subIndex]								
         reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))		
@@ -924,7 +1106,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         else:  # user clicked not OK, i.e. Cancel ?				
             return None								
         if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch) == 'Sketcher::SketchObject':	
+            if Draft.getType(self.targetArchSketch)=='Sketcher::SketchObject':	
                 # Save information in ArchWall					
                 tempOverrideWidth = self.targetWall.OverrideWidth		
                 tempOverrideWidth[subIndex] = replyWidth			
@@ -933,10 +1115,13 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 print (" It is an ArchSketch")					
                 print (" Full Support not added currently yet !")		
                 print (" Fallback to treat as Sketch as 'partial preview' if particular feature Not implemented in ArchSketch yet !")	
-                # Save information in ArchWall												
+                # Save information in ArchWall					
                 tempOverrideWidth = self.targetWall.OverrideWidth		
                 tempOverrideWidth[subIndex] = replyWidth			
                 self.targetWall.OverrideWidth = tempOverrideWidth		
+                tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync				
+                tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['width'] = replyWidth	
+                self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict				
         else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
@@ -1090,13 +1275,13 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
                 # ArchObjects other than ArchSketchObjects			
                 self.targetObject.MasterSketchSubelementTag = tag		
             else:								
-                self.targetObject.Proxy.MasterSketchSubelementTag = tag	
-        else:  								
+                self.targetObject.Proxy.MasterSketchSubelementTag = tag		
+        else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
         self.targetObject.recompute()						
         if self.targetWall:							
-            self.targetWall.recompute()					
+            self.targetWall.recompute()						
 										
     def escape(self,info):							
         k=info['Key']								
@@ -1286,7 +1471,7 @@ FreeCADGui.addCommand('CellComplex', _Command_CellComplex())
 #----------------------------------------------------------------------------#	
 										
 										
-def attachToMasterSketch(subject, target=None, subelement=None,		
+def attachToMasterSketch(subject, target=None, subelement=None,			
                          attachmentOffset=None, zOffset='0',			
                          intersectingSubelement=None, mapMode='ObjectXY'):	
 										
@@ -1336,7 +1521,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                     return							
         elif hasattr(fp, "Host"):  # (Lnk)Eqpt, [ ? (Lnk)ArchSketch ]		
             if fp.Host:								
-                if isinstance(fp.Host.getLinkedObject().Proxy, ArchWall._Wall):			
+                if isinstance(fp.Host.getLinkedObject().Proxy, ArchWall._Wall):	
                     hostWall = fp.Host						
                     hostBase = hostWall.Base					
                 else:  # i.e. attaching to objects other than Wall		
