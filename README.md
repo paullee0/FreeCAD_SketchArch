@@ -52,8 +52,9 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 3. Width & Align Per Edge  (Toponaming-Tolerant)
+#### 3. Width & Align Per Edge
 ([Toponaming-Tolerant](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/README.md#7-topological-naming-tolerant))
+
 ![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
 ![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
 
