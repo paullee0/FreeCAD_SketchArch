@@ -26,7 +26,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 2. Parametric Placement of Arch Objects Intuitively
+#### 2. Parametric Attachment of Arch Objects Intuitively  (Toponaming-Tolerant)
 
 ![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Attach.svg)
 
@@ -51,7 +51,7 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 3. Width & Align Per Edge
+#### 3. Width & Align Per Edge  (Toponaming-Tolerant)
 ![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
 ![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
 
@@ -114,13 +114,13 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170538)
 
 
-#### 7. Topological naming tolerant
+#### 7. Topological Naming Tolerant
 
 - Progress / Status of Implementation :
   
-    1.  21.8.2021 Exposed - [Arch Object Intuitive Automatic Placement](https://forum.freecad.org/viewtopic.php?t=60034)
-    2.  ?.2024 Being Exposed - Arch Wall Width Setting for Each Wall Segment
-    3.  ?.2024 Being Exposed - Arch Wall Align Setting for Each Wall Segment
+    1.  10.7.2021 Exposed - [Arch Object Intuitive Automatic Placement](https://forum.freecad.org/viewtopic.php?t=60034)
+    2.  27.4.2024 Exposed - [Arch Wall Width Setting for Each Wall Segment](https://forum.freecad.org/viewtopic.php?p=755689#p755689)
+    3.  2.4.2024 Exposed - [Arch Wall Align Setting for Each Wall Segment](https://forum.freecad.org/viewtopic.php?p=755689#p755689)
     4.  (Above 3 Features Implementated in 2019-21)
  
 - The most important feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
