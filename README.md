@@ -49,8 +49,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 [![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/ozZ-jl-BSjU "Click To PLAY VIDEO - Placement of Arch Equipment!")
 
 ![alt text 2a](https://forum.freecadweb.org/download/file.php?id=129408)
-
-
+![alt text 2b](https://forum.freecad.org/download/file.php?style=4&id=191612)
+![alt text 2c](https://forum.freecad.org/download/file.php?style=4&id=191611J)
 
 #### 3. Width & Align Per Edge
 ([Toponaming-Tolerant](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/README.md#7-topological-naming-tolerant))
