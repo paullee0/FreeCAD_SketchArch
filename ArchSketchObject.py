@@ -1463,6 +1463,9 @@ class _CommandEditCurtainWall():
             targetObjectBase = sel0						
             if not inListCW:							
                 sel0 = [ArchCurtainWall.makeCurtainWall(sel0)]			
+                App.ActiveDocument.recompute()					
+            else:								
+                sel0 = inListCW							
         elif Draft.getType(sel0) in ["CurtainWall"]:				
             if sel0.Base and Draft.getType(sel0.Base) in ["ArchSketch"]:	
                 targetObjectBase = sel0.Base					
@@ -1547,10 +1550,13 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
     def escape(self,info):							
         k=info['Key']								
         if k=="ESCAPE":								
-            self.targetCurtainWall.ViewObject.Transparency = self.targetCurtainWallTransparency		
-        SketchArchCommands.selectObjectObserver.escape(self,info)					
-													
-													
+            if self.targetCurtainWallList:					
+                for c in self.targetCurtainWallList:				
+                    t = self.targetCurtainWallListTransparency.pop(0)		
+                    c.ViewObject.Transparency = t				
+        SketchArchCommands.selectObjectObserver.escape(self,info)		
+										
+										
 class _Command_ArchSketch():							
 										
     ''' ArchSketch Command Definition - Gui to make an ArchSketch '''		
