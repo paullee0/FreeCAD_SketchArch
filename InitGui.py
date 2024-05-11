@@ -40,7 +40,7 @@ class SketchArchWorkbench(Workbench):
         import SketchArch							
         self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 			
                                 "EditWallWidth", "EditWallAttach",		
-                                "EditStructure", "Voxel",			
+                                "EditStructure", "EditCurtainWall", "Voxel",	
                                 "CellComplex"]					
         self.appendToolbar("Sketch Arch", self.ArchSketchTools)			
         self.appendMenu("Sketch Arch", self.ArchSketchTools)			

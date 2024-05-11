@@ -21,7 +21,7 @@
 #***************************************************************************	
 										
 import FreeCAD, FreeCADGui, Sketcher, Part, Draft, DraftVecUtils		
-import ArchWall, ArchWindow							
+import ArchWall, ArchWindow, ArchCurtainWall					
 										
 import SketchArchIcon								
 import SketchArchCommands							
@@ -533,6 +533,21 @@ class ArchSketch(ArchSketchObject):
                   return None							
 										
 										
+  def getEdgeTagDictSyncCurtainWallStatus(self, fp, tag=None, index=None, role='curtainWallAxis'):	
+      if tag is not None:										
+          return self.EdgeTagDictSync[tag].get(role, False)  # False == None ?				
+      elif index is not None:										
+          try:												
+              return self.EdgeTagDictSync[fp.Geometry[index].Tag].get(role, False)			
+          except:											
+              self.syncEdgeTagDictSync(fp)								
+              try: # again										
+                  return self.EdgeTagDictSync[fp.Geometry[index].Tag].get(role, False)			
+              except:											
+                  print (" index number not present ! ")						
+                  return None										
+													
+													
   def syncEdgeTagDictSync(self, fp):						
       edgeTagDictTemp = {}							
 										
@@ -604,7 +619,8 @@ class ArchSketch(ArchSketchObject):
   #***************************************************************************#	
 										
 										
-  '''  "ArchStructure"-related  '''						
+  '''  "ArchStructure"-related    '''						
+  '''  "ArchCurtainWall"-related  '''						
 										
 										
   def getStructureBaseShapeWires(self, fp, role='slab', archsketchEdges=None ):									
@@ -624,7 +640,6 @@ class ArchSketch(ArchSketchObject):
                   i = str(i)							
               if i.isnumeric():							
                   slabEdgesList.append(int(i))					
-										
 										
       if not slabEdgesList:							
           return None								
@@ -655,6 +670,39 @@ class ArchSketch(ArchSketchObject):
           structureBaseShapeWires.append(Part.Wire(clusterT))			
 										
       return {'slabWires':structureBaseShapeWires, 'faceMaker':'Bullseye', 'slabThickness' : 250}	
+										
+										
+  def getCurtainWallBaseShapeEdgesInfo(self, fp, role='curtainWallAxis'):							
+      ''' Arguments	: fp, role, overrideEdges (indexes of selected edges (or groups) caller force to use )		
+          Return	: dict { 'curtainWallEdges' : curtainWallBaseShapeEdges } '''					
+															
+      # Get ArchSketch edges to construct ArchCurtainWall			
+      curtainWallAxisDict = {}							
+      curtainWallEdgesList = []							
+										
+      curtainWallAxisDict = {k:v for (k,v) in self.EdgeTagDictSync.items() if v.get('curtainWallAxis', None) == True}		
+																
+      if curtainWallAxisDict:							
+          for k,v in curtainWallAxisDict.items():				
+              i, none = self.getEdgeTagIndex(fp, k, None)			
+              if i != None:							
+                  curtainWallEdgesList.append(i)				
+      if not curtainWallEdgesList:						
+          return {'curtainWallEdges':None}					
+      skGeomEdges = []								
+      skPlacement = fp.Placement  # Get Sketch's placement to restore later	
+      curtainWallBaseShapeEdges = []						
+      for i in curtainWallEdgesList:						
+          skGeomI = self.getEdgeGeom(fp, i)					
+          # support Line, Arc, Circle for Sketch as Base at the moment				
+          if isinstance(skGeomI, (Part.LineSegment, Part.Circle, Part.ArcOfCircle)):		
+              skGeomEdgesI = skGeomI.toShape()					
+              skGeomEdges.append(skGeomEdgesI)					
+      for edge in skGeomEdges:							
+          edge.Placement = edge.Placement.multiply(skPlacement)			
+          curtainWallBaseShapeEdges.append(edge)				
+										
+      return {'curtainWallEdges':curtainWallBaseShapeEdges}			
 										
 										
   #***************************************************************************#	
@@ -1385,6 +1433,121 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
         k=info['Key']								
         if k=="ESCAPE":								
             self.targetStructure.ViewObject.Transparency = self.targetStructureTransparency		
+        SketchArchCommands.selectObjectObserver.escape(self,info)					
+													
+													
+class _CommandEditCurtainWall():						
+										
+    '''Edit CurtainWall (Underlying ArchSketch) Command Definition'''		
+    '''Not supporting Sketch                                    '''		
+    def GetResources(self):							
+        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_CurtainWall_Toggle.svg',		
+                'Accel'   : "E, C",						
+                'MenuText': "Edit Curtain Wall",				
+                'ToolTip' : "Select Curtain Wall/ArchSketch to edit ",		
+                'CmdType' : "ForEdit"}						
+										
+    def IsActive(self):								
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        try:									
+            sel0 = Gui.Selection.getSelection()[0]				
+        except:									
+            reply = QtGui.QMessageBox.information(None,"","Select an Arch Curtain Wall ( with underlying Base ArchSketch Sketch ) or ArchSketch ")	
+            return								
+        targetObjectBase = None							
+										
+        if Draft.getType(sel0) in ["ArchSketch"]:				
+            inListCW = Draft.getObjectsOfType(sel0.InList, "CurtainWall")	
+            targetObjectBase = sel0						
+            if not inListCW:							
+                sel0 = [ArchCurtainWall.makeCurtainWall(sel0)]			
+        elif Draft.getType(sel0) in ["CurtainWall"]:				
+            if sel0.Base and Draft.getType(sel0.Base) in ["ArchSketch"]:	
+                targetObjectBase = sel0.Base					
+                sel0 = [sel0]							
+            else:								
+                reply = QtGui.QMessageBox.information(None,"","Arch Curtain Wall without Base is not supported - Select an Arch Curtain Wall ( with underlying Base ArchSketch Sketch ) or ArchSketch ")	
+                return								
+        else:									
+            reply = QtGui.QMessageBox.information(None,"","Select an Arch Curtain Wall ( with underlying Base ArchSketch Sketch ) or ArchSketch ")								
+            return								
+        if True:								
+            targetObjectBase.ViewObject.HideDependent = False			
+            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
+            Gui.ActiveDocument.setEdit(targetObjectBase)			
+            App.Console.PrintMessage("Select target Edge of the ArchSketch to turn it on/off as Curtain Wall edges "+ "\n")			
+            FreeCADGui.Selection.clearSelection()				
+            s=GuiEditCurtainWallObserver(sel0, targetObjectBase)		
+            self.observer = s							
+            FreeCADGui.Selection.addObserver(s)					
+										
+										
+FreeCADGui.addCommand('EditCurtainWall', _CommandEditCurtainWall())		
+										
+										
+class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):	
+										
+    def __init__(self, targetCurtainWallList, targetBaseSketch):							
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        self.targetCurtainWallList = targetCurtainWallList  # becomes a List		
+        self.targetArchSketch = targetBaseSketch				
+        if self.targetCurtainWallList:						
+            self.targetCurtainWallListTransparency = []				
+            for c in self.targetCurtainWallList:				
+                t = c.ViewObject.Transparency = 60				
+                self.targetCurtainWallListTransparency.append(t)		
+										
+    def proceed(self, doc, obj, sub, pnt):					
+        self.edge = sub								
+        self.pickedEdgePlacement = App.Vector(pnt)				
+        subIndex = int( sub.lstrip('Edge'))-1					
+        curCurtainWallStatus = None						
+        newCurtainWallStatus = None						
+        if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncCurtainWallStatus'):											
+            curCurtainWallStatus = self.targetArchSketch.Proxy.getEdgeTagDictSyncCurtainWallStatus(self.targetArchSketch, None, subIndex, role='curtainWallAxis')	
+            if curCurtainWallStatus == False:  # not curCurtainWallStatus:	
+                newCurtainWallStatus = True  # 'Enabled'			
+            elif curCurtainWallStatus == True:					
+                newCurtainWallStatus = 'Disabled'				
+            elif curCurtainWallStatus == 'Disabled':				
+                newCurtainWallStatus = True  # 'Enabled'			
+            tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync						
+            tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['curtainWallAxis'] = newCurtainWallStatus	
+            self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict						
+														
+            curtainWallDict = {}						
+            curtainWallEdgesList = []						
+														
+            curtainWallDict = {k:v for (k,v) in tempDict.items() if v.get('curtainWallAxis', None) == True}	
+            if curtainWallDict:											
+                for k,v in curtainWallDict.items():								
+                    i, none = self.targetArchSketch.Proxy.getEdgeTagIndex(self.targetArchSketch, k, None)	
+                    if i != None:						
+                        curtainWallEdgesList.append(str(i))			
+            for c in self.targetCurtainWallList:				
+                c.OverrideEdges = curtainWallEdgesList				
+										
+        else:									
+            for c in self.targetCurtainWallList:				
+                curtainWallEdgesList = c.OverrideEdges				
+                # 2 status :  True or Disabled (no False)			
+                if str(subIndex) in curtainWallEdgesList:			
+                    curtainWallEdgesList.remove(str(subIndex))			
+                else:								
+                    curtainWallEdgesList.append(str(subIndex))			
+                #self.targetCurtainWall.OverrideEdges = curtainWallEdgesList	
+                c.OverrideEdges = curtainWallEdgesList				
+                c.recompute()							
+										
+        FreeCADGui.Selection.clearSelection()					
+        App.ActiveDocument.recompute()						
+										
+    def escape(self,info):							
+        k=info['Key']								
+        if k=="ESCAPE":								
+            self.targetCurtainWall.ViewObject.Transparency = self.targetCurtainWallTransparency		
         SketchArchCommands.selectObjectObserver.escape(self,info)					
 													
 													
@@ -2215,4 +2378,3 @@ def selfCutEdges(edges):
     return cutEdgesList									
 											
 #***************************************************************************	
-reply = QtGui.QMessageBox.information(None,"","SketchArch Add-On being loaded.  Click button to Continue ")	
