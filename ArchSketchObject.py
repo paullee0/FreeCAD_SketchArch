@@ -104,9 +104,11 @@ class ArchSketch(ArchSketchObject):
           fp.addProperty("App::PropertyEnumeration","Align","Added ArchSketch Properties","The default alignment for the wall with this ArchSketch as its base object")						
           fp.Align = ['Left','Right','Center']					
           fp.Align = 'Center'							
-      if not hasattr(fp,"ArchSketchWidth"):					
+      if not hasattr(fp,"Offset"):																						
+          fp.addProperty("App::PropertyDistance","Offset","Wall",QT_TRANSLATE_NOOP("App::Property","The offset between the wall (segment) and its baseline (only for left and right alignments)"))		
+      if not hasattr(fp,"ArchSketchWidth"):																					
           fp.addProperty("App::PropertyLength","ArchSketchWidth","Added ArchSketch Properties","ArchSketchWidth returned ")											
-          fp.ArchSketchWidth = 200 * MM  # Default				
+          fp.ArchSketchWidth = 200 * MM  # Default																				
 																										
       if not hasattr(fp,"DetectRoom"):																						
           fp.addProperty("App::PropertyBool","DetectRoom","Added ArchSketch Properties",QT_TRANSLATE_NOOP("App::Property","Enable to detect rooms enclosed by edges/walls - For CellComplex object to work, the generated shape is not shown in the ArchSketch object, but shown by a CellComplex Object.  This make recompute of this object longer !"))												
@@ -424,6 +426,20 @@ class ArchSketch(ArchSketchObject):
       return self.getSortedClustersEdgesWidth(fp)				
 										
 										
+  def getAligns(self, fp):							
+  										
+      ''' wrapper function for uniform format '''				
+										
+      return self.getSortedClustersEdgesAlign(fp)				
+										
+										
+  def getOffsets(self, fp):							
+  										
+      ''' wrapper function for uniform format '''				
+										
+      return self.getSortedClustersEdgesOffset(fp)				
+										
+										
   def getUnsortedEdgesWidth(self, fp):						
 										
       widthsList = []								
@@ -494,13 +510,6 @@ class ArchSketch(ArchSketchObject):
           return None  #pass							
 										
 										
-  def getAligns(self, fp):							
-  										
-      ''' wrapper function for uniform format '''				
-										
-      return self.getSortedClustersEdgesAlign(fp)				
-										
-										
   def getSortedClustersEdgesAlign(self, fp):					
       '''  									
            This method check the SortedClusters-isSame-(flat)List		
@@ -529,6 +538,32 @@ class ArchSketch(ArchSketchObject):
               try:  # again							
                   tagI = fp.Geometry[index].Tag					
                   return self.EdgeTagDictSync[tagI].get('align', None)		
+              except:								
+                  return None							
+										
+										
+  def getSortedClustersEdgesOffset(self, fp):					
+      offsetsList = []								
+      for i in self.clEdgeSameIndexFlat:					
+          curOffset = self.getEdgeTagDictSyncOffset(fp, None, i)		
+          if not curOffset:							
+              curOffset = fp.Offset						
+          offsetsList.append(curOffset)						
+      return offsetsList							
+										
+										
+  def getEdgeTagDictSyncOffset(self, fp, tag=None, index=None):			
+      if tag is not None:							
+          return self.EdgeTagDictSync[tag].get('offset', None)			
+      elif index is not None:							
+          try:									
+              tagI = fp.Geometry[index].Tag					
+              return self.EdgeTagDictSync[tagI].get('offset', None)		
+          except:								
+              self.syncEdgeTagDictSync(fp)					
+              try:  # again							
+                  tagI = fp.Geometry[index].Tag					
+                  return self.EdgeTagDictSync[tagI].get('offset', None)		
               except:								
                   return None							
 										
@@ -619,8 +654,9 @@ class ArchSketch(ArchSketchObject):
   #***************************************************************************#	
 										
 										
-  '''  "ArchStructure"-related    '''						
-  '''  "ArchCurtainWall"-related  '''						
+  '''  ArchWall-related          '''						
+  '''  ArchStructure-related     '''						
+  '''  ArchCurtainWall-related   '''						
 										
 										
   def getStructureBaseShapeWires(self, fp, role='slab', archsketchEdges=None ):									
@@ -2300,9 +2336,39 @@ def sortWidth(edgeWidthList, sortedIndexes):
             curWidth = edgeWidthList[i]						
         # if edgeWidthList does not cover the edge				
         except:									
-            curWidth = 200  # default						
+            curWidth = 0  # default to be ArchWall's Offset			
         widthList.append(curWidth)						
     return widthList								
+										
+										
+def sortSketchOffset(sketch,edgeOffsetList):					
+										
+    '''										
+        This function is primarily to support Ordinary Sketch + Arch Wall	
+        to gain Offset setting with OverrideOffset attribute in Arch Wall	
+										
+        This function arrange the edgeOffsetList 				
+        - a list of Offset in the order of Edge Indexes -			
+        into a list of Width following the order of edges			
+        sorted by Part.getSortedClusters()					
+    '''										
+										
+    sortedIndexes = getSketchSortedClEdgesOrder(sketch)				
+    offsetList = sortOffset(edgeOffsetList, sortedIndexes)			
+    return offsetList								
+										
+										
+def sortOffset(edgeOffsetList, sortedIndexes):					
+    clEdgeSameIndexFlat = sortedIndexes[4]					
+    offsetList = []								
+    for i in clEdgeSameIndexFlat:						
+        try:									
+            curOffset = edgeOffsetList[i]					
+        # if edgeOffsetList does not cover the edge				
+        except:									
+            curOffset = 0  # default						
+        offsetList.append(curOffset)						
+    return offsetList								
 										
 										
 def removeBBFace(bbFace, sliceFaces):  						
