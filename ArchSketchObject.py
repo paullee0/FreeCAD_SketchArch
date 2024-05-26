@@ -1079,7 +1079,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         k=info['Key']								
         if k=="ESCAPE":								
             self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
-        SketchArchCommands.selectObjectObserver.escape(self,info)		
+            SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
 class _CommandEditWallWidth():							
@@ -1215,7 +1215,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         k=info['Key']								
         if k=="ESCAPE":								
             self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
-        SketchArchCommands.selectObjectObserver.escape(self,info)		
+            SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
 class _CommandEditWallAttach():							
@@ -1372,7 +1372,7 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         if k=="ESCAPE":								
             if self.targetWall:											
                 self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy				
-        SketchArchCommands.selectObjectObserver.escape(self,info)						
+            SketchArchCommands.selectObjectObserver.escape(self,info)						
 										
 										
 class _CommandEditStructure():							
@@ -1469,7 +1469,7 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
         k=info['Key']								
         if k=="ESCAPE":								
             self.targetStructure.ViewObject.Transparency = self.targetStructureTransparency		
-        SketchArchCommands.selectObjectObserver.escape(self,info)					
+            SketchArchCommands.selectObjectObserver.escape(self,info)					
 													
 													
 class _CommandEditCurtainWall():						
@@ -1590,7 +1590,7 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
                 for c in self.targetCurtainWallList:				
                     t = self.targetCurtainWallListTransparency.pop(0)		
                     c.ViewObject.Transparency = t				
-        SketchArchCommands.selectObjectObserver.escape(self,info)		
+            SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
 class _Command_ArchSketch():							
