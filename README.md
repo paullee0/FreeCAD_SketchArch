@@ -69,7 +69,9 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 
 
 
-#### 4. ArchStructure, Curtain Wall, ArchWall etc. +  Same ArchSketch = Building Layout
+#### 4. Arch Structure, Curtain Wall, Wall etc. +  Same ArchSketch = Building Layout
+(with User Selected Edges in ArchSketch)
+
 ![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Structure_Toggle.svg) 
 ![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_CurtainWall_Toggle.svg) <br>
 ArchSketch + ArchStructure = Slab Layout <br>
@@ -82,7 +84,7 @@ Have your ever set out your building layout in a sketch like below, and wonder i
 - ArchStructure build slab based on the outermost one, with an opening in the middle
 - ArchCurtainWall build panels based on the outermost one edges
 
-So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you just edit the same ArchSketch, you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
+So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you can select the Edges in ArchSketch you want for your Wall, Slab, or Curtain Wall separately though on same ArchSketch; and you just edit the same ArchSketch,  and you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
 
 [FreeCAD Forum Discussion Thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=73018&sid=ba2732dd08a70b09011f667ae874e322)
 
