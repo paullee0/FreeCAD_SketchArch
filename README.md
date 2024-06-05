@@ -1,20 +1,21 @@
 ## FreeCAD SketchArch Workbench
 
-![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/SketchArchWorkbench.svg)  An experimental add-on module to augment Arch Objects with additional feature
+![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/SketchArchWorkbench.svg)  An experimental add-on module to augment Arch Objects with additional features
 
 ### I. Description
 
-To leverage Sketch and/or SketchObjectPython inherent features to help building Architectural Models
+For better and more intuitive architectural modelling workflow, this workbench leverage Sketch (or SketchObjectPython) inherent features and enhance it with smarter and information-rich features for use as Base of Arch Objects (e.g. Wall, Structure, Curtain Wall).
 
 
 ### II. Features
 
-#### 1. Sketcher Capabilities
+#### 1. ArchSketch : Sketcher Capabilities - Enhanced with Smarter and Information-Rich Features
 ![alt text 1](https://wiki.freecadweb.org/images/9/91/Workbench_Sketcher.svg)
 
-- Leverage Sketch and/or SketchObjectPython inherent features and capabilities
-- So Sketch Layout + Arch Wall = Building Layout
+- Leverage Sketch inherent features and capabilities
+- So [ArchSketch + Arch Wall + Structure + Curtain Wall etc. = Building Layout](https://github.com/paullee0/FreeCAD_SketchArch#4-arch-structure-curtain-wall-wall-etc---same-archsketch--building-layout)
 - Sketcher have geometric and dimensional constraints to help making and editing 'single-line sketch layouts'
+
 
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/uhf5TH3WKAc/mq2.jpg?sqp=CKy6opQG&rs=AOn4CLAvBRVX4w5_4ykpze3cDoRvkNEnZA)](https://youtu.be/uhf5TH3WKAc "Click To PLAY VIDEO !")
@@ -58,8 +59,8 @@ To leverage Sketch and/or SketchObjectPython inherent features to help building 
 ![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
 ![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
 
-- ArchWall base on a Sketch / SketchObjectPython object (ArchSketch) can have different width for each segment - per Sketch Edge
-- ArchWall base on a Sketch / ArchSketch can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
+- ArchWall base on a ArchSketch / Sketch can have different width for each segment - per Sketch Edge
+- ArchWall base on a ArchSketch / Sketch  can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO - EDIT ALIGN!")
@@ -214,7 +215,7 @@ What ceated ?
   - 'Grouped' under 'ArchSpace' as well
 
 
-#### 10. More concepts of adopting SketchObjectPython / ArchSketch as Building Layout Object
+#### 10. More concepts of adopting ArchSketch as Building Layout Object
 
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
@@ -223,7 +224,7 @@ What ceated ?
 
 #### Prerequisites / Other Remarks
 
-- The said information (width, align, height, material etc.) is conceived to be saved in Sketch / SketchObjectPython with Part Geometry Extensions feature - the latter currently has a bug which crash FC
+- The said information (width, align, height, material etc.) is conceived to be saved in ArchSketch with Part Geometry Extensions feature - the latter currently has a bug which crash FC
 - Bugs / IFC export / multi-materials etc. to support Wall base on Sketch to be fixed / implemented
 
 </details>
