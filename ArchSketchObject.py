@@ -331,7 +331,6 @@ class ArchSketch(ArchSketchObject):
           try:									
               tagI = fp.Geometry[i].Tag						
           except:								
-              print (" try-break end, fp.Geometry[i] - i is ...  ", i)		
               break								
           edgeTagDictArchiveTagDict = None					
           if self.EdgeTagDictArchive.values():					
@@ -568,6 +567,32 @@ class ArchSketch(ArchSketchObject):
                   return None							
 										
 										
+  def getEdgeTagDictSyncRoleStatus(self, fp, tag=None, index=None, role='wallAxis'):	
+      if tag is not None:								
+          pass									
+      elif index is not None:							
+          tag = fp.Geometry[index].Tag						
+      return self.EdgeTagDictSync[tag].get(role, 'Not Set')				
+										
+										
+  def getEdgeTagDictSyncWallStatus(self,fp,tag=None,index=None,role='wallAxis'):	
+      roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role)	
+      if roleStatus == True:							
+          wallAxisStatus = True							
+      elif roleStatus == 'Disabled':						
+          wallAxisStatus = False						
+      # 'Not Set' (default)							
+      else:									
+          if tag != None:  #elif						
+              index, none = self.getEdgeTagIndex(fp,tag, None)			
+          construction = fp.getConstruction(index)				
+          if not construction:  # for Wall, True if not construction		
+              wallAxisStatus = True						
+          else:									
+              wallAxisStatus = False						
+      return wallAxisStatus							
+										
+										
   def getEdgeTagDictSyncCurtainWallStatus(self, fp, tag=None, index=None, role='curtainWallAxis'):	
       if tag is not None:										
           return self.EdgeTagDictSync[tag].get(role, False)  # False == None ?				
@@ -623,7 +648,6 @@ class ArchSketch(ArchSketchObject):
     ''' Arguments	: fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False			
         Return		: index, tagSync (not tagInitial nor tagArchive...yet) '''			
 													
-													
     if tag and index is None:										
 										
         if useEdgeTagDictSyncFindIndex == False:				
@@ -657,6 +681,29 @@ class ArchSketch(ArchSketchObject):
   '''  ArchWall-related          '''						
   '''  ArchStructure-related     '''						
   '''  ArchCurtainWall-related   '''						
+										
+										
+  def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis'):			
+										
+      edgesSortedClusters = []							
+      skGeom = fp.GeometryFacadeList						
+      skGeomEdges = []								
+      skPlacement = fp.Placement  # Get Sketch's placement to restore later	
+										
+      for i in skGeom:								
+          wallAxisStatus = self.getEdgeTagDictSyncWallStatus(fp, tag=i.Tag, role='wallAxis')	
+          if wallAxisStatus:							
+              # support Line, Arc, Circle for Sketch as Base at the moment	
+              if isinstance(i.Geometry, (Part.LineSegment, Part.Circle, Part.ArcOfCircle)):	
+                  skGeomEdgesI = i.Geometry.toShape()						
+                  skGeomEdges.append(skGeomEdgesI)						
+      for cluster in Part.getSortedClusters(skGeomEdges):					
+          clusterTransformed = []								
+          for edge in cluster:									
+              edge.Placement = skPlacement.multiply(edge.Placement) 		
+              clusterTransformed.append(edge)					
+          edgesSortedClusters.append(clusterTransformed)			
+      return {'wallAxis' : edgesSortedClusters}					
 										
 										
   def getStructureBaseShapeWires(self, fp, role='slab', archsketchEdges=None ):									
@@ -708,7 +755,7 @@ class ArchSketch(ArchSketchObject):
       return {'slabWires':structureBaseShapeWires, 'faceMaker':'Bullseye', 'slabThickness' : 250}	
 										
 										
-  def getCurtainWallBaseShapeEdgesInfo(self, fp, role='curtainWallAxis'):							
+  def getCurtainWallBaseShapeEdgesInfo(self, fp, role='curtainWallAxis'):						
       ''' Arguments	: fp, role, overrideEdges (indexes of selected edges (or groups) caller force to use )		
           Return	: dict { 'curtainWallEdges' : curtainWallBaseShapeEdges } '''					
 															
@@ -967,7 +1014,7 @@ class _CommandEditWallAlign():
                 sel0 = None							
         if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
             if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':		
-                reply = QtGui.QMessageBox.information(None,"","Multi-Align support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
+                pass									
             elif Draft.getType(targetObjectBase) == 'ArchSketch':		
                 reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
@@ -994,6 +1041,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         if self.targetWall:							
             self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
+            targetWall.recompute()						
         if targetBaseSketch:							
             tempOverrideAlign = None						
             wallAlign = None							
@@ -1122,7 +1170,7 @@ class _CommandEditWallWidth():
                 sel0 = None							
         if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:		
             if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':			
-                reply = QtGui.QMessageBox.information(None,"","Multi-Width support Sketch with Part Geometry Extension (abdullah's development) / ArchSketch primarily.  Support on Sketch could only be done 'partially' (indexes of edges is disturbed if sketch is edited) until bug in Part Geometry Extension is fixed - currently for demonstration purpose.  Procced now. ")	
+                pass										
             elif Draft.getType(targetObjectBase) == 'ArchSketch':		
                 reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
@@ -1148,6 +1196,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.targetArchSketch = targetBaseSketch				
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
         targetWall.ViewObject.Transparency = 60					
+        targetWall.recompute()							
         if targetBaseSketch:  # would be none ?					
             tempOverrideWidth = None						
             wallWidth = None							
@@ -1322,6 +1371,7 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         if self.targetWall:												
             self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency						
             targetHostWall.ViewObject.Transparency = 60									
+            targetHostWall.recompute()											
         if hasattr(targetObject, "Host"):										
             if targetObject.Host != targetHostWall:  # Testing For Host first						
                 targetObject.Host = targetHostWall  # No recompute, save time						
@@ -1417,7 +1467,6 @@ class _CommandEditStructure():
             else:								
                 sel0 = None							
         if Draft.getType(targetObjectBase) in ['ArchSketch']:			
-            reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
@@ -1440,6 +1489,7 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
         if self.targetStructure:							
             self.targetStructureTransparency = targetStructure.ViewObject.Transparency	
             targetStructure.ViewObject.Transparency = 60			
+            targetStructure.recompute()						
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -1530,12 +1580,13 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
 										
     def __init__(self, targetCurtainWallList, targetBaseSketch):							
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
-        self.targetCurtainWallList = targetCurtainWallList  # becomes a List		
+        self.targetCurtainWallList = targetCurtainWallList  # becomes a List	
         self.targetArchSketch = targetBaseSketch				
         if self.targetCurtainWallList:						
             self.targetCurtainWallListTransparency = []				
             for c in self.targetCurtainWallList:				
                 t = c.ViewObject.Transparency = 60				
+                c.recompute()							
                 self.targetCurtainWallListTransparency.append(t)		
 										
     def proceed(self, doc, obj, sub, pnt):					
@@ -1593,13 +1644,109 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
             SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
+class _CommandEditWall():							
+										
+    def GetResources(self):							
+        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Wall_Toggle.svg',	
+                'Accel'   : "E, A",						
+                'MenuText': "Edit Wall",					
+                'ToolTip' : "Select Wall / ArchSketch to edit ",		
+                'CmdType' : "ForEdit"}						
+										
+    def IsActive(self):								
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        try:									
+            sel0 = Gui.Selection.getSelection()[0]				
+        except:									
+            reply = QtGui.QMessageBox.information(None,"","Select an Arch Structure ( with underlying Base ArchSketch Sketch ) or ArchSketch ")	
+            return								
+        targetObjectBase = None							
+										
+        if Draft.getType(sel0) not in ['Wall', 'ArchSketch']:			
+            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall (with underlying Base ArchSketch Sketch) to Edit")		
+            return																
+        if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not										
+            if sel0.Base:  # ArchSketch or Sketch				
+                targetObjectBase = sel0.Base					
+            else:								
+                reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch Sketch ) or ArchSketch ")		
+                return																							
+        else:									
+            targetObjectBase = sel0						
+            if Draft.getType(sel0.InList[0]) in ["Wall"]:			
+                sel0 = sel0.InList[0]						
+            else:								
+                sel0 = None							
+        if not "ArchSketchEdges" in sel0.PropertiesList:											
+            sel0.addProperty("App::PropertyStringList","ArchSketchEdges","Wall",QT_TRANSLATE_NOOP("App::Property","Selected edges (or group of edges) of the base Sketch/ArchSketch, to use in creating the shape of this Arch Wall (instead of using all the Base Sketch/ArchSketch's edges by default).  Input are index numbers of edges or groups.  Disabled and ignored if Base object (ArchSketch) provides selected edges (as Wall Axis) information, with getWallBaseShapeEdgesInfo() method.  [ENHANCEMENT by ArchSketch] GUI 'Edit Wall Segment' Tool is provided in external SketchArch Add-on to let users to (de)select the edges interactively.  'Toponaming-Tolerant' if ArchSketch is used in Base (and SketchArch Add-on is installed).  Warning : Not 'Toponaming-Tolerant' if just Sketch is used."))				
+        if Draft.getType(targetObjectBase) in ['ArchSketch']:			
+            targetObjectBase.ViewObject.HideDependent = False			
+            #Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
+            Gui.ActiveDocument.setEdit(targetObjectBase)			
+            App.Console.PrintMessage("Select target Edge of the ArchSketch to turn it on/off as Wall Segment "+ "\n")	
+            FreeCADGui.Selection.clearSelection()				
+            s=GuiEditWallObserver(sel0, targetObjectBase)			
+            self.observer = s							
+            FreeCADGui.Selection.addObserver(s)					
+										
+										
+FreeCADGui.addCommand('EditWall', _CommandEditWall())				
+										
+										
+class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):		
+										
+    def __init__(self, targetWall, targetBaseSketch):				
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')	
+        self.targetWall = targetWall							
+        self.targetArchSketch = targetBaseSketch					
+        if self.targetWall:							
+            self.targetWallTransparency = targetWall.ViewObject.Transparency	
+            targetWall.ViewObject.Transparency = 60				
+            targetWall.recompute()						
+										
+    def proceed(self, doc, obj, sub, pnt):					
+        self.edge = sub								
+        self.pickedEdgePlacement = App.Vector(pnt)				
+        subIndex = int( sub.lstrip('Edge'))-1					
+        curWallStatus = None							
+        newWallStatus = None							
+										
+        targetArchSketch = self.targetArchSketch				
+        curWallStatus = targetArchSketch.Proxy.getEdgeTagDictSyncRoleStatus(targetArchSketch, None, subIndex, role='wallAxis')	
+        if curWallStatus == True:						
+            newWallStatus = 'Disabled'						
+        elif curWallStatus == 'Disabled':					
+            newWallStatus = True						
+        else:									
+            construction = targetArchSketch.getConstruction(subIndex)		
+            if not construction:  # for Wall, True if not construction		
+                newWallStatus = 'Disabled'					
+            else:								
+                newWallStatus = True						
+        tempDict = targetArchSketch.Proxy.EdgeTagDictSync				
+        tempDict[targetArchSketch.Geometry[subIndex].Tag]['wallAxis'] = newWallStatus	
+        self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict				
+        FreeCADGui.Selection.clearSelection()					
+        self.targetArchSketch.recompute()					
+        if self.targetWall:							
+            self.targetWall.recompute()						
+										
+    def escape(self,info):							
+        k=info['Key']								
+        if k=="ESCAPE":								
+            self.targetWall.ViewObject.Transparency = self.targetWallTransparency	
+            SketchArchCommands.selectObjectObserver.escape(self,info)			
+											
+											
 class _Command_ArchSketch():							
 										
     ''' ArchSketch Command Definition - Gui to make an ArchSketch '''		
 										
     def GetResources(self):							
-        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/SketchArchWorkbench.svg',		
-                'Accel' : "Alt+S",						
+        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/SketchArchWorkbench.svg',	
+                'Accel' : "Alt+S",								
                 'MenuText': "New ArchSketch",					
                 'ToolTip' : "create an ArchSketch"}				
 										
@@ -2199,12 +2346,20 @@ def getSketchSortedClEdgesOrder(sketch):
       for c, i in enumerate(skGeom):						
           skGeomEdge = i.toShape()						
           skGeomEdgesFullSet.append(skGeomEdge)					
-          if hasattr(i, 'Construction'):					
-              construction = i.Construction					
-          elif hasattr(sketch, 'getConstruction'):				
-              construction = sketch.getConstruction(c)				
-          if not construction:							
-              skGeomEdgesSet.append(skGeomEdge)					
+          wallAxisStatus = None										
+          if hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy, 'getEdgeTagDictSyncWallStatus'):	
+              skProxy = sketch.Proxy									
+              wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch, tag=i.Tag, role='wallAxis')	
+          else:									
+              if hasattr(i, 'Construction'):					
+                  construction = i.Construction					
+              elif hasattr(sketch, 'getConstruction'):				
+                  construction = sketch.getConstruction(c)			
+              if not construction:						
+                  wallAxisStatus = True						
+          if wallAxisStatus:							
+              if isinstance(i,(Part.LineSegment,Part.Circle,Part.ArcOfCircle)):	
+                  skGeomEdgesSet.append(skGeomEdge)				
       return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
 										
 										
