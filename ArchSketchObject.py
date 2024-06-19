@@ -1013,10 +1013,6 @@ class _CommandEditWallAlign():
             else:								
                 sel0 = None							
         if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
-            if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':		
-                pass									
-            elif Draft.getType(targetObjectBase) == 'ArchSketch':		
-                reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
@@ -1036,6 +1032,11 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
 										
     def __init__(self, targetWall, targetBaseSketch):				
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetWall = targetWall  # maybe None				
         self.targetArchSketch = targetBaseSketch  # maybe None			
         if self.targetWall:							
@@ -1060,6 +1061,12 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                     tempOverrideAlign.append(wallAlign)				
                 tempOverrideAlign = [i if i is not None else wallAlign for i in tempOverrideAlign]	
             self.targetWall.OverrideAlign = tempOverrideAlign						
+										
+    def tasksSketchClose(self):							
+        self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
+        self.targetWall.recompute()						
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -1120,6 +1127,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
+        FreeCADGui.Selection.clearSelection()					
         if self.targetWall:							
             self.targetWall.recompute()						
 										
@@ -1169,10 +1177,6 @@ class _CommandEditWallWidth():
             else:								
                 sel0 = None							
         if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:		
-            if Draft.getType(targetObjectBase) == 'Sketcher::SketchObject':			
-                pass										
-            elif Draft.getType(targetObjectBase) == 'ArchSketch':		
-                reply = QtGui.QMessageBox.information(None,"","ArchSketch features being added, fallback to treat as Sketch if particular feature not implemented yet - currently for demonstration purpose.  Procced now. ")	
             targetObjectBase.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
@@ -1192,6 +1196,11 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
 										
     def __init__(self, targetWall, targetBaseSketch):				
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetWall = targetWall						
         self.targetArchSketch = targetBaseSketch				
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
@@ -1216,6 +1225,12 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 tempOverrideWidth = [i if i is not None else wallWidth for i in tempOverrideWidth]	
             self.targetWall.OverrideWidth = tempOverrideWidth						
 													
+    def tasksSketchClose(self):							
+        self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
+        self.targetWall.recompute()						
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
+										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
         self.pickedEdgePlacement = App.Vector(pnt)				
@@ -1258,6 +1273,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
+        FreeCADGui.Selection.clearSelection()					
         self.targetWall.recompute()						
 										
     def escape(self,info):							
@@ -1363,33 +1379,45 @@ FreeCADGui.addCommand('EditWallAttach', _CommandEditWallAttach())
 										
 class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):	
 										
-    def __init__(self, targetObject, targetHostWall, targetBaseSketch):	
+    def __init__(self, targetObject, targetHostWall, targetBaseSketch):		
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
-        self.targetObject = targetObject										
-        self.targetWall = targetHostWall										
-        self.targetArchSketch = targetBaseSketch									
-        if self.targetWall:												
-            self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency						
-            targetHostWall.ViewObject.Transparency = 60									
-            targetHostWall.recompute()											
-        if hasattr(targetObject, "Host"):										
-            if targetObject.Host != targetHostWall:  # Testing For Host first						
-                targetObject.Host = targetHostWall  # No recompute, save time						
-        else:  # elif hasattr(targetObject, "Hosts"):									
-            if targetObject.Hosts:											
-                if targetObject.Hosts[0] != targetHostWall:  # Testing Host[0]						
-                    targetObjectHosts = targetObject.Hosts								
-                    targetObjectHosts[0] = targetHostWall  # replace 1st item						
-                    targetObject.Hosts = targetObjectHosts								
-            else:													
-                targetObject.Hosts = [targetHostWall]									
-            # Not recompute atm to save time										
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+        self.targetObject = targetObject					
+        self.targetWall = targetHostWall					
+        self.targetArchSketch = targetBaseSketch				
+        if self.targetWall:							
+            self.targetWallTransparentcy=targetHostWall.ViewObject.Transparency	
+            targetHostWall.ViewObject.Transparency = 60				
+            targetHostWall.recompute()						
+        if hasattr(targetObject, "Host"):					
+            if targetObject.Host != targetHostWall:  # Testing For Host first	
+                targetObject.Host = targetHostWall  # No recompute, save time	
+        else:  # elif hasattr(targetObject, "Hosts"):				
+            if targetObject.Hosts:						
+                if targetObject.Hosts[0] != targetHostWall:  # Testing Host[0]	
+                    targetObjectHosts = targetObject.Hosts			
+                    targetObjectHosts[0] = targetHostWall  # replace 1st item	
+                    targetObject.Hosts = targetObjectHosts							
+            else:												
+                targetObject.Hosts = [targetHostWall]				
+            # Not recompute atm to save time					
         if targetHostWall:							
             # check if need to assign to attach to 'Host'			
             if targetObject.AttachToAxisOrSketch != 'Host':			
                 targetObject.AttachToAxisOrSketch = 'Host'			
-															
-    def proceed(self, doc, obj, sub, pnt):										
+										
+    def tasksSketchClose(self):							
+        if self.targetWall:									
+            self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy		
+            self.targetWall.recompute()								
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
+										
+    def proceed(self, doc, obj, sub, pnt):									
         self.edge = sub								
         self.pickedEdgePlacement = App.Vector(pnt)				
         subElement = sub.lstrip('Edge')						
@@ -1413,6 +1441,7 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         else:  									
             # nothing implemented if self.targetArchSketch is None		
             pass								
+        FreeCADGui.Selection.clearSelection()					
         self.targetObject.recompute()						
         if self.targetWall:							
             self.targetWall.recompute()						
@@ -1420,9 +1449,9 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
     def escape(self,info):							
         k=info['Key']								
         if k=="ESCAPE":								
-            if self.targetWall:											
-                self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy				
-            SketchArchCommands.selectObjectObserver.escape(self,info)						
+            if self.targetWall:									
+                self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy		
+            SketchArchCommands.selectObjectObserver.escape(self,info)				
 										
 										
 class _CommandEditStructure():							
@@ -1483,13 +1512,24 @@ FreeCADGui.addCommand('EditStructure', _CommandEditStructure())
 class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):	
 										
     def __init__(self, targetStructure, targetBaseSketch):			
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')	
-        self.targetStructure = targetStructure  # maybe None				
-        self.targetArchSketch = targetBaseSketch					
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+										
+        self.targetStructure = targetStructure  # maybe None			
+        self.targetArchSketch = targetBaseSketch				
         if self.targetStructure:							
             self.targetStructureTransparency = targetStructure.ViewObject.Transparency	
             targetStructure.ViewObject.Transparency = 60			
             targetStructure.recompute()						
+										
+    def tasksSketchClose(self):							
+        self.targetStructure.ViewObject.Transparency = self.targetStructureTransparency		
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -1578,8 +1618,14 @@ FreeCADGui.addCommand('EditCurtainWall', _CommandEditCurtainWall())
 										
 class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):	
 										
-    def __init__(self, targetCurtainWallList, targetBaseSketch):							
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+    def __init__(self, targetCurtainWallList, targetBaseSketch):						
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+										
         self.targetCurtainWallList = targetCurtainWallList  # becomes a List	
         self.targetArchSketch = targetBaseSketch				
         if self.targetCurtainWallList:						
@@ -1588,6 +1634,14 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
                 t = c.ViewObject.Transparency = 60				
                 c.recompute()							
                 self.targetCurtainWallListTransparency.append(t)		
+										
+    def tasksSketchClose(self):							
+        if self.targetCurtainWallList:						
+            for c in self.targetCurtainWallList:				
+                t = self.targetCurtainWallListTransparency.pop(0)		
+                c.ViewObject.Transparency = t					
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -1699,12 +1753,23 @@ class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):
 										
     def __init__(self, targetWall, targetBaseSketch):				
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')	
-        self.targetWall = targetWall							
-        self.targetArchSketch = targetBaseSketch					
+        mw = FreeCADGui.getMainWindow()						
+        self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
+        self.manualUpdateBtn = self.taskspanel.findChild(			
+            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+        self.targetWall = targetWall						
+        self.targetArchSketch = targetBaseSketch				
         if self.targetWall:							
             self.targetWallTransparency = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
             targetWall.recompute()						
+										
+    def tasksSketchClose(self):							
+        self.targetWall.ViewObject.Transparency = self.targetWallTransparency	
+        self.targetWall.recompute()						
+        FreeCADGui.Selection.removeObserver(self)				
+        self.av.removeEventCallback("SoKeyboardEvent",self.escape)		
 										
     def proceed(self, doc, obj, sub, pnt):					
         self.edge = sub								
@@ -1754,7 +1819,6 @@ class _Command_ArchSketch():
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
-        reply = QtGui.QMessageBox.information(None,"","ArchSketch functionalities being developed :) ")	
         makeArchSketch()							
 										
 FreeCADGui.addCommand('ArchSketch', _Command_ArchSketch())			
