@@ -38,8 +38,8 @@ class SketchArchWorkbench(Workbench):
         ''' This function is executed when FreeCAD starts '''			
 										
         import SketchArch							
-        self.ArchSketchTools = ["ArchSketch", "EditWallAlign", 			
-                                "EditWallWidth", "EditWallAttach", "EditWall",	
+        self.ArchSketchTools = ["ArchSketch", "EditWallAlign", "EditWallWidth",	
+                                "EditWallOffset", "EditWallAttach", "EditWall",	
                                 "EditStructure", "EditCurtainWall", "Voxel",	
                                 "CellComplex"]					
         self.appendToolbar("Sketch Arch", self.ArchSketchTools)			
