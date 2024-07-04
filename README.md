@@ -53,13 +53,14 @@ For better and more intuitive architectural modelling workflow, this workbench l
 ![alt text 2b](https://forum.freecad.org/download/file.php?style=4&id=191612)
 ![alt text 2c](https://forum.freecad.org/download/file.php?style=4&id=191611J)
 
-#### 3. Width & Align Per Edge
+#### 3. Width, Align & Offset Per Edge
 ([Toponaming-Tolerant](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/README.md#7-topological-naming-tolerant))
 
-![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
-![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
+![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
+![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
+![alt text 3ca](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Offset.svg)
 
-- ArchWall base on a ArchSketch / Sketch can have different width for each segment - per Sketch Edge
+- ArchWall base on a ArchSketch / Sketch can have different Width, Align & Offset for each segment - per Sketch Edge
 - ArchWall base on a ArchSketch / Sketch  can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
 (Click To PLAY VIDEO !)
@@ -73,11 +74,12 @@ For better and more intuitive architectural modelling workflow, this workbench l
 #### 4. Arch Structure, Curtain Wall, Wall etc. +  Same ArchSketch = Building Layout
 (with User Selected Edges in ArchSketch)
 
-![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Structure_Toggle.svg) 
-![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_CurtainWall_Toggle.svg) <br>
+![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Wall_Toggle.svg) 
+![alt text 4b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Structure_Toggle.svg) 
+![alt text 4c](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_CurtainWall_Toggle.svg) <br>
+ArchSketch + ArchWall = Wall Layout <br>
 ArchSketch + ArchStructure = Slab Layout <br>
 ArchSketch + ArchCurtainWall = CurtainWall Layout <br>
-ArchSketch + ArchWall = Wall Layout <br>
 
 Have your ever set out your building layout in a sketch like below, and wonder if -
 
