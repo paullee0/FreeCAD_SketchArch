@@ -61,6 +61,9 @@ class ArchSketch(ArchSketchObject):
   SnapPresetDict = {'AxisStart':0.0, '1/4':0.25, '1/3':1/3, 'MidPoint':0.5,	
                     '2/3':2/3, '3/4':3/4, 'AxisEnd':1.0}			
   EdgeTagDicts=['EdgeTagDictArchive', 'EdgeTagDictInitial', 'EdgeTagDictSync']	
+  GeomSupported = (Part.LineSegment, Part.Circle, Part.ArcOfCircle, 		
+                   Part.Ellipse)						
+										
 										
   def __init__(self, obj):							
       ArchSketchObject.__init__(self, obj)					
@@ -691,12 +694,12 @@ class ArchSketch(ArchSketchObject):
       skPlacement = fp.Placement  # Get Sketch's placement to restore later	
 										
       for i in skGeom:								
-          wallAxisStatus = self.getEdgeTagDictSyncWallStatus(fp, tag=i.Tag, role='wallAxis')	
-          if wallAxisStatus:							
-              # support Line, Arc, Circle for Sketch as Base at the moment	
-              if isinstance(i.Geometry, (Part.LineSegment, Part.Circle, Part.ArcOfCircle)):	
-                  skGeomEdgesI = i.Geometry.toShape()						
-                  skGeomEdges.append(skGeomEdgesI)						
+          if isinstance(i.Geometry, ArchSketch.GeomSupported):			
+              wallAxisStatus = self.getEdgeTagDictSyncWallStatus(fp, tag=i.Tag,	
+                                    role='wallAxis')				
+              if wallAxisStatus:						
+                  skGeomEdgesI = i.Geometry.toShape()				
+                  skGeomEdges.append(skGeomEdgesI)				
       for cluster in Part.getSortedClusters(skGeomEdges):					
           clusterTransformed = []								
           for edge in cluster:									
@@ -2542,21 +2545,23 @@ def getSketchSortedClEdgesOrder(sketch,archSketchEdges=None):
       for c, i in enumerate(skGeom):						
           skGeomEdge = i.toShape()						
           skGeomEdgesFullSet.append(skGeomEdge)					
-          wallAxisStatus = None							
-          if archSketchEdges is not None:					
-              wallAxisStatus = str(c) in archSketchEdges			
-          elif hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy, 'getEdgeTagDictSyncWallStatus'):	
-              skProxy = sketch.Proxy									
-              wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch, tag=i.Tag, role='wallAxis')	
-          else:									
-              if hasattr(i, 'Construction'):					
-                  construction = i.Construction					
-              elif hasattr(sketch, 'getConstruction'):				
-                  construction = sketch.getConstruction(c)			
-              if not construction:						
-                  wallAxisStatus = True						
-          if wallAxisStatus:							
-              if isinstance(i,(Part.LineSegment,Part.Circle,Part.ArcOfCircle)):	
+          if isinstance(i, ArchSketch.GeomSupported):				
+              wallAxisStatus = None						
+              if archSketchEdges is not None:					
+                  wallAxisStatus = str(c) in archSketchEdges			
+              elif hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy,		
+                                            'getEdgeTagDictSyncWallStatus'):	
+                  skProxy = sketch.Proxy					
+                  wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch,	
+                                           tag=i.Tag, role='wallAxis')		
+              else:								
+                  if hasattr(i, 'Construction'):				
+                      construction = i.Construction				
+                  elif hasattr(sketch, 'getConstruction'):			
+                      construction = sketch.getConstruction(c)			
+                  if not construction:						
+                      wallAxisStatus = True					
+              if wallAxisStatus:						
                   skGeomEdgesSet.append(skGeomEdge)				
       return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
 										
