@@ -21,24 +21,24 @@
 #***************************************************************************	
 										
 import FreeCAD, FreeCADGui, Sketcher, Part, Draft, DraftVecUtils		
-import ArchWall, ArchWindow, ArchCurtainWall					
+import Arch, ArchWall, ArchWindow, ArchCurtainWall				
 										
 import SketchArchIcon								
 import SketchArchCommands							
 										
 # for ArchWindows								
 from PySide.QtCore import QT_TRANSLATE_NOOP					
-										
-import math, time								
 from PySide import QtGui, QtCore						
 from FreeCAD import Vector							
+										
+import uuid, math, time								
+										
 App = FreeCAD									
 Gui = FreeCADGui								
 pi = math.pi									
 zeroMM = FreeCAD.Units.Quantity('0mm')						
 MM = FreeCAD.Units.Quantity('1mm')						
 tolerance = 0.000000001								
-										
 										
 										
 #--------------------------------------------------------------------------#	
@@ -98,28 +98,51 @@ class ArchSketch(ArchSketchObject):
         if not hasattr(self,i):							
           setattr(self, i, {})							
 										
+      if not hasattr(self,'PropertySetDict'):					
+          self.PropertySetDict = {}						
+      if not hasattr(self,"clEdgeDict"):					
+          self.clEdgeDict = {}							
+      if not hasattr(self,"clEdgePartnerIndexFlat"):				
+          self.clEdgePartnerIndexFlat = []					
       if not hasattr(self,"clEdgeSameIndexFlat"):				
           self.clEdgeSameIndexFlat = []						
+      if not hasattr(self,"clEdgeEqualIndexFlat"):				
+          self.clEdgeEqualIndexFlat = []					
 										
       ''' Added ArchSketch Properties '''					
 										
+      ArchSkPropStr = 'Added ArchSketch Properties'				
       if not hasattr(fp,"Align"):																						
-          fp.addProperty("App::PropertyEnumeration","Align","Added ArchSketch Properties","The default alignment for the wall with this ArchSketch as its base object")						
+          fp.addProperty("App::PropertyEnumeration","Align",ArchSkPropStr,"The default alignment for the wall with this ArchSketch as its base object")								
           fp.Align = ['Left','Right','Center']					
           fp.Align = 'Center'							
       if not hasattr(fp,"Offset"):																						
-          fp.addProperty("App::PropertyDistance","Offset","Wall",QT_TRANSLATE_NOOP("App::Property","The offset between the wall (segment) and its baseline (only for left and right alignments)"))		
+          fp.addProperty("App::PropertyDistance","Offset",ArchSkPropStr,QT_TRANSLATE_NOOP("App::Property","The offset between the wall (segment) and its baseline (only for left and right alignments)"))	
       if not hasattr(fp,"ArchSketchWidth"):																					
-          fp.addProperty("App::PropertyLength","ArchSketchWidth","Added ArchSketch Properties","ArchSketchWidth returned ")											
+          fp.addProperty("App::PropertyLength","ArchSketchWidth",ArchSkPropStr,"ArchSketchWidth returned ")													
           fp.ArchSketchWidth = 200 * MM  # Default																				
 																										
       if not hasattr(fp,"DetectRoom"):																						
-          fp.addProperty("App::PropertyBool","DetectRoom","Added ArchSketch Properties",QT_TRANSLATE_NOOP("App::Property","Enable to detect rooms enclosed by edges/walls - For CellComplex object to work, the generated shape is not shown in the ArchSketch object, but shown by a CellComplex Object.  This make recompute of this object longer !"))												
+          fp.addProperty("App::PropertyBool","DetectRoom",ArchSkPropStr,QT_TRANSLATE_NOOP("App::Property","Enable to detect rooms enclosed by edges/walls - For CellComplex object to work, the generated shape is not shown in the ArchSketch object, but shown by a CellComplex Object.  This make recompute of this object longer !"))														
       if not hasattr(fp,"CellComplexElements"):																					
-          fp.addProperty('Part::PropertyPartShape', 'CellComplexElements', 'Added ArchSketch Properties', QT_TRANSLATE_NOOP("App::Property","The Shape of built CellComplexElements"),8)			
+          fp.addProperty('Part::PropertyPartShape', 'CellComplexElements', ArchSkPropStr, QT_TRANSLATE_NOOP("App::Property","The Shape of built CellComplexElements"),8)					
       if not hasattr(fp,"FloorHeight"):																						
-          fp.addProperty("App::PropertyLength","FloorHeight","Added ArchSketch Properties","Global ArchSketch Floor to Next Floor Height")									
+          fp.addProperty("App::PropertyLength","FloorHeight",ArchSkPropStr,"Global ArchSketch Floor to Next Floor Height")											
           fp.FloorHeight = 3000 * MM  # Default																					
+      if not hasattr(fp,"PropertySet"):						
+          fp.addProperty("App::PropertyEnumeration","PropertySet",ArchSkPropStr	
+                         ,QT_TRANSLATE_NOOP("App::Property"			
+                         ,"List User Defined Property Sets"))			
+          fp.PropertySet = ['Default']						
+      if not hasattr(self,"PropSetListPrev"):					
+          self.PropSetListPrev = []						
+      if not hasattr(self,"PropSetPickedUuid"):					
+          self.PropSetPickedUuid = None						
+      if not hasattr(fp,"ShapeList"):						
+          sstr="The returned Shape of the ArchSkech with supported geometries"	
+          fp.addProperty('Part::PropertyTopoShapeList', 'ShapeList',		
+                         ArchSkPropStr, QT_TRANSLATE_NOOP("App::Property",	
+                         sstr,8))						
 																										
 																										
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
@@ -266,8 +289,32 @@ class ArchSketch(ArchSketchObject):
       normal = fp.getGlobalPlacement().Rotation.multVec(FreeCAD.Vector(0,0,1))	
 										
 										
-      ''' (-I) - Sync EdgeTagDictSync - ArchSketch Edge Indexes against (semi-persistant) Tags '''	
-													
+      if True:									
+          propSetPickedUuidPrev = self.PropSetPickedUuid			
+          propSetListPrev = self.PropSetListPrev				
+          propSetSelectedNamePrev = fp.PropertySet				
+          propSetSelectedNameCur = None						
+										
+          # get full list of PropertySet					
+          propSetListCur = self.getPropertySet(fp)				
+          # get updated name (if any) of the selected PropertySet		
+          propSetSelectedNameCur = self.getPropertySet(fp,			
+                                        propSetUuid=propSetPickedUuidPrev)	
+          if propSetSelectedNameCur:  # True if selection is not deleted	
+              if propSetListPrev != propSetListCur:				
+                  fp.PropertySet = propSetListCur				
+                  fp.PropertySet = propSetSelectedNameCur			
+                  self.propSetListPrev = propSetListCur				
+              elif propSetSelectedNamePrev != propSetSelectedNameCur:		
+                  fp.PropertySet = propSetSelectedNameCur			
+          else:  # True if selection is deleted					
+              if propSetListPrev != propSetListCur:				
+                  fp.PropertySet = propSetListCur				
+                  fp.PropertySet = 'Default'					
+										
+										
+      ''' (-I) - Sync EdgeTagDictSync: ArchSketch Edge Indexes against Tags '''	
+										
       self.syncEdgeTagDictSync(fp)						
 										
 										
@@ -278,6 +325,7 @@ class ArchSketch(ArchSketchObject):
 										
       ''' (IX or XI) - Update the order of edges by getSortedClusters '''	
 										
+      self.updateShapeList(fp)							
       self.updateSortedClustersEdgesOrder(fp)					
 										
 										
@@ -305,23 +353,45 @@ class ArchSketch(ArchSketchObject):
           fp.CellComplexElements = solidsCmpd								
 										
 										
+  def updateShapeList(self, fp):						
+      skGeom = fp.Geometry							
+      skGeomEdgesFullSet = []							
+      for c, i in enumerate(skGeom):						
+          skGeomEdge = i.toShape()						
+          skGeomEdgesFullSet.append(skGeomEdge)					
+      fp.ShapeList = skGeomEdgesFullSet						
+										
+										
   def updateSortedClustersEdgesOrder(self, fp):					
 										
-      clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat = getSketchSortedClEdgesOrder(fp)				
+      tup = getSketchSortedClEdgesOrder(fp)					
+      (clEdgePartnerIndex,clEdgeSameIndex,clEdgeEqualIndex,			
+       clEdgePartnerIndexFlat,clEdgeSameIndexFlat,clEdgeEqualIndexFlat) = tup	
 										
+      self.clEdgeDict['clEdgeSameIndexFlat'] = clEdgeSameIndexFlat		
       self.clEdgePartnerIndex = clEdgePartnerIndex				
       self.clEdgeSameIndex = clEdgeSameIndex					
       self.clEdgeEqualIndex = clEdgeEqualIndex					
-										
       self.clEdgePartnerIndexFlat = clEdgePartnerIndexFlat			
       self.clEdgeSameIndexFlat = clEdgeSameIndexFlat				
       self.clEdgeEqualIndexFlat = clEdgeEqualIndexFlat				
+										
+      for key, value in iter(fp.Proxy.PropertySetDict.items()):			
+          tupUuid = getSketchSortedClEdgesOrder(fp, propSetUuid=key)		
+          (partnerIndex,sameIndex,equalIndex,					
+           partnerIndexFlat,sameIndexFlat,equalIndexFlat) = tupUuid		
+          if not self.clEdgeDict.get(key,None):					
+              self.clEdgeDict[key] = {}						
+          self.clEdgeDict[key]['clEdgeSameIndexFlat'] = sameIndexFlat		
 										
 										
   def onChanged(self, fp, prop):						
       if prop in ["MasterSketch", "PlacementAxis", "AttachToAxisOrSketch"]:	
           changeAttachMode(fp, prop)						
 										
+      if prop == "PropertySet":							
+          uuid = self.getPropertySet(fp, propSetName=fp.PropertySet)		
+          self.PropSetPickedUuid = uuid						
 										
   def rebuildEdgeTagDicts(self, fp):  # To be called by Local			
 										
@@ -421,46 +491,83 @@ class ArchSketch(ArchSketchObject):
               updatePropertiesLinkCommonODR(archObject, None)			
 										
 										
-  def getWidths(self, fp):							
+  #**************************************************************************#	
+										
+										
+  ''' Property Set Dict (self.PropertySetDict) related method()  '''		
+										
+										
+  def getPropertySet(self, fp, propSetUuid=None, propSetName=None):		
+										
+      if not propSetUuid and not propSetName:					
+          setDicts = list(self.PropertySetDict.values())			
+          setNames = [ d.get('name',None) for d in setDicts ]			
+          propertySetList = ['Default'] + setNames				
+          return propertySetList						
+      elif propSetUuid:								
+          setDict = self.PropertySetDict.get(propSetUuid, None)			
+          if setDict:								
+              setName = setDict.get('name',None)				
+              return setName							
+          else:									
+              return None							
+      elif propSetName:								
+          if propSetName == 'Default' : return None				
+          for k, v in self.PropertySetDict.items():				
+              if v.get('name') == propSetName:					
+                  uuid = k							
+                  break								
+          return uuid								
+										
+										
+  #**************************************************************************#	
+										
+										
+  ''' edge Tag Dict (self.syncEdgeTagDictSync) related method()  '''		
+										
+										
+  def getWidths(self, fp, propSetUuid=None):					
   										
       ''' wrapper function for uniform format '''				
   										
-      return self.getSortedClustersEdgesWidth(fp)				
+      return self.getSortedClustersEdgesWidth(fp, propSetUuid)			
 										
 										
-  def getAligns(self, fp):							
+  def getAligns(self, fp, propSetUuid=None):					
   										
       ''' wrapper function for uniform format '''				
 										
-      return self.getSortedClustersEdgesAlign(fp)				
+      return self.getSortedClustersEdgesAlign(fp, propSetUuid)			
 										
 										
-  def getOffsets(self, fp):							
+  def getOffsets(self, fp , propSetUuid=None):					
   										
       ''' wrapper function for uniform format '''				
 										
-      return self.getSortedClustersEdgesOffset(fp)				
+      return self.getSortedClustersEdgesOffset(fp, propSetUuid)			
 										
 										
-  def getUnsortedEdgesWidth(self, fp):						
+  def getUnsortedEdgesWidth(self, fp, propSetUuid=None):			
 										
       widthsList = []								
       for j in range(0, len(fp.Geometry)):					
-          curWidthEdgeTagDictSync = self.getEdgeTagDictSyncWidth(fp, None, j)	
+          curWidthEdgeTagDictSync = self.getEdgeTagDictSyncWidth(fp, None, j,	
+                                         propSetUuid)				
           widthsList.append(curWidthEdgeTagDictSync)				
       return widthsList								
 										
 										
-  def getUnsortedEdgesAlign(self, fp):						
+  def getUnsortedEdgesAlign(self, fp, propSetUuid=None):			
 										
       alignsList = []								
       for j in range(0, len(fp.Geometry)):					
-          curAlignEdgeTagDictSync = self.getEdgeTagDictSyncAlign(fp, None, j)	
+          curAlignEdgeTagDictSync = self.getEdgeTagDictSyncAlign(fp, None, j,	
+                                         propSetUuid)				
           alignsList.append(curAlignEdgeTagDictSync)				
       return alignsList								
 										
 										
-  def getSortedClustersEdgesWidth(self, fp):					
+  def getSortedClustersEdgesWidth(self, fp, propSetUuid=None):			
 										
       '''  This method check the SortedClusters-isSame-(flat)List (omitted	
            construction geometry), find the corresponding edgesWidth and make	
@@ -479,40 +586,54 @@ class ArchSketch(ArchSketchObject):
                         .... convoluted object sync, restoreOnLoad '''		
 										
       widthsList = []								
-      widthsListEdgeTagDictSync = []						
-      for i in self.clEdgeSameIndexFlat:					
 										
-          curWidthEdgeTagDictSync = self.getEdgeTagDictSyncWidth(fp, None, i)	
-          if not curWidthEdgeTagDictSync:					
+      if not propSetUuid:							
+          clEdgeSameIndexFlat = self.clEdgeDict.get('clEdgeSameIndexFlat',None)	
+      else:									
+          clEdgeSameIndexFlat = None						
+          dictUuid = self.clEdgeDict.get(propSetUuid,None)			
+          if dictUuid:								
+              clEdgeSameIndexFlat = dictUuid.get('clEdgeSameIndexFlat',None)	
+          if not clEdgeSameIndexFlat:						
+              return []								
+										
+      for i in clEdgeSameIndexFlat:						
+          curWidth = self.getEdgeTagDictSyncWidth(fp, None, i, propSetUuid)	
+          if not curWidth:							
               if fp.ArchSketchWidth:						
-                  curWidthEdgeTagDictSync = fp.ArchSketchWidth.Value		
+                  curWidth = fp.ArchSketchWidth.Value				
               else:								
-                  curWidthEdgeTagDictSync = 0  # 0 follow Wall's Width		
-          widthsListEdgeTagDictSync.append(curWidthEdgeTagDictSync)		
-      return widthsListEdgeTagDictSync						
+                  curWidth = 0  # 0 follow Wall's Width				
+          widthsList.append(curWidth)						
+      return widthsList								
 										
 										
-  def getEdgeTagDictSyncWidth(self, fp, tag=None, index=None):			
+  def getEdgeTagDictSyncWidth(self,fp,tag=None,index=None,propSetUuid=None):	
 										
       if tag is not None:							
-          return self.EdgeTagDictSync[tag].get('width', None)			
-										
+          tagI = tag								
       elif index is not None:							
           try:  # Cases where self.EdgeTagDictSync not updated yet ?		
               tagI = fp.Geometry[index].Tag					
-              return self.EdgeTagDictSync[tagI].get('width', None)		
           except:								
               self.syncEdgeTagDictSync(fp)					
               try: # again							
                   tagI = fp.Geometry[index].Tag					
-                  return self.EdgeTagDictSync[tagI].get('width', None)		
               except:								
                   return None							
       else:									
           return None  #pass							
+      if propSetUuid:								
+          dictI = self.EdgeTagDictSync[tagI].get(propSetUuid, None)		
+      else:									
+          dictI = self.EdgeTagDictSync[tagI]					
+      if not dictI:								
+          return None								
+      widthI = dictI.get('width', None)						
+      return widthI								
 										
 										
-  def getSortedClustersEdgesAlign(self, fp):					
+  def getSortedClustersEdgesAlign(self, fp, propSetUuid):			
       '''  									
            This method check the SortedClusters-isSame-(flat)List		
            find the corresponding edgesAlign ... 				
@@ -520,66 +641,115 @@ class ArchSketch(ArchSketchObject):
       '''									
 										
       alignsList = []								
-      for i in self.clEdgeSameIndexFlat:					
-          curAlign = self.getEdgeTagDictSyncAlign(fp, None, i)			
+										
+      if not propSetUuid:							
+          clEdgeSameIndexFlat = self.clEdgeDict.get('clEdgeSameIndexFlat',None)	
+      else:									
+          clEdgeSameIndexFlat = None						
+          dictUuid = self.clEdgeDict.get(propSetUuid,None)			
+          if dictUuid:								
+              clEdgeSameIndexFlat = dictUuid.get('clEdgeSameIndexFlat',None)	
+          if not clEdgeSameIndexFlat:						
+              return []								
+										
+      for i in clEdgeSameIndexFlat:						
+          curAlign = self.getEdgeTagDictSyncAlign(fp, None, i, propSetUuid)	
           if not curAlign:							
               curAlign = fp.Align # default Align (set up to 'Center')		
           alignsList.append(curAlign)						
       return alignsList								
 										
 										
-  def getEdgeTagDictSyncAlign(self, fp, tag=None, index=None):			
+  def getEdgeTagDictSyncAlign(self,fp,tag=None,index=None,propSetUuid=None):	
       if tag is not None:							
-          return self.EdgeTagDictSync[tag].get('align', None)			
+          tagI = tag								
       elif index is not None:							
           try:									
               tagI = fp.Geometry[index].Tag					
-              return self.EdgeTagDictSync[tagI].get('align', None)		
+              #return self.EdgeTagDictSync[tagI].get('align', None)		
           except:								
               self.syncEdgeTagDictSync(fp)					
               try:  # again							
                   tagI = fp.Geometry[index].Tag					
-                  return self.EdgeTagDictSync[tagI].get('align', None)		
+                  #return self.EdgeTagDictSync[tagI].get('align', None)		
               except:								
                   return None							
+      if propSetUuid:								
+          dictI = self.EdgeTagDictSync[tagI].get(propSetUuid, None)		
+      else:									
+          dictI = self.EdgeTagDictSync[tagI]					
+      if not dictI:								
+          return None								
+      alignI = dictI.get('align', None)						
+      return alignI								
 										
 										
-  def getSortedClustersEdgesOffset(self, fp):					
+  def getSortedClustersEdgesOffset(self, fp, propSetUuid=None):			
       offsetsList = []								
-      for i in self.clEdgeSameIndexFlat:					
-          curOffset = self.getEdgeTagDictSyncOffset(fp, None, i)		
+      if not propSetUuid:							
+          clEdgeSameIndexFlat = self.clEdgeDict.get('clEdgeSameIndexFlat',None)	
+      else:									
+          clEdgeSameIndexFlat = None						
+          dictUuid = self.clEdgeDict.get(propSetUuid,None)			
+          if dictUuid:								
+              clEdgeSameIndexFlat = dictUuid.get('clEdgeSameIndexFlat',None)	
+          if not clEdgeSameIndexFlat:						
+              return []								
+										
+      for i in clEdgeSameIndexFlat:						
+          curOffset = self.getEdgeTagDictSyncOffset(fp, None, i, propSetUuid)	
           if not curOffset:							
               curOffset = fp.Offset						
           offsetsList.append(curOffset)						
       return offsetsList							
 										
 										
-  def getEdgeTagDictSyncOffset(self, fp, tag=None, index=None):			
+  def getEdgeTagDictSyncOffset(self,fp,tag=None,index=None,propSetUuid=None):	
       if tag is not None:							
-          return self.EdgeTagDictSync[tag].get('offset', None)			
+          tagI = tag								
       elif index is not None:							
           try:									
               tagI = fp.Geometry[index].Tag					
-              return self.EdgeTagDictSync[tagI].get('offset', None)		
           except:								
               self.syncEdgeTagDictSync(fp)					
               try:  # again							
                   tagI = fp.Geometry[index].Tag					
-                  return self.EdgeTagDictSync[tagI].get('offset', None)		
               except:								
                   return None							
+      else:									
+          return None  #pass							
+      if propSetUuid:								
+          dictI = self.EdgeTagDictSync[tagI].get(propSetUuid, None)		
+      else:									
+          dictI = self.EdgeTagDictSync[tagI]					
+      if not dictI:								
+          return None								
+      OffsetI = dictI.get('offset', None)					
+      return OffsetI								
 										
 										
-  def getEdgeTagDictSyncRoleStatus(self, fp, tag=None, index=None, role='wallAxis'):	
-      if tag is not None:								
+  def getEdgeTagDictSyncRoleStatus(self, fp, tag=None, index=None,		
+                                   role='wallAxis', propSetUuid=None):		
+										
+      if tag is not None:							
           pass									
       elif index is not None:							
           tag = fp.Geometry[index].Tag						
-      return self.EdgeTagDictSync[tag].get(role, 'Not Set')				
+      if not propSetUuid:							
+          return self.EdgeTagDictSync[tag].get(role, 'Not Set')			
+      else:									
+          dictPropSet = self.EdgeTagDictSync[tag].get(propSetUuid, None)	
+          if dictPropSet:							
+               return dictPropSet.get(role, 'Not Set')				
+          else:									
+              return None							
+              									
 										
+  def getEdgeTagDictSyncWallStatus(self,fp,tag=None,index=None,role='wallAxis',	
+                                   propSetUuid=None):				
 										
-  def getEdgeTagDictSyncWallStatus(self,fp,tag=None,index=None,role='wallAxis'):	
-      roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role)	
+      roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role,	
+                                                     propSetUuid)		
       if roleStatus == True:							
           wallAxisStatus = True							
       elif roleStatus == 'Disabled':						
@@ -686,7 +856,7 @@ class ArchSketch(ArchSketchObject):
   '''  ArchCurtainWall-related   '''						
 										
 										
-  def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis'):			
+  def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):	
 										
       edgesSortedClusters = []							
       skGeom = fp.GeometryFacadeList						
@@ -696,13 +866,13 @@ class ArchSketch(ArchSketchObject):
       for i in skGeom:								
           if isinstance(i.Geometry, ArchSketch.GeomSupported):			
               wallAxisStatus = self.getEdgeTagDictSyncWallStatus(fp, tag=i.Tag,	
-                                    role='wallAxis')				
+                                    role='wallAxis', propSetUuid=propSetUuid)	
               if wallAxisStatus:						
                   skGeomEdgesI = i.Geometry.toShape()				
                   skGeomEdges.append(skGeomEdgesI)				
-      for cluster in Part.getSortedClusters(skGeomEdges):					
-          clusterTransformed = []								
-          for edge in cluster:									
+      for cluster in Part.getSortedClusters(skGeomEdges):			
+          clusterTransformed = []						
+          for edge in cluster:							
               edge.Placement = skPlacement.multiply(edge.Placement) 		
               clusterTransformed.append(edge)					
           edgesSortedClusters.append(clusterTransformed)			
@@ -806,6 +976,8 @@ class ArchSketch(ArchSketchObject):
       ''' Rebuilding Tags  '''							
       self.rebuildEdgeTagDicts(fp)						
       self.callParentToRebuildMasterSketchTags(fp) # "Master"			
+      ''' Update to self.clEdgeDict Dict - For Backward Compatibility '''	
+      self.updateSortedClustersEdgesOrder(fp)					
 										
 										
 										
@@ -980,7 +1152,7 @@ def makeCellComplex(InputShapeObj=None):
 										
 class _CommandEditWallAlign():							
 										
-    '''Edit Wall Segment (Underlying [Arch]Sketch) Align Command Definition'''	
+    '''Edit Align of Wall Segment (Underlying ArchSketch) Command Definition'''	
 										
     def GetResources(self):							
         return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Align',	
@@ -1037,8 +1209,8 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetWall = targetWall  # maybe None				
         self.targetArchSketch = targetBaseSketch  # maybe None			
@@ -1140,7 +1312,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
 										
 class _CommandEditWallWidth():							
 										
-    '''Edit Wall Segment (Underlying [Arch]Sketch) Width Command Definition'''	
+    '''Edit Width of Wall Segment (Underlying ArchSketch) Command Definition'''	
 										
     def GetResources(self):							
         return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Width',	
@@ -1153,22 +1325,30 @@ class _CommandEditWallWidth():
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
+        msg1 = "Select an Arch Wall (with Base ArchSketch) or ArchSketch"	
+        msg2 = "Arch Wall without Base is not supported - "			
+        msg3 = ("ArchSketchData is set False :  " +				
+                "This tool would update ArchWall's ArchSketchEdges " +		
+                "but Not data in the underlying ArchSketch")			
+        msg4 = ("Select target Edge of the ArchSketch " +			
+                "to Edit the corresponding Wall Segment Width")			
+        msg5 = ("Gui to edit Arch Wall with a DWire Base is not " +		
+                "implemented yet - Please directly edit ArchWall " +		
+                "OverrideAlign attribute for the purpose.")			
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
         except:									
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         targetObjectBase = None							
-										
         if Draft.getType(sel0) not in ["Wall","ArchSketch"]:			
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
-										
-        if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
+        if hasattr(sel0, "Base"):  # Wall has Base, ArchSketch does not		
             if sel0.Base:							
                 targetObjectBase = sel0.Base					
             else:								
-                reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch")	
+                reply = QtGui.QMessageBox.information(None,"",msg2 + msg1)	
                 return								
         else:									
             targetObjectBase = sel0						
@@ -1176,18 +1356,19 @@ class _CommandEditWallWidth():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:		
+        if Draft.getType(targetObjectBase) in ['ArchSketch']:			
             targetObjectBase.ViewObject.HideDependent = False			
-            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
+            if not sel0.ArchSketchData:						
+                reply = QtGui.QMessageBox.information(None,"",msg3)		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
-            App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to Edit the corresponding Wall Segment Width "+ "\n")	
+            App.Console.PrintMessage(msg4 + "\n")				
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallWidthObserver(sel0, targetObjectBase)			
             self.observer = s							
             FreeCADGui.Selection.addObserver(s)					
 										
         elif Draft.getType(targetObjectBase) == 'Wire':				
-            reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
+            reply = QtGui.QMessageBox.information(None,"",msg5)			
 										
 FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())			
 										
@@ -1195,36 +1376,32 @@ FreeCADGui.addCommand('EditWallWidth', _CommandEditWallWidth())
 class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):	
 										
     def __init__(self, targetWall, targetBaseSketch):				
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,	
+                                                         'Edge')		
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+										
         self.targetWall = targetWall						
         self.targetArchSketch = targetBaseSketch				
+										
+        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid		
+										
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
         targetWall.ViewObject.Transparency = 60					
         targetWall.recompute()							
-        if targetBaseSketch:  # would be none ?					
-            tempOverrideWidth = None						
-            wallWidth = None							
-            if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-                wallWidth = targetBaseSketch.ArchSketchWidth.Value		
-            if not wallWidth:							
-                wallWidth = targetWall.Width.Value  # use Wall's Width		
-            if Draft.getType(self.targetArchSketch) == 'ArchSketch':					
-                if hasattr(self.targetArchSketch.Proxy, "getUnsortedEdgesWidth"):			
-                    tempOverrideWidth = targetBaseSketch.Proxy.getUnsortedEdgesWidth(targetBaseSketch)	
-                    tempOverrideWidth = [i if i is not None else wallWidth for i in tempOverrideWidth]	
-            if not tempOverrideWidth:						
-                tempOverrideWidth = self.targetWall.OverrideWidth		
-                # filling OverrideWidth for geometry edges		 	
-                while len(tempOverrideWidth) < len(targetBaseSketch.Geometry):	
-                    tempOverrideWidth.append(wallWidth)  #(0)			
-                tempOverrideWidth = [i if i is not None else wallWidth for i in tempOverrideWidth]	
-            self.targetWall.OverrideWidth = tempOverrideWidth						
-													
+        if not targetWall.ArchSketchData:					
+            wallWidth = targetWall.Width.Value  # use Wall's Width		
+            tempOverrideWidth = self.targetWall.OverrideWidth			
+            # filling OverrideWidth for geometry edges			 	
+            while len(tempOverrideWidth) < len(targetBaseSketch.Geometry):	
+                tempOverrideWidth.append(wallWidth)				
+            tempOverrideWidth = [i if i is not None else wallWidth		
+                                 for i in tempOverrideWidth]			
+            self.targetWall.OverrideWidth = tempOverrideWidth			
+										
     def tasksSketchClose(self):							
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
         self.targetWall.recompute()						
@@ -1236,16 +1413,22 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        #if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
         curWidth = None								
-        if hasattr(self.targetArchSketch, "Proxy"):				
-            if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncWidth'):						
-                curWidth = self.targetArchSketch.Proxy.getEdgeTagDictSyncWidth(self.targetArchSketch, None, subIndex)	
+        targetArchSk = self.targetArchSketch					
+        if self.targetWall.ArchSketchData:					
+            curWidth = targetArchSk.Proxy.getEdgeTagDictSyncWidth(		
+                                          targetArchSk, None, subIndex,		
+                                          propSetUuid=self.propSetUuid)		
             if not curWidth:							
-                curWidth = self.targetArchSketch.ArchSketchWidth.Value		
-        if not curWidth:												
-            curWidth = self.targetWall.OverrideWidth[subIndex]								
-        reply = QtGui.QInputDialog.getText(None, "Input Width","Width of Wall Segment", text=str(curWidth))		
+                curWidth = targetArchSk.ArchSketchWidth.Value			
+            if not curWidth:  # if above is 0					
+                curWidth = self.targetWall.OverrideWidth[subIndex]		
+        else:  # if not self.targetWall.ArchSketchData				
+            curWidth = self.targetWall.OverrideWidth[subIndex]			
+										
+        reply = QtGui.QInputDialog.getText(None, "Input Width",			
+                                           "Width of Wall Segment",		
+                                           text=str(curWidth))			
         if reply[1]:  # user clicked OK						
             if reply[0]:							
                 replyWidth = float(reply[0])					
@@ -1253,34 +1436,37 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
                 return None							
         else:  # user clicked not OK, i.e. Cancel ?				
             return None								
-        if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch)=='Sketcher::SketchObject':	
-                # Save information in ArchWall					
-                tempOverrideWidth = self.targetWall.OverrideWidth		
-                tempOverrideWidth[subIndex] = replyWidth			
-                self.targetWall.OverrideWidth = tempOverrideWidth		
-            elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-                # Save information in ArchWall					
-                tempOverrideWidth = self.targetWall.OverrideWidth		
-                tempOverrideWidth[subIndex] = replyWidth			
-                self.targetWall.OverrideWidth = tempOverrideWidth		
-                tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync				
-                tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['width'] = replyWidth	
-                self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict				
-        else:  									
-            # nothing implemented if self.targetArchSketch is None		
-            pass								
+										
+        if self.targetWall.ArchSketchData:					
+            tempDict = targetArchSk.Proxy.EdgeTagDictSync			
+            tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]		
+            if self.propSetUuid:						
+                if not tempDictI.get(self.propSetUuid, None):			
+                    tempDictI[self.propSetUuid] = {}				
+                tempDictI[self.propSetUuid]['width'] = replyWidth		
+            else:								
+                tempDictI['width'] = replyWidth					
+            targetArchSk.Proxy.EdgeTagDictSync = tempDict			
+        else:  # if not self.targetWall.ArchSketchData				
+            # Save information in ArchWall					
+            tempOverrideWidth = self.targetWall.OverrideWidth			
+            tempOverrideWidth[subIndex] = replyWidth				
+            self.targetWall.OverrideWidth = tempOverrideWidth			
         FreeCADGui.Selection.clearSelection()					
+        targetArchSk.recompute()						
         self.targetWall.recompute()						
 										
     def escape(self,info):							
         k=info['Key']								
         if k=="ESCAPE":								
-            self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
+            targetWall = self.targetWall					
+            targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
             SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
 class _CommandEditWallOffset():							
+										
+    '''Edit Offset of Wall Segment (Underlying ArchSketch) Command Definition'''
 										
     def GetResources(self):							
         return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Offset',	
@@ -1293,22 +1479,30 @@ class _CommandEditWallOffset():
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
+        msg1 = "Select an Arch Wall (with Base ArchSketch) or ArchSketch"	
+        msg2 = "Arch Wall without Base is not supported - "			
+        msg3 = ("ArchSketchData is set False :  " +				
+                "This tool would update ArchWall's ArchSketchEdges " +		
+                "but Not data in the underlying ArchSketch")			
+        msg4 = ("Select target Edge of the ArchSketch " +			
+                "to Edit the corresponding Wall Segment Offset")		
+        msg5 = ("Gui to edit Arch Wall with a DWire Base is not " +		
+                "implemented yet - Please directly edit ArchWall " +		
+                "OverrideOffset attribute for the purpose.")			
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
         except:									
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall (with underlying Base ArchSketch or Sketch) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         targetObjectBase = None							
-										
         if Draft.getType(sel0) not in ["Wall","ArchSketch"]:			
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall (with underlying Base ArchSketch or Sketch) to Edit")		
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
-										
-        if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
+        if hasattr(sel0, "Base"):  # Wall has Base, ArchSketch does not		
             if sel0.Base:  # ArchSketch or Sketch				
                 targetObjectBase = sel0.Base					
             else:								
-                reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall (with underlying Base ArchSketch or Sketch) or ArchSketch")		
+                reply = QtGui.QMessageBox.information(None,"",msg2 + msg1)	
                 return								
         else:									
             targetObjectBase = sel0						
@@ -1316,54 +1510,51 @@ class _CommandEditWallOffset():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if not "ArchSketchEdges" in sel0.PropertiesList:											
-            sel0.addProperty("App::PropertyStringList","ArchSketchEdges","Wall",QT_TRANSLATE_NOOP("App::Property","Selected edges (or group of edges) of the base Sketch/ArchSketch, to use in creating the shape of this Arch Wall (instead of using all the Base Sketch/ArchSketch's edges by default).  Input are index numbers of edges or groups.  Disabled and ignored if Base object (ArchSketch) provides selected edges (as Wall Axis) information, with getWallBaseShapeEdgesInfo() method.  [ENHANCEMENT by ArchSketch] GUI 'Edit Wall Segment' Tool is provided in external SketchArch Add-on to let users to (de)select the edges interactively.  'Toponaming-Tolerant' if ArchSketch is used in Base (and SketchArch Add-on is installed).  Warning : Not 'Toponaming-Tolerant' if just Sketch is used."))				
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:		
-            targetObjectBase.ViewObject.HideDependent = False					
-            #Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")			
-            if not sel0.ArchSketchData:																					
-                reply = QtGui.QMessageBox.information(None,"","ArchSketchData is set False :  This tool would update ArchWall's ArchSketchEdges but Not data in the underlying ArchSketch")		
+        if Draft.getType(targetObjectBase) in ['ArchSketch']:			
+            targetObjectBase.ViewObject.HideDependent = False			
+            if not sel0.ArchSketchData:						
+                reply = QtGui.QMessageBox.information(None,"",msg3)		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
-            App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to Edit the corresponding Wall Segment Offset "+ "\n")	
+            App.Console.PrintMessage(msg4 + "\n")				
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallOffsetObserver(sel0, targetObjectBase)			
             self.observer = s							
             FreeCADGui.Selection.addObserver(s)					
-										
         elif Draft.getType(targetObjectBase) == 'Wire':				
-            reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
+            reply = QtGui.QMessageBox.information(None,"",msg5)			
 										
 FreeCADGui.addCommand('EditWallOffset', _CommandEditWallOffset())		
+										
+										
 class GuiEditWallOffsetObserver(SketchArchCommands.selectObjectObserver):	
 										
     def __init__(self, targetWall, targetBaseSketch):				
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,	
+                                                         'Edge')		
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
+										
         self.targetWall = targetWall						
         self.targetArchSketch = targetBaseSketch				
+										
+        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid		
+										
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
         targetWall.ViewObject.Transparency = 60					
         targetWall.recompute()							
-        if targetBaseSketch:  # would be none ?					
-            tempOverrideOffset = None						
-            wallOffset = None							
-            wallOffset = 0  # Default										
-            if targetWall.ArchSketchData and Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-                if hasattr(self.targetArchSketch.Proxy, "getUnsortedEdgesOffset"):				
-                    tempOverrideOffset = targetBaseSketch.Proxy.getUnsortedEdgesOffset(targetBaseSketch)	
-                    tempOverrideOffset = [i if i is not None else wallOffset for i in tempOverrideOffset]	
-            if not tempOverrideOffset:						
-                tempOverrideOffset = self.targetWall.OverrideOffset		
-                # filling OverrideOffset for geometry edges		 	
-                while len(tempOverrideOffset) < len(targetBaseSketch.Geometry):	
-                    tempOverrideOffset.append(wallOffset)  #(0)			
-                tempOverrideOffset = [i if i is not None else wallOffset for i in tempOverrideOffset]	
-            self.targetWall.OverrideOffset = tempOverrideOffset						
-													
+        if not targetWall.ArchSketchData:					
+            wallWidth = targetWall.Offset.Value  # use Wall's Offset		
+            tempOverrideOffset = self.targetWall.OverrideOffset			
+            # filling OverrideOffset for geometry edges		 		
+            while len(tempOverrideOffset) < len(targetBaseSketch.Geometry):	
+                tempOverrideOffset.append(wallOffset)				
+            tempOverrideOffset = [i if i is not None else wallOffset		
+                                  for i in tempOverrideOffset]			
+            self.targetWall.OverrideOffset = tempOverrideOffset			
+										
     def tasksSketchClose(self):							
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
         self.targetWall.recompute()						
@@ -1375,47 +1566,58 @@ class GuiEditWallOffsetObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
         App.Console.PrintMessage("Input Width"+ "\n")				
-        curOffset = None												
-        if self.targetWall.ArchSketchData and hasattr(self.targetArchSketch, "Proxy"):					
-            if hasattr(self.targetArchSketch.Proxy, 'getEdgeTagDictSyncOffset'):					
-                curOffset = self.targetArchSketch.Proxy.getEdgeTagDictSyncOffset(self.targetArchSketch, None, subIndex)	
+        curOffset = None							
+        targetArchSk = self.targetArchSketch					
+        if self.targetWall.ArchSketchData:					
+            curOffset = targetArchSk.Proxy.getEdgeTagDictSyncOffset(		
+                                           targetArchSk, None, subIndex,	
+                                           propSetUuid=self.propSetUuid)	
             if not curOffset:							
-                curOffset = 0  #self.targetArchSketch.ArchSketchWidth.Value	
-        if not curOffset:												
-            curOffset = self.targetWall.OverrideOffset[subIndex]							
-        reply = QtGui.QInputDialog.getText(None, "Input Offset","Offset of Wall Segment", text=str(curOffset))		
+                curOffset = targetArchSk.Offset					
+        else:  # if not self.targetWall.ArchSketchData				
+            curOffset = self.targetWall.OverrideOffset[subIndex]		
+										
+        reply = QtGui.QInputDialog.getText(None, "Input Offset",		
+                                           "Offset of Wall Segment",		
+                                           text=str(curOffset))			
         if reply[1]:  # user clicked OK						
             if reply[0]:							
-                replyWidth = float(reply[0])					
+                replyOffset = float(reply[0])					
             else:  # no input							
                 return None							
         else:  # user clicked not OK, i.e. Cancel ?				
             return None								
-        if self.targetWall.ArchSketchData and Draft.getType(self.targetArchSketch) == 'ArchSketch':	
-            tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync					
-            tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['offset'] = replyWidth		
-            self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict					
-        elif self.targetArchSketch is not None:					
+        if self.targetWall.ArchSketchData:					
+            tempDict = targetArchSk.Proxy.EdgeTagDictSync			
+            tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]		
+            if self.propSetUuid:						
+                if not tempDictI.get(self.propSetUuid, None):			
+                    tempDictI[self.propSetUuid] = {}				
+                tempDictI[self.propSetUuid]['offset'] = replyOffset		
+            else:								
+                tempDictI['offset'] = replyOffset				
+            targetArchSk.Proxy.EdgeTagDictSync = tempDict			
+        #elif targetArchSk is not None:						
+        else:  # if not self.targetWall.ArchSketchData				
             # Save information in ArchWall					
             tempOverrideOffset = self.targetWall.OverrideOffset			
-            tempOverrideOffset[subIndex] = replyWidth				
+            tempOverrideOffset[subIndex] = replyOffset				
             self.targetWall.OverrideOffset = tempOverrideOffset			
-        else:  									
-            # nothing implemented if self.targetArchSketch is None		
-            pass								
         FreeCADGui.Selection.clearSelection()					
+        targetArchSk.recompute()						
         self.targetWall.recompute()						
 										
     def escape(self,info):							
         k=info['Key']								
         if k=="ESCAPE":								
-            self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
+            targetWall = self.targetWall					
+            targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
             SketchArchCommands.selectObjectObserver.escape(self,info)		
 										
 										
 class _CommandEditWallAttach():							
 										
-    '''Edit ArchSketch and ArchObjects Attachment Command Definition		
+    '''Edit ArchObjects and ArchSketch Attachment Command Definition		
        edit attachment to Wall Segment (Underlying Arch]Sketch)'''		
 										
     def GetResources(self):							
@@ -1513,8 +1715,8 @@ class GuiEditWallAttachObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetObject = targetObject					
         self.targetWall = targetHostWall					
@@ -1640,8 +1842,8 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
 										
         self.targetStructure = targetStructure  # maybe None			
@@ -1747,8 +1949,8 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')				
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
 										
         self.targetCurtainWallList = targetCurtainWallList  # becomes a List	
@@ -1825,8 +2027,11 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
 										
 class _CommandEditWall():							
 										
+    '''Edit ArchWall (Underlying ArchSketch) Command Definition '''		
+										
     def GetResources(self):							
-        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Wall_Toggle.svg',	
+        return {'Pixmap'  : SketchArchIcon.getIconPath() +			
+                                           '/icons/Edit_Wall_Toggle.svg',	
                 'Accel'   : "E, W",						
                 'MenuText': "Edit Wall",					
                 'ToolTip' : "Select Wall / ArchSketch to edit ",		
@@ -1836,37 +2041,41 @@ class _CommandEditWall():
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
+        msg1 = "Select an Arch Wall (with Base ArchSketch) or ArchSketch"	
+        msg2 = "Arch Wall without Base is not supported - "			
+        msg3 = ("ArchSketchData is set False :  " +				
+                "This tool would update ArchWall's ArchSketchEdges " +		
+                "but Not data in the underlying ArchSketch")			
+        msg4 = ("Select target Edge of the ArchSketch " +			
+                "to turn it on/off as Wall Segment")				
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
         except:									
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Structure ( with underlying Base ArchSketch Sketch ) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         targetObjectBase = None							
-										
-        if Draft.getType(sel0) not in ['Wall', 'ArchSketch']:											
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall (with underlying Base ArchSketch Sketch) to Edit")		
-            return																
-        if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not										
+        if Draft.getType(sel0) not in ['Wall', 'ArchSketch']:			
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
+            return								
+        if hasattr(sel0, "Base"):  # Wall has Base, ArchSketch does not		
             if sel0.Base:  # ArchSketch or Sketch				
                 targetObjectBase = sel0.Base					
             else:								
-                reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch Sketch ) or ArchSketch ")		
-                return																							
+                reply = QtGui.QMessageBox.information(None,"",msg2 + msg1)	
+                return								
         else:									
             targetObjectBase = sel0						
             if Draft.getType(sel0.InList[0]) in ["Wall"]:			
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if not "ArchSketchEdges" in sel0.PropertiesList:											
-            sel0.addProperty("App::PropertyStringList","ArchSketchEdges","Wall",QT_TRANSLATE_NOOP("App::Property","Selected edges (or group of edges) of the base Sketch/ArchSketch, to use in creating the shape of this Arch Wall (instead of using all the Base Sketch/ArchSketch's edges by default).  Input are index numbers of edges or groups.  Disabled and ignored if Base object (ArchSketch) provides selected edges (as Wall Axis) information, with getWallBaseShapeEdgesInfo() method.  [ENHANCEMENT by ArchSketch] GUI 'Edit Wall Segment' Tool is provided in external SketchArch Add-on to let users to (de)select the edges interactively.  'Toponaming-Tolerant' if ArchSketch is used in Base (and SketchArch Add-on is installed).  Warning : Not 'Toponaming-Tolerant' if just Sketch is used."))				
         if Draft.getType(targetObjectBase) in ['ArchSketch']:			
             targetObjectBase.ViewObject.HideDependent = False			
             #Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")	
             if not sel0.ArchSketchData:						
-                reply = QtGui.QMessageBox.information(None,"","ArchSketchData is set False :  This tool would update ArchWall's ArchSketchEdges but Not data in the underlying ArchSketch")		
+                reply = QtGui.QMessageBox.information(None,"",msg3)		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
-            App.Console.PrintMessage("Select target Edge of the ArchSketch to turn it on/off as Wall Segment "+ "\n")	
+            App.Console.PrintMessage(msg4 + "\n")				
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallObserver(sel0, targetObjectBase)			
             self.observer = s							
@@ -1878,15 +2087,20 @@ FreeCADGui.addCommand('EditWall', _CommandEditWall())
 										
 class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):		
 										
-    def __init__(self, targetWall, targetBaseSketch):				
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')	
+    def __init__(self, targetWall, targetBaseSketch, propSetUuid=None):		
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,	
+                                                         'Edge')		
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
-        self.manualUpdateBtn = self.taskspanel.findChild(			
-            QtGui.QToolButton, "manualUpdate")					
+        self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
+                                                         "manualUpdate")	
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetWall = targetWall						
         self.targetArchSketch = targetBaseSketch				
+        if propSetUuid:								
+            self.propSetUuid = propSetUuid					
+        else:									
+            self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid		
         if self.targetWall:							
             self.targetWallTransparency = targetWall.ViewObject.Transparency	
             targetWall.ViewObject.Transparency = 60				
@@ -1904,24 +2118,30 @@ class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):
         subIndex = int( sub.lstrip('Edge'))-1					
         curWallStatus = None							
         newWallStatus = None							
-										
-        targetArchSketch = self.targetArchSketch				
-        curWallStatus = targetArchSketch.Proxy.getEdgeTagDictSyncRoleStatus(targetArchSketch, None, subIndex, role='wallAxis')	
-        if curWallStatus == True:						
-            newWallStatus = 'Disabled'						
-        elif curWallStatus == 'Disabled':					
-            newWallStatus = True						
-        else:									
-            construction = targetArchSketch.getConstruction(subIndex)		
-            if not construction:  # for Wall, True if not construction		
+        targetArchSk = self.targetArchSketch					
+        if self.targetWall.ArchSketchData:					
+            curWallStatus = targetArchSk.Proxy.getEdgeTagDictSyncRoleStatus(	
+                            targetArchSk, None, subIndex, role='wallAxis',	
+                            propSetUuid=self.propSetUuid)			
+            if curWallStatus == True:						
                 newWallStatus = 'Disabled'					
-            else:								
+            elif curWallStatus == 'Disabled':					
                 newWallStatus = True						
-        if self.targetWall.ArchSketchData:							
-            tempDict = targetArchSketch.Proxy.EdgeTagDictSync					
-            tempDict[targetArchSketch.Geometry[subIndex].Tag]['wallAxis'] = newWallStatus	
-            self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict				
-        if True:								
+            else:								
+                construction = targetArchSk.getConstruction(subIndex)		
+                if not construction:  # for Wall, True if not construction	
+                    newWallStatus = 'Disabled'					
+                else:								
+                    newWallStatus = True					
+            tempDict = targetArchSk.Proxy.EdgeTagDictSync			
+            tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]		
+            if self.propSetUuid:						
+                if not tempDictI.get(self.propSetUuid, None):			
+                    tempDictI[self.propSetUuid] = {}				
+                tempDictI[self.propSetUuid]['wallAxis'] = newWallStatus		
+            else:								
+                tempDictI['wallAxis'] = newWallStatus				
+            targetArchSk.Proxy.EdgeTagDictSync = tempDict			
             wallEdgesList = self.targetWall.ArchSketchEdges			
             if str(subIndex) in wallEdgesList:					
                 wallEdgesList.remove(str(subIndex))				
@@ -1936,17 +2156,78 @@ class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):
     def escape(self,info):							
         k=info['Key']								
         if k=="ESCAPE":								
-            self.targetWall.ViewObject.Transparency = self.targetWallTransparency	
-            SketchArchCommands.selectObjectObserver.escape(self,info)			
-											
-											
+            targetWall = self.targetWall					
+            targetWall.ViewObject.Transparency = self.targetWallTransparency	
+            SketchArchCommands.selectObjectObserver.escape(self,info)		
+										
+										
+class _CommandPropertySet():							
+										
+    def GetResources(self):							
+										
+        return {'Pixmap' : SketchArchIcon.getIconPath() +			
+                                          '/icons/PropertySet.svg',		
+                'Accel' : "Alt+T",						
+                'MenuText': "Variant PropertySet",				
+                'ToolTip' : "Create Variant Layout, Properties, Layer etc." +	
+                            "(add PropertySet )"}				
+										
+    def IsActive(self):								
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        msg1 = ("Select Arch Object (Wall supported at the moment) " +		
+                "with underlying Base ArchSketch Sketch.")			
+        msg2 = ("Arch Wall without Base is not supported - " + msg1)		
+        msg3 = ("Select target Edge of the ArchSketch to turn it on/off " +	
+                "as Wall Segment")						
+        try:									
+            sel0 = Gui.Selection.getSelection()[0]				
+        except:									
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
+            return								
+        targetObjectBase = None							
+        if Draft.getType(sel0) not in ['Wall']:					
+            reply = QtGui.QMessageBox.information(None,"",msg2)			
+            return								
+        if hasattr(sel0, "Base"): # Wall can have or have no Base		
+            if Draft.getType(sel0.Base) in ['ArchSketch']:			
+                targetObjectBase = sel0.Base					
+            else:								
+                reply = QtGui.QMessageBox.information(None,"",msg2)		
+                return								
+        else:									
+            reply = QtGui.QMessageBox.information(None,"",msg2)			
+            return								
+        newWall = addArchWall(None, targetObjectBase)				
+										
+        u = uuid.uuid4()							
+        us = str(u)								
+        psn = 'PropetrySet-' + us						
+        targetObjectBase.Proxy.PropertySetDict[us] = {'name':psn}		
+        if newWall:								
+            targetObjectBase.ViewObject.HideDependent = False			
+            newWall.ArchSketchPropertySet = ['Default', psn]			
+            newWall.ArchSketchPropertySet = psn					
+            newWall.Proxy.ArchSkPropSetPickedUuid = us				
+            Gui.ActiveDocument.setEdit(targetObjectBase)			
+            App.Console.PrintMessage(msg3 + "\n")				
+            FreeCADGui.Selection.clearSelection()				
+            s=GuiEditWallObserver(newWall, targetObjectBase, propSetUuid=us)	
+            self.observer = s							
+            FreeCADGui.Selection.addObserver(s)					
+										
+FreeCADGui.addCommand('PropertySet', _CommandPropertySet())			
+										
+										
 class _Command_ArchSketch():							
 										
     ''' ArchSketch Command Definition - Gui to make an ArchSketch '''		
 										
     def GetResources(self):							
-        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/SketchArchWorkbench.svg',	
-                'Accel' : "Alt+S",								
+        return {'Pixmap' : SketchArchIcon.getIconPath() +			
+                                          '/icons/SketchArchWorkbench.svg',	
+                'Accel' : "Alt+S",						
                 'MenuText': "New ArchSketch",					
                 'ToolTip' : "create an ArchSketch"}				
 										
@@ -1976,8 +2257,9 @@ class _Command_Voxel():
         try:									
             sel = Gui.Selection.getSelection()[0]				
         except:									
-            reply = QtGui.QMessageBox.information(None,"","Select an object with Shape to 'voxelise' ")								
-            return																		
+            reply = QtGui.QMessageBox.information(None,"",			
+                          "Select an object with Shape to 'voxelise' ")		
+            return								
         try:									
             sel1 = Gui.Selection.getSelection()[1]				
         except:									
@@ -1999,20 +2281,23 @@ class _Command_CellComplex():
     ''' ArchSketch Command Definition - Gui to make CellComplex '''		
 										
     def GetResources(self):							
-        return {'Pixmap' : SketchArchIcon.getIconPath() + '/icons/CellComplex.svg',		
-                'Accel' : "Alt+c",								
-                'MenuText': "Create CelllComplex",						
-                'ToolTip' : "create CelllComplex"}						
-												
-    def IsActive(self):										
-        return not FreeCAD.ActiveDocument is None						
-    def Activated(self):									
-        sel = None										
-        try:											
-            sel = Gui.Selection.getSelection()[0]						
-        except:											
-            reply = QtGui.QMessageBox.information(None,"","Select an object with Shape to get CellComplexElement ")								
-        cc = makeCellComplex(sel)																		
+        return {'Pixmap' : SketchArchIcon.getIconPath() +			
+                                          '/icons/CellComplex.svg',		
+                'Accel' : "Alt+c",						
+                'MenuText': "Create CelllComplex",				
+                'ToolTip' : "create CelllComplex"}				
+										
+    def IsActive(self):								
+        return not FreeCAD.ActiveDocument is None				
+										
+    def Activated(self):							
+        sel = None								
+        try:									
+            sel = Gui.Selection.getSelection()[0]				
+        except:									
+            reply = QtGui.QMessageBox.information(None,"",			
+                    "Select an object with Shape to get CellComplexElement ")	
+        cc = makeCellComplex(sel)						
 										
 FreeCADGui.addCommand('CellComplex', _Command_CellComplex())			
 										
@@ -2413,19 +2698,36 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
 '''------------------- Creation/Insertion Functions ---------------------'''	
 										
 										
-def makeArchSketch(grp=None, label="ArchSketch__NAME", attachToAxisOrSketch=None, placementAxis_Or_masterSketch=None, copyFlag=None, visibility=None):		
+def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,	
+                   placementAxis_Or_masterSketch=None,copyFlag=None,		
+                   visibility=None):						
   name = "ArchSketch"								
   if grp:									
       archSketch = grp.newObject("Sketcher::SketchObjectPython",name)		
   else:										
-      archSketch=App.ActiveDocument.addObject("Sketcher::SketchObjectPython",name)	
+      archSketch=App.ActiveDocument.addObject("Sketcher::SketchObjectPython",	
+                                              name)				
   archSketch.Label = label							
   archSketchInsta=ArchSketch(archSketch)					
   archSketch.AttachToAxisOrSketch = "Master Sketch"				
   return archSketch								
 										
 										
+def addArchWall(grp=None, baseobj=None, length=None, width=None, height=None,	
+                align="Center", face=None):					
+    label = "Wall__" + baseobj.Label						
+    archWall = Arch.makeWall(baseobj, length, width, height, align, face)	
+    archWall.ViewObject.Transparency = 0					
+    archWall.ViewObject.LineWidth = 1						
+    archWall.ViewObject.Visibility = True					
+    archWall.Label = label							
+    if grp:									
+        grp.addObject(archWall)							
+    return archWall								
+										
+										
 '''------------------------- Low Level Operation --------------------------'''	
+										
 										
 def changeAttachMode(fp, fpProp):						
     if fpProp == "AttachToAxisOrSketch":					
@@ -2527,24 +2829,24 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex, snapP
 																								
 # For All Sketch, Not Only ArchSketch						
 										
-def getSketchSortedClEdgesOrder(sketch,archSketchEdges=None):			
+def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,			
+                                propSetUuid=None):				
 										
       ''' Call getSortedClEdgesOrder() -					
           To do Part.getSortedClusters() on geometry of a Sketch (omit		
-          construction geometry), check the order of edges to return lists of	
-          indexes in the order of sorted edges	 			 	
+          construction geometry if no 'wallAxis' role), check the order of	
+          edges to return lists of indexes in the order of sorted edges.	
+										
+          Supported role='wallAxis'						
 										
           return:								
-          - clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, and		
-          - clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat	
+            clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, and		
+            clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat	
       '''									
 										
       skGeom = sketch.Geometry							
-      skGeomEdgesFullSet = []							
       skGeomEdgesSet = []							
       for c, i in enumerate(skGeom):						
-          skGeomEdge = i.toShape()						
-          skGeomEdgesFullSet.append(skGeomEdge)					
           if isinstance(i, ArchSketch.GeomSupported):				
               wallAxisStatus = None						
               if archSketchEdges is not None:					
@@ -2553,7 +2855,8 @@ def getSketchSortedClEdgesOrder(sketch,archSketchEdges=None):
                                             'getEdgeTagDictSyncWallStatus'):	
                   skProxy = sketch.Proxy					
                   wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch,	
-                                           tag=i.Tag, role='wallAxis')		
+                                           tag=i.Tag, role='wallAxis',		
+                                           propSetUuid=propSetUuid)		
               else:								
                   if hasattr(i, 'Construction'):				
                       construction = i.Construction				
@@ -2562,8 +2865,8 @@ def getSketchSortedClEdgesOrder(sketch,archSketchEdges=None):
                   if not construction:						
                       wallAxisStatus = True					
               if wallAxisStatus:						
-                  skGeomEdgesSet.append(skGeomEdge)				
-      return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)		
+                  skGeomEdgesSet.append(sketch.ShapeList[c])			
+      return getSortedClEdgesOrder(skGeomEdgesSet, sketch.ShapeList)		
 										
 										
 def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):		
@@ -2764,47 +3067,47 @@ def boundBoxShape(obj, enlarge):
     return rect  #, objPl (no need to return as it is the original object's placement)				
 														
 														
-def getSketchEdges(sk):																
-																		
-    ''' return lists in lists '''														
-																		
-    skGeom = sk.GeometryFacadeList														
-    skGeomEdges = []																
-    skGeomEdgesFull = []															
-																		
-    for i in skGeom:																
-        if isinstance(i.Geometry, (Part.LineSegment, Part.Circle, Part.ArcOfCircle)):								
-                skGeomEdgesI = i.Geometry.toShape()												
-																		
-                if not i.Construction:														
-                    skGeomEdges.append(skGeomEdgesI)												
-                skGeomEdgesFull.append(skGeomEdgesI)												
-    return skGeomEdges, skGeomEdgesFull														
-																		
-																		
-def flattenEdLst(edgesLstInLst):							
-											
-    flattened  = [e for sublist in edgesLstInLst for e in sublist]			
-    return flattened									
-											
-											
-def selfCutEdges(edges):								
-    '''											
-        The provided edges are cut one by one against the rest,				
-        the fragments of edges are collected in a list of list,				
-        and returned.									
-    '''											
-											
-    cutEdgesList = []									
-    l = len(edges)									
-    for n in range(l):									
-        cutEdgesListI = []								
-        edgesC = edges.copy()								
-        e = edgesC.pop(n)								
-        cut = e.cut(edgesC)								
-        for cutE in cut.Edges:								
-            cutEdgesListI.append(cutE)							
-        cutEdgesList.append(cutEdgesListI)						
-    return cutEdgesList									
-											
+def getSketchEdges(sk):								
+										
+    ''' return lists in lists '''						
+										
+    skGeom = sk.GeometryFacadeList						
+    skGeomEdges = []								
+    skGeomEdgesFull = []							
+										
+    for i in skGeom:								
+        if isinstance(i.Geometry, ArchSketch.GeomSupported):			
+                skGeomEdgesI = i.Geometry.toShape()				
+										
+                if not i.Construction:						
+                    skGeomEdges.append(skGeomEdgesI)				
+                skGeomEdgesFull.append(skGeomEdgesI)				
+    return skGeomEdges, skGeomEdgesFull						
+										
+										
+def flattenEdLst(edgesLstInLst):						
+										
+    flattened  = [e for sublist in edgesLstInLst for e in sublist]		
+    return flattened								
+										
+										
+def selfCutEdges(edges):							
+    '''										
+        The provided edges are cut one by one against the rest,			
+        the fragments of edges are collected in a list of list,			
+        and returned.								
+    '''										
+										
+    cutEdgesList = []								
+    l = len(edges)								
+    for n in range(l):								
+        cutEdgesListI = []							
+        edgesC = edges.copy()							
+        e = edgesC.pop(n)							
+        cut = e.cut(edgesC)							
+        for cutE in cut.Edges:							
+            cutEdgesListI.append(cutE)						
+        cutEdgesList.append(cutEdgesListI)					
+    return cutEdgesList								
+										
 #***************************************************************************	
