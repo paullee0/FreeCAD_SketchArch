@@ -101,7 +101,15 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205754)
 
 
-#### 5. Floor Area Calculation + Room Dimension
+#### 5. Variant PropertySets : Variant Arch Layout / Objects
+![alt text 5](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons//PropertySet.svg) 
+
+- See YouTube Video adn FreeCAD Forum Discussion at the moment - https://forum.freecad.org/viewtopic.php?p=784622#p784622
+- (Click To PLAY VIDEO !)
+[![Youtub Video](https://i9.ytimg.com/vi/1rlPwVOXWKc/mq3.jpg?sqp=CNS1opQG&rs=AOn4CLBho4vSSl9OJ3Ce44ZdC-_zjwg10g)](https://youtu.be/_UERVIczKMY "Click To PLAY VIDEO !")
+
+
+#### 6. Floor Area Calculation + Room Dimension
 
 - [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=47905&start=70#p485618))
 - See below on CellComplex
@@ -110,7 +118,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 
 
 
-#### 6. CellComplex Creation [Topologic]
+#### 7. CellComplex Creation [Topologic]
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/CellComplex.svg)
 
 - CellComplex is a Topologic concept and object : see ([OSArch discussion - Talk on Topologic: Redefining BIM through Spatial Topology, Information, and Grammars](https://community.osarch.org/discussion/131/talk-on-topologic-redefining-bim-through-spatial-topology-information-and-grammars#latest))
@@ -125,7 +133,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 ![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170538)
 
 
-#### 7. Topological Naming Tolerant
+#### 8. Topological Naming Tolerant
 
 - Progress / Status of Implementation :
   
@@ -160,7 +168,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 [![ Youtube Video](https://i9.ytimg.com/vi/Sqt2rezgPZk/mq2.jpg?sqp=CIzNopQG&rs=AOn4CLC1cDMCGaulTNjBOEkRnu0fJNmyKw)](https://youtu.be/Sqt2rezgPZk "Click To PLAY VIDEO - 'TopoNaming Tolerant' Feature !")
 
 
-#### 8. Voxelisation
+#### 9. Voxelisation
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Voxel.svg)
 
 
@@ -191,7 +199,7 @@ What ceated ?
 <details>
   <summary>Click to expand!</summary>
   
-#### 9. Space / Room / Zone & Cell Complex Definition
+#### 10. Space / Room / Zone & Cell Complex Definition
 
 - A Space, Room or Zone could be defined right within (Arch)Sketch itself
 - Automatic identification of each enclosed area (room) defined by edges (walls)
@@ -217,7 +225,7 @@ What ceated ?
   - 'Grouped' under 'ArchSpace' as well
 
 
-#### 10. More concepts of adopting ArchSketch as Building Layout Object
+#### 11. More concepts of adopting ArchSketch as Building Layout Object
 
   - Different materials for wall surface on each sides
   - Different wall joint / junction geometrical shape
