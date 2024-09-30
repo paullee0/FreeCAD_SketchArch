@@ -1155,7 +1155,7 @@ class _CommandEditWallAlign():
     '''Edit Align of Wall Segment (Underlying ArchSketch) Command Definition'''	
 										
     def GetResources(self):							
-        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Align',	
+        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Align.svg',	
                 'Accel'   : "E, A",						
                 'MenuText': "Edit Wall Segment Align",				
                 'ToolTip' : "Select Wall/ArchSketch to Flip Segment Align ",	
@@ -1315,7 +1315,7 @@ class _CommandEditWallWidth():
     '''Edit Width of Wall Segment (Underlying ArchSketch) Command Definition'''	
 										
     def GetResources(self):							
-        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Width',	
+        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Width.svg',	
                 'Accel'   : "E, D",						
                 'MenuText': "Edit Wall Segment Width",				
                 'ToolTip' : "select Wall to Edit Wall Segment Width ",		
@@ -1469,7 +1469,7 @@ class _CommandEditWallOffset():
     '''Edit Offset of Wall Segment (Underlying ArchSketch) Command Definition'''
 										
     def GetResources(self):							
-        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Offset',	
+        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Offset.svg',	
                 'Accel'   : "E, F",						
                 'MenuText': "Edit Wall Segment Offset",				
                 'ToolTip' : "select Wall to Edit Wall Segment Offset ",		
@@ -1621,7 +1621,7 @@ class _CommandEditWallAttach():
        edit attachment to Wall Segment (Underlying Arch]Sketch)'''		
 										
     def GetResources(self):							
-        return {'Pixmap'  : SketchArchIcon.getIconPath()+'/icons/Edit_Attach',	
+        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Attach.svg',	
                 'Accel'   : "E, T",						
                 'MenuText': "Edit Attachment",					
                 'ToolTip' : "Select ArchSketch or Arch Window/Equipment (and optional a target) change attachment edge / to attach to a target ",	
