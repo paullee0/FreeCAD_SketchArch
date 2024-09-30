@@ -222,7 +222,6 @@ class _Wall(ArchComponent.Component):
         # TODO By Paul 2024.9.8
             obj.ArchSketchPropertySet = ['Default']
         if not hasattr(self,"ArchSkPropSetPickedUuid"):  # 'obj.Proxy', 'self' not works ?
-            print (' debug- no ArchSkPropSetPickedUuid !')
             self.ArchSkPropSetPickedUuid = ''
 
         # TODO By Paul 2024.9.22
@@ -237,7 +236,6 @@ class _Wall(ArchComponent.Component):
 
     # TODO By Paul 2024.9.15
     def loads(self,state):
-        print (' state are - ', state)  # Remarks : if only 1 property, it is not enclosed in a list (if used [0], the 1st character of the Uuid string is returned )
         self.ArchSkPropSetPickedUuid = state[0]
         self.ArchSkPropSetListPrev = state[1]
 
@@ -311,28 +309,27 @@ class _Wall(ArchComponent.Component):
         propSetListPrev = self.ArchSkPropSetListPrev
         propSetSelectedNamePrev = obj.ArchSketchPropertySet			# Not using name but uuid, as the former should be changeable
         propSetSelectedNameCur = None
-
-        # get full list of PropertySet
         propSetListCur = None
         if Draft.getType(obj.Base) == "ArchSketch":
             baseProxy = obj.Base.Proxy
             if hasattr(baseProxy,"getPropertySet"):
+                # get full list of PropertySet
                 propSetListCur = baseProxy.getPropertySet(obj.Base)
-
-        # get updated name (if any) of the selected PropertySet 
-        propSetSelectedNameCur = baseProxy.getPropertySet(obj.Base,
-                                           propSetUuid=propSetPickedUuidPrev)
+                # get updated name (if any) of the selected PropertySet 
+                propSetSelectedNameCur = baseProxy.getPropertySet(obj.Base,
+                                         propSetUuid=propSetPickedUuidPrev)
         if propSetSelectedNameCur:  # True if selection is not deleted
-                if propSetListPrev != propSetListCur:
-                    obj.ArchSketchPropertySet = propSetListCur
-                    obj.ArchSketchPropertySet = propSetSelectedNameCur
-                    self.ArchSkPropSetListPrev = propSetListCur
-                #elif propSetListPrev == propSetListCur:
-                    #pass  #nothing to do in this case
-                # but if below, though (propSetListPrev == propSetListCur)
-                elif propSetSelectedNamePrev != propSetSelectedNameCur:
-                    obj.ArchSketchPropertySet = propSetSelectedNameCur
+            if propSetListPrev != propSetListCur:
+                obj.ArchSketchPropertySet = propSetListCur
+                obj.ArchSketchPropertySet = propSetSelectedNameCur
+                self.ArchSkPropSetListPrev = propSetListCur
+            #elif propSetListPrev == propSetListCur:
+                #pass  #nothing to do in this case
+            # but if below, though (propSetListPrev == propSetListCur)
+            elif propSetSelectedNamePrev != propSetSelectedNameCur:
+                obj.ArchSketchPropertySet = propSetSelectedNameCur
         else:  # True if selection is deleted					# TODO Would really 'deleted' in the PropertySetDict, or 'marked' it as 'disabled' etc.?
+            if propSetListCur:
                 if propSetListPrev != propSetListCur:
                     obj.ArchSketchPropertySet = propSetListCur
                     obj.ArchSketchPropertySet = 'Default'
@@ -411,7 +408,6 @@ class _Wall(ArchComponent.Component):
 
                                     for edge in baseEdges:
                                         while offset < (edge.Length-obj.Joint.Value):
-                                            #print i," Edge ",edge," : ",edge.Length," - ",offset
                                             if offset:
                                                 t = edge.tangentAt(offset)
                                                 p = t.cross(n)
