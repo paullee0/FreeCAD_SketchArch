@@ -83,7 +83,6 @@ class ArchSketch(ArchSketchObject):
 										
       obj.setEditorMode("MapMode",1)						
       obj.setEditorMode("MapReversed",1)					
-      obj.setEditorMode("Constraints",2)					
       obj.setEditorMode("Placement",1)						
 										
 										
