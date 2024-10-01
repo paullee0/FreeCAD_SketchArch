@@ -142,7 +142,7 @@ class ArchSketch(ArchSketchObject):
           sstr="The returned Shape of the ArchSkech with supported geometries"	
           fp.addProperty('Part::PropertyTopoShapeList', 'ShapeList',		
                          ArchSkPropStr, QT_TRANSLATE_NOOP("App::Property",	
-                         sstr,8))						
+                         sstr),8)						
 																										
 																										
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):		
