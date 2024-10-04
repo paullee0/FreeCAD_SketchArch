@@ -1164,21 +1164,30 @@ class _CommandEditWallAlign():
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
+        msg1 = "Select an Arch Wall (with Base ArchSketch) or ArchSketch"	
+        msg2 = "Arch Wall without Base is not supported - "			
+        msg3 = ("ArchSketchData is set False :  " +				
+                "This tool would update ArchWall's ArchSketchEdges " +		
+                "but Not data in the underlying ArchSketch")			
+        msg4 = ("Select target Edge of the ArchSketch " +			
+                "to Flip the corresponding Wall Segment Align")			
+        msg5 = ("Gui to edit Arch Wall with a DWire Base is not " +		
+                "implemented yet - Please directly edit ArchWall " +		
+                "OverrideAlign attribute for the purpose.")			
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
         except:									
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         targetObjectBase = None							
-										
         if Draft.getType(sel0) not in ["Wall","ArchSketch"]:			
-            reply = QtGui.QMessageBox.information(None,"","Select an Arch Wall ( with underlying Base ArchSketch or Sketch ) or ArchSketch ")	
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         if hasattr(sel0, "Base"): # Wall has Base, ArchSketch does not		
             if sel0.Base:							
                 targetObjectBase = sel0.Base					
             else:								
-                reply = QtGui.QMessageBox.information(None,"","Arch Wall without Base is not supported - Select an Arch Wall ( with underlying Base ArchSketch or Sketch )")	
+                reply = QtGui.QMessageBox.information(None,"",msg2 + msg1)	
                 return								
         else:									
             targetObjectBase = sel0						
@@ -1186,18 +1195,20 @@ class _CommandEditWallAlign():
                 sel0 = sel0.InList[0]						
             else:								
                 sel0 = None							
-        if Draft.getType(targetObjectBase) in ['ArchSketch', 'Sketcher::SketchObject']:	
+        if Draft.getType(targetObjectBase) in ['ArchSketch']:			
             targetObjectBase.ViewObject.HideDependent = False			
             Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")		
+            if not sel0.ArchSketchData:						
+                reply = QtGui.QMessageBox.information(None,"",msg3)		
             Gui.ActiveDocument.setEdit(targetObjectBase)			
-            App.Console.PrintMessage("Select target Edge of the ArchSketch / Sketch to Flip the corresponding Wall Segment Align "+ "\n")	
+            App.Console.PrintMessage(msg4 + "\n")				
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallAlignObserver(sel0, targetObjectBase)			
             self.observer = s							
             FreeCADGui.Selection.addObserver(s)					
-        elif Draft.getType(targetObjectBase) == 'Wire':				
-            reply = QtGui.QMessageBox.information(None,"","Gui to edit Arch Wall with a DWire Base is not implemented yet - Please directly edit ArchWall OverrideAlign attribute for the purpose.")	
 										
+        elif Draft.getType(targetObjectBase) == 'Wire':				
+            reply = QtGui.QMessageBox.information(None,"",msg5)			
 										
 FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())			
 										
@@ -1205,7 +1216,8 @@ FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())
 class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):	
 										
     def __init__(self, targetWall, targetBaseSketch):				
-        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,'Edge')					
+        SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,	
+                                                         'Edge')		
         mw = FreeCADGui.getMainWindow()						
         self.taskspanel = mw.findChild(QtGui.QDockWidget, "Tasks")		
         self.manualUpdateBtn = self.taskspanel.findChild(QtGui.QToolButton,	
@@ -1213,28 +1225,21 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.manualUpdateBtn.destroyed.connect(self.tasksSketchClose)		
         self.targetWall = targetWall  # maybe None				
         self.targetArchSketch = targetBaseSketch  # maybe None			
-        if self.targetWall:							
-            self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
-            targetWall.ViewObject.Transparency = 60				
-            targetWall.recompute()						
-        if targetBaseSketch:							
-            tempOverrideAlign = None						
-            wallAlign = None							
-            if Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-                wallAlign = targetBaseSketch.Align				
-            if not wallAlign:							
-                wallAlign = targetWall.Align  # use Wall's Align		
-            if Draft.getType(self.targetArchSketch) == 'ArchSketch':					
-                if hasattr(self.targetArchSketch.Proxy, "getUnsortedEdgesAlign"):			
-                    tempOverrideAlign = targetBaseSketch.Proxy.getUnsortedEdgesAlign(targetBaseSketch)	
-                    tempOverrideAlign = [i if i is not None else wallAlign for i in tempOverrideAlign]	
-            if not tempOverrideAlign:						
-                tempOverrideAlign = self.targetWall.OverrideAlign		
-                # filling OverrideAlign for geometry edges		 	
-                while len(tempOverrideAlign) < len(targetBaseSketch.Geometry):	
-                    tempOverrideAlign.append(wallAlign)				
-                tempOverrideAlign = [i if i is not None else wallAlign for i in tempOverrideAlign]	
-            self.targetWall.OverrideAlign = tempOverrideAlign						
+										
+        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid		
+										
+        self.targetWallTransparentcy = targetWall.ViewObject.Transparency	
+        targetWall.ViewObject.Transparency = 60					
+        targetWall.recompute()							
+        if True:  # if not targetWall.ArchSketchData:				
+            wallAlign = targetWall.Align  # use Wall's Align			
+            tempOverrideAlign = self.targetWall.OverrideAlign			
+            # filling OverrideAlign for geometry edges			 	
+            while len(tempOverrideAlign) < len(targetBaseSketch.Geometry):	
+                tempOverrideAlign.append(wallAlign)				
+            tempOverrideAlign = [i if i is not None else wallAlign		
+                                 for i in tempOverrideAlign]			
+            self.targetWall.OverrideAlign = tempOverrideAlign			
 										
     def tasksSketchClose(self):							
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy	
@@ -1246,58 +1251,54 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.edge = sub								
         self.pickedEdgePlacement = App.Vector(pnt)				
         subIndex = int( sub.lstrip('Edge'))-1					
+        App.Console.PrintMessage("Click Edge to change its Align"+ "\n")	
 										
-        if self.targetArchSketch is not None:					
-            if Draft.getType(self.targetArchSketch)=='Sketcher::SketchObject':	
-                curAlign = self.targetWall.OverrideAlign[subIndex]		
+        targetArchSk = self.targetArchSketch					
+        if (self.targetWall.ArchSketchData and hasattr(targetArchSk.Proxy,	
+                                               "getEdgeTagDictSyncAlign")):	
+            curAlign = targetArchSk.Proxy.getEdgeTagDictSyncAlign(self.		
+                                          targetArchSketch, None, subIndex,	
+                                          propSetUuid=self.propSetUuid)		
+            if curAlign == 'Left':						
+                curAlign = 'Right'						
+            elif curAlign == 'Right':						
+                curAlign = 'Center'						
+            elif curAlign == 'Center':						
+                curAlign = 'Left'						
+            else:  # 'Center' or else?						
+                curAlign = 'Right'						
+            tempDict = targetArchSk.Proxy.EdgeTagDictSync			
+            tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]		
+            if self.propSetUuid:						
+                if not tempDictI.get(self.propSetUuid, None):			
+                    tempDictI[self.propSetUuid] = {}				
+                tempDictI[self.propSetUuid]['align'] = curAlign			
+            else:								
+                tempDictI['align'] = curAlign					
+            targetArchSk.Proxy.EdgeTagDictSync = tempDict			
+            targetArchSk.recompute()						
+        else: 									
+            if (self.targetWall.ArchSketchData and not				
+                     hasattr(targetArchSk.Proxy, "getEdgeTagDictSyncAlign")):	
+                msg1 = ("ArchSketchData set but SketchArch Not installed : " +	
+                        "This tool would update ArchWall's ArchSketchEdges " +	
+                        "but Not data in the underlying ArchSketch")		
+                reply = QtGui.QMessageBox.information(None,"",msg1)		
+            curAlign = self.targetWall.OverrideAlign[subIndex]			
+            if curAlign == 'Left':						
+                curAlign = 'Right'						
+            elif curAlign == 'Right':						
+                curAlign = 'Center'						
+            elif curAlign == 'Center':						
+                curAlign = 'Left'						
+            else:  # 'Center' or else?						
+                curAlign = 'Right'						
 										
-                if curAlign == 'Left':						
-                    curAlign = 'Right'						
-                elif curAlign == 'Right':					
-                    curAlign = 'Center'						
-                elif curAlign == 'Center':					
-                    curAlign = 'Left'						
-                else:	# 'Center' or else?					
-                    curAlign = 'Right'						
-										
-                # Save information in ArchWall					
-                if self.targetWall:						
-                    tempOverrideAlign = self.targetWall.OverrideAlign		
-                    tempOverrideAlign[subIndex] = curAlign			
-                    self.targetWall.OverrideAlign = tempOverrideAlign		
-										
-            elif Draft.getType(self.targetArchSketch) == 'ArchSketch':		
-                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):							
-                    curAlign = self.targetWall.OverrideAlign[subIndex]									
-                else:															
-                    curAlign = self.targetArchSketch.Proxy.getEdgeTagDictSyncAlign(self.targetArchSketch, None, subIndex)		
-										
-                if curAlign == 'Left':						
-                    curAlign = 'Right'						
-                elif curAlign == 'Right':					
-                    curAlign = 'Center'						
-                elif curAlign == 'Center':					
-                    curAlign = 'Left'						
-                else:	# 'Center' or else?					
-                    curAlign = 'Right'						
-										
-                if not hasattr(self.targetArchSketch.Proxy, "getEdgeTagDictSyncAlign"):							
-                    if self.targetWall:						
-                        tempOverrideAlign = self.targetWall.OverrideAlign	
-                        tempOverrideAlign[subIndex] = curAlign			
-                        self.targetWall.OverrideAlign = tempOverrideAlign	
-                else:								
-                    tempDict = self.targetArchSketch.Proxy.EdgeTagDictSync					
-                    tempDict[self.targetArchSketch.Geometry[subIndex].Tag]['align'] = curAlign			
-                    self.targetArchSketch.Proxy.EdgeTagDictSync = tempDict					
-                if self.targetWall:										
-                    tempAlign = self.targetArchSketch.Align							
-                    tempOverrideAlign=self.targetArchSketch.Proxy.getUnsortedEdgesAlign(self.targetArchSketch)	
-                    tempOverrideAlign=[i if i is not None else tempAlign for i in tempOverrideAlign]		
-                    self.targetWall.OverrideAlign = tempOverrideAlign						
-        else:  									
-            # nothing implemented if self.targetArchSketch is None		
-            pass								
+            # Save information in ArchWall					
+            if self.targetWall:							
+                tempOverrideAlign = self.targetWall.OverrideAlign		
+                tempOverrideAlign[subIndex] = curAlign				
+                self.targetWall.OverrideAlign = tempOverrideAlign		
         FreeCADGui.Selection.clearSelection()					
         if self.targetWall:							
             self.targetWall.recompute()						
@@ -1333,7 +1334,7 @@ class _CommandEditWallWidth():
                 "to Edit the corresponding Wall Segment Width")			
         msg5 = ("Gui to edit Arch Wall with a DWire Base is not " +		
                 "implemented yet - Please directly edit ArchWall " +		
-                "OverrideAlign attribute for the purpose.")			
+                "OverrideWidth attribute for the purpose.")			
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
         except:									
