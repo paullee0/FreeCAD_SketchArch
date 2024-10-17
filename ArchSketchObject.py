@@ -2588,7 +2588,9 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
 																										
                     if hasattr(hostSketch, "Proxy"):																				
                         if hasattr(hostSkProxy, "getEdgeTagDictSyncAlign") and hasattr(hostSkProxy,"EdgeTagDictSync"):												
-                            pass																						
+                            align = hostSkProxy.getEdgeTagDictSyncAlign(hostSketch, None, msSubelementIndex)													
+                            if not align:																					
+                                align = hostSketch.Align																			
                     if align == None:																						
                         if hostWall:  #elif hostWall:																				
                             try:																						
