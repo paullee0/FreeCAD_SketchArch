@@ -2314,12 +2314,12 @@ def attachToMasterSketch(subject, target=None, subelement=None,
   if Draft.getType(subject) == "ArchSketch":					
       subject.MapReversed = False						
       subject.MapMode = mapMode							
-      subject.Support = subject.MasterSketch					
+      subject.AttachmentSupport = subject.MasterSketch				
 										
 										
 def detachFromMasterSketch(fp):							
   fp.MapMode = 'Deactivated'							
-  fp.Support = None								
+  fp.AttachmentSupport = None							
 										
 										
 def updatePropertiesLinkCommonODR(fp, linkFp=None, hostSketch=None):		
