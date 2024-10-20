@@ -2170,16 +2170,24 @@ class _CommandPropertySet():
                 'Accel' : "Alt+T",						
                 'MenuText': "Variant PropertySet",				
                 'ToolTip' : "Create Variant Layout, Properties, Layer etc." +	
-                            "(add PropertySet )"}				
+                            "(add extra PropertySet to ArchSketch )"}		
 										
     def IsActive(self):								
         return not FreeCAD.ActiveDocument is None				
 										
     def Activated(self):							
-        msg1 = ("Select Arch Object (Wall supported at the moment) " +		
-                "with underlying Base ArchSketch Sketch.")			
-        msg2 = ("Arch Wall without Base is not supported - " + msg1)		
-        msg3 = ("Select target Edge of the ArchSketch to turn it on/off " +	
+        msg1 = ("Select ArchSketch / Arch Object (Wall supported currently) " +	
+                "with underlying Base ArchSketch.")				
+        msg2 = ("Arch Wall without Base ArchSketch is not supported - " + msg1)	
+        msg3a= ("Create extra PropertySet to base ArchSketch.  Create Arch " +	
+                "Object as selected and set its ArchSketch PropertySet to " +	
+                "the new set.  Input PropertySet name here. ")			
+        msg3b= ("Create extra PropertySet to base ArchSketch.  Input " +	
+                "PropertySet name here. ")					
+        msg3c= ("PropertySet Not set to Default.  Could change the selected " +	
+                "PropertySet name by inputting new name here.  Canel to " +	
+                "skip and to create new PropertySet.")				
+        msg4 = ("Select target Edge of the ArchSketch to turn it on/off " +	
                 "as Wall Segment")						
         try:									
             sel0 = Gui.Selection.getSelection()[0]				
@@ -2187,31 +2195,70 @@ class _CommandPropertySet():
             reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
         targetObjectBase = None							
-        if Draft.getType(sel0) not in ['Wall']:					
-            reply = QtGui.QMessageBox.information(None,"",msg2)			
+        # Verify selection type and find ArchSkech/Arch Objects			
+        if Draft.getType(sel0) not in ['Wall', 'ArchSketch']:			
+            reply = QtGui.QMessageBox.information(None,"",msg1)			
             return								
-        if hasattr(sel0, "Base"): # Wall can have or have no Base		
+        elif hasattr(sel0, "Base"):  # Wall can have or have no Base		
             if Draft.getType(sel0.Base) in ['ArchSketch']:			
                 targetObjectBase = sel0.Base					
             else:								
                 reply = QtGui.QMessageBox.information(None,"",msg2)		
                 return								
-        else:									
-            reply = QtGui.QMessageBox.information(None,"",msg2)			
-            return								
-        newWall = addArchWall(None, targetObjectBase)				
-										
+        else:  # ArchSketch							
+            targetObjectBase = sel0						
+        # If selected ArchSketch/ArchWall is with PropertySet set to one	
+        # other than Default, change PropertyName rather than creating one.	
+        changeName = False							
+        # if sel0 is Wall							
+        if (sel0 != targetObjectBase) and (sel0.ArchSketchPropertySet 		
+                                           != 'Default'):			
+            changeName = True							
+            psUuid = sel0.Proxy.ArchSkPropSetPickedUuid				
+        elif (sel0 == targetObjectBase) and (targetObjectBase.PropertySet	
+                                             != 'Default'):			
+            changeName = True							
+            psUuid = targetObjectBase.Proxy.PropSetPickedUuid			
+        if changeName:								
+            psn = targetObjectBase.Proxy.getPropertySet(targetObjectBase,	
+                                                        propSetUuid=psUuid)	
+            reply = QtGui.QInputDialog.getText(None, "Input PropertySet Name",	
+                                               msg3c, text=psn)			
+            if reply[1]:  # user clicked OK					
+                psn = reply[0]							
+                targetObjectBase.Proxy.PropertySetDict[psUuid]['name'] = psn	
+                targetObjectBase.recompute()					
+                if sel0 != targetObjectBase:  # Wall				
+                    sel0.recompute()						
+                return  # No more action					
+            #else:  # user clicked Cancel, reply [0] will be ""			
+            #    pass # Cancel changing name					
         u = uuid.uuid4()							
         us = str(u)								
         psn = 'PropetrySet-' + us						
+        if sel0 != targetObjectBase:  # i.e. sel0 is Wall			
+            reply = QtGui.QInputDialog.getText(None, "Input PropertySet Name",	
+                                               msg3a, text=us)			
+        else:  # i.e. sel0 is not Wall, only ArchSketch				
+            reply = QtGui.QInputDialog.getText(None, "Input PropertySet Name",	
+                                               msg3b, text=us)			
+        if reply[1]:  # user clicked OK						
+            psn = reply[0]							
+        else:  # user clicked Cancel, reply [0] will be ""			
+            replyText = reply[0]						
+            return								
         targetObjectBase.Proxy.PropertySetDict[us] = {'name':psn}		
+        targetObjectBase.recompute()						
+        if sel0 == targetObjectBase:  # i.e. sel0 not Wall, only ArchSketch	
+            return  # No more action						
+        newWall = addArchWall(None, targetObjectBase)				
         if newWall:								
             targetObjectBase.ViewObject.HideDependent = False			
             newWall.ArchSketchPropertySet = ['Default', psn]			
             newWall.ArchSketchPropertySet = psn					
             newWall.Proxy.ArchSkPropSetPickedUuid = us				
             Gui.ActiveDocument.setEdit(targetObjectBase)			
-            App.Console.PrintMessage(msg3 + "\n")				
+            App.Console.PrintMessage(msg4 + "\n")				
             FreeCADGui.Selection.clearSelection()				
             s=GuiEditWallObserver(newWall, targetObjectBase, propSetUuid=us)	
             self.observer = s							
