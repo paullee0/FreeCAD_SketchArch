@@ -2356,18 +2356,23 @@ FreeCADGui.addCommand('CellComplex', _Command_CellComplex())
 										
 def attachToMasterSketch(subject, target=None, subelement=None,			
                          attachmentOffset=None, zOffset='0',			
-                         intersectingSubelement=None, mapMode='ObjectXY'):	
-										
-  if Draft.getType(subject) == "ArchSketch":					
-      subject.MapReversed = False						
-      subject.MapMode = mapMode							
-      subject.AttachmentSupport = subject.MasterSketch				
-										
-										
-def detachFromMasterSketch(fp):							
-  fp.MapMode = 'Deactivated'							
-  fp.AttachmentSupport = None							
-										
+                         intersectingSubelement=None, mapMode='ObjectXY'):
+
+    if Draft.getType(subject) == "ArchSketch":
+        subject.MapReversed = False
+        subject.MapMode = mapMode
+        if hasattr(subject, "AttachmentSupport"):
+            subject.AttachmentSupport = subject.MasterSketch
+        else:
+            subject.Support = subject.MasterSketch
+
+
+def detachFromMasterSketch(fp):
+    fp.MapMode = "Deactivated"
+    if hasattr(fp, "AttachmentSupport"):
+        fp.AttachmentSupport = None
+    else:
+        fp.Support = None
 										
 def updatePropertiesLinkCommonODR(fp, linkFp=None, hostSketch=None):		
     updateAttachmentOffset(fp, linkFp, mode='ODR')				
