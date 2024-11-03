@@ -465,6 +465,7 @@ class ArchSketch(ArchSketchObject):
       total = len(foundParentArchSketchNames)					
       for key, parentArchSketchName in enumerate(foundParentArchSketchNames):	
           parent = FreeCAD.ActiveDocument.getObject(parentArchSketchName)	
+          parent.Proxy.setProperties(parent)
           parent.Proxy.setPropertiesLinkCommon(parent)				
 										
           lite = True								
