@@ -465,7 +465,7 @@ class ArchSketch(ArchSketchObject):
       total = len(foundParentArchSketchNames)					
       for key, parentArchSketchName in enumerate(foundParentArchSketchNames):	
           parent = FreeCAD.ActiveDocument.getObject(parentArchSketchName)	
-          parent.Proxy.setProperties(parent)
+          parent.Proxy.setProperties(parent)					
           parent.Proxy.setPropertiesLinkCommon(parent)				
 										
           lite = True								
@@ -1149,6 +1149,40 @@ def makeCellComplex(InputShapeObj=None):
 #---------------------------------------------------------------------------#	
 #             FreeCAD Commands Classes & Associated Functions               #	
 #---------------------------------------------------------------------------#	
+										
+class _CommandArchSketchLock():							
+										
+    """GuiCommand for the ArchSketch Lock tool."""				
+										
+    def __init__(self):								
+        FreeCAD.ArchSketchLock = True  #Assumed default checkable status	
+										
+    def GetResources(self):							
+        return {'Pixmap' :   SketchArchIcon.getIconPath() +			
+                                          '/icons/ArchSketchLock.svg',		
+                "Accel":     "Shift+S",						
+                "MenuText":  QT_TRANSLATE_NOOP("ArchSketchLock",		
+                                               "ArchSketch Lock"),		
+                "ToolTip":   QT_TRANSLATE_NOOP("ArchSketchLock",		
+                             "Enable / Disable ArchSketch creation by " +	
+                             "ArchWall and ArchObjects"),			
+                "CmdType":   "NoTransaction",					
+                "Checkable": self.isChecked()}					
+										
+    def IsActive(self):								
+        return True								
+										
+    def Activated(self, status=0):						
+        if not status:  #if FreeCAD.ArchSketchLock:				
+            FreeCAD.ArchSketchLock = False					
+        else:									
+            FreeCAD.ArchSketchLock = True					
+										
+    def isChecked(self):							
+        return FreeCAD.ArchSketchLock						
+										
+FreeCADGui.addCommand('ArchSketchLock', _CommandArchSketchLock())		
+										
 										
 class _CommandEditWallAlign():							
 										
@@ -2357,23 +2391,24 @@ FreeCADGui.addCommand('CellComplex', _Command_CellComplex())
 										
 def attachToMasterSketch(subject, target=None, subelement=None,			
                          attachmentOffset=None, zOffset='0',			
-                         intersectingSubelement=None, mapMode='ObjectXY'):
-
-    if Draft.getType(subject) == "ArchSketch":
-        subject.MapReversed = False
-        subject.MapMode = mapMode
-        if hasattr(subject, "AttachmentSupport"):
-            subject.AttachmentSupport = subject.MasterSketch
-        else:
-            subject.Support = subject.MasterSketch
-
-
-def detachFromMasterSketch(fp):
-    fp.MapMode = "Deactivated"
-    if hasattr(fp, "AttachmentSupport"):
-        fp.AttachmentSupport = None
-    else:
-        fp.Support = None
+                         intersectingSubelement=None, mapMode='ObjectXY'):	
+										
+  if Draft.getType(subject) == "ArchSketch":					
+      subject.MapReversed = False						
+      subject.MapMode = mapMode							
+      if hasattr(subject, "AttachmentSupport"):					
+          subject.AttachmentSupport = subject.MasterSketch			
+      else:									
+          subject.Support = subject.MasterSketch				
+										
+										
+def detachFromMasterSketch(fp):							
+  fp.MapMode = 'Deactivated'							
+  if hasattr(fp, "AttachmentSupport"):						
+      fp.AttachmentSupport = None						
+  else:										
+       fp.Support = None							
+										
 										
 def updatePropertiesLinkCommonODR(fp, linkFp=None, hostSketch=None):		
     updateAttachmentOffset(fp, linkFp, mode='ODR')				
@@ -2755,7 +2790,12 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
 										
 def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,	
                    placementAxis_Or_masterSketch=None,copyFlag=None,		
-                   visibility=None):						
+                   visibility=None, ArchSketchLock='Check'):			
+  # Check if ArchSketchLock is checked before proceed further			
+  if ArchSketchLock=='Check':							
+      if hasattr(FreeCAD, 'ArchSketchLock'):					
+          if not FreeCAD.ArchSketchLock:  # If False				
+              raise Exception  # BimWall on exception would create Sketch	
   name = "ArchSketch"								
   if grp:									
       archSketch = grp.newObject("Sketcher::SketchObjectPython",name)		
