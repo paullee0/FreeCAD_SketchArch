@@ -977,8 +977,9 @@ class ArchSketch(ArchSketchObject):
       self.rebuildEdgeTagDicts(fp)						
       self.callParentToRebuildMasterSketchTags(fp) # "Master"			
       ''' Update to self.clEdgeDict Dict - For Backward Compatibility '''	
+      if not fp.ShapeList:							
+          self.updateShapeList(fp)						
       self.updateSortedClustersEdgesOrder(fp)					
-										
 										
 										
 class Voxel:									
