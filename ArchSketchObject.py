@@ -888,7 +888,7 @@ class ArchSketch(ArchSketchObject):
 										
       # Get ArchSketch edges to construct ArchStructure				
       #										
-      # Use inputed archsketchEdges if numeric, if available, as priority	
+      # Use inputted archsketchEdges if numeric, if available, as priority	
       if archsketchEdges:							
           for i in archsketchEdges:						
               if isinstance(i, int):						
@@ -1700,7 +1700,7 @@ class _CommandEditWallAttach():
             else:																							
                 targetHostWall = sel1																					
         # if no sel1: check if it was assigned -																			
-        # or use Windows.Hosts / Equiptment.Host, i.e. not changing targetHostWall															
+        # or use Windows.Hosts / Equipment.Host, i.e. not changing targetHostWall															
         # Window has Hosts, Equipment Host																				
         elif hasattr(sel0, "Host"):						
             if sel0.Host:							
@@ -2579,7 +2579,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             # sync index in record ('toponaming tolerent' process)		
             if msSubelementIndex != None:					
                 fp.MasterSketchSubelementIndex = msSubelementIndex		
-            else:  #  previous tag has no corresonding index			
+            else:  #  previous tag has no corresponding index			
                 if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)	
                     if fp.Proxy.Type == "ArchSketch":				
                         fp.Proxy.MasterSketchSubelementTag =  ''		
@@ -2606,7 +2606,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             if msIntSubelementIndex != None:					
                 fp.MasterSketchIntersectingSubelementIndex = (			
                                                           msIntSubelementIndex) 
-            else:  #  previous tag has no corresonding index			
+            else:  #  previous tag has no corresponding index			
                 if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)	
                     if fp.Proxy.Type == "ArchSketch":				
                         fp.Proxy.MasterSketchIntersectingSubelementTag =  ''	
