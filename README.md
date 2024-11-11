@@ -109,7 +109,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 #### 5. Variant PropertySets : Variant Arch Layout / Objects
 ![alt text 5](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons//PropertySet.svg) 
 
-- See YouTube Video adn FreeCAD Forum Discussion at the moment - https://forum.freecad.org/viewtopic.php?p=784622#p784622
+- See YouTube Video and FreeCAD Forum Discussion at the moment - https://forum.freecad.org/viewtopic.php?p=784622#p784622
 - (Click To PLAY VIDEO !)
 [![Youtub Video](https://youtu.be/N3OAd1ykAag?si=phtlBXa9CzZ9CVPZ)](https://youtu.be/N3OAd1ykAag?si=phtlBXa9CzZ9CVPZ "Click To PLAY VIDEO !")
 [![Youtub Video](https://i9.ytimg.com/vi/1rlPwVOXWKc/mq3.jpg?sqp=CNS1opQG&rs=AOn4CLBho4vSSl9OJ3Ce44ZdC-_zjwg10g)](https://youtu.be/_UERVIczKMY "Click To PLAY VIDEO !")
@@ -149,7 +149,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
     1.  10.7.2021 Exposed - [Arch Object Intuitive Automatic Placement](https://forum.freecad.org/viewtopic.php?t=60034)
     2.  27.4.2024 Exposed - [Arch Wall Width Setting for Each Wall Segment](https://forum.freecad.org/viewtopic.php?p=755689#p755689)
     3.  27.4.2024 Exposed - [Arch Wall Align Setting for Each Wall Segment](https://forum.freecad.org/viewtopic.php?p=755689#p755689)
-    4.  (Above 3 Features Implementated in 2019-21)
+    4.  (Above 3 Features Implemented in 2019-21)
  
 - The most important feature is to make referencing to a Sketch Edge persistent (not currently as of 0.19_pre, unless use @realthunder's branch),
   3 main approaches :
@@ -191,7 +191,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
     - b. Any Corner : If Any Corner of (the BoundBox of) voxel is within the Input Shape, it is shown
     - c. All Corners : Only if All Corners of (the BoundBox of) voxel are within the Input Shape, it is shown
 
-What ceated ?
+What's created ?
 1. Under the hood, pressing the button creates 2 objects
 2. First is a 'VoxelPart' object with a propertyLink to an 'Input Shape Object'
 3. Second is an App::Link which produce the Array of Voxels

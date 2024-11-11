@@ -225,7 +225,7 @@ class Arch_Window:
                 wp += ", " + p.lower() + "=" + str(getattr(self,p))
             import ArchSketchObject
             if hasattr(ArchSketchObject, 'attachToHost'):
-                # Window sketch's stay at orgin is good if addon exists
+                # Window sketch's stay at origin is good if addon exists
                 FreeCADGui.doCommand("win = Arch.makeWindowPreset('" + WindowPresets[self.Preset] + "' " + wp + ")")
                 FreeCADGui.doCommand("FreeCADGui.Selection.addSelection(win)")
                 w = FreeCADGui.Selection.getSelection()[0]
