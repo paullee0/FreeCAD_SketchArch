@@ -227,7 +227,7 @@ class _Wall(ArchComponent.Component):
         self.Type = "Wall"
 
     # TODO By Paul 2024.9.15
-    def dumps(self):  # Supercede Arch.Component.dumps()
+    def dumps(self):  # Supersede Arch.Component.dumps()
         return self.ArchSkPropSetPickedUuid, self.ArchSkPropSetListPrev
 
     # TODO By Paul 2024.9.15
