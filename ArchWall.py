@@ -212,28 +212,32 @@ class _Wall(ArchComponent.Component):
             obj.ArchSketchData = True
         if not "ArchSketchEdges" in lp:
             obj.addProperty("App::PropertyStringList","ArchSketchEdges","Wall",QT_TRANSLATE_NOOP("App::Property","Selected edges (or group of edges) of the base Sketch/ArchSketch, to use in creating the shape of this Arch Wall (instead of using all the Base Sketch/ArchSketch's edges by default).  Input are index numbers of edges or groups.  Disabled and ignored if Base object (ArchSketch) provides selected edges (as Wall Axis) information, with getWallBaseShapeEdgesInfo() method.  [ENHANCEMENT by ArchSketch] GUI 'Edit Wall Segment' Tool is provided in external SketchArch Add-on to let users to (de)select the edges interactively.  'Toponaming-Tolerant' if ArchSketch is used in Base (and SketchArch Add-on is installed).  Warning : Not 'Toponaming-Tolerant' if just Sketch is used."))
-
-        # TODO By Paul 2024.9.8
         if not hasattr(obj,"ArchSketchPropertySet"):
             obj.addProperty("App::PropertyEnumeration","ArchSketchPropertySet","Wall",QT_TRANSLATE_NOOP("App::Property","Select User Defined PropertySet to use in creating variant shape, layers of the Arch Wall with same ArchSketch "))
             obj.ArchSketchPropertySet = ['Default']
         if not hasattr(self,"ArchSkPropSetPickedUuid"):  # 'obj.Proxy', 'self' not works ?
             self.ArchSkPropSetPickedUuid = ''
-        # TODO By Paul 2024.9.22
         if not hasattr(self,"ArchSkPropSetListPrev"):
             self.ArchSkPropSetListPrev = []
-
         self.connectEdges = []
         self.Type = "Wall"
 
-    # TODO By Paul 2024.9.15
-    def dumps(self):  # Supercede Arch.Component.dumps()
+    def dumps(self):
+        super().dumps()
         return self.ArchSkPropSetPickedUuid, self.ArchSkPropSetListPrev
 
-    # TODO By Paul 2024.9.15
     def loads(self,state):
-        self.ArchSkPropSetPickedUuid = state[0]
-        self.ArchSkPropSetListPrev = state[1]
+        super().loads(state)  # do nothing as of 2024.11.28
+        if state == None:
+            return
+        elif state[0] == 'W':  # state[1] == 'a', behaviour before 2024.11.28
+            return
+        elif state[0] == 'Wall':
+            self.ArchSkPropSetPickedUuid = state[1]
+            self.ArchSkPropSetListPrev = state[2]
+        elif state[0] != 'Wall':  # model before merging super.dumps/loads()
+            self.ArchSkPropSetPickedUuid = state[0]
+            self.ArchSkPropSetListPrev = state[1]
 
     def onDocumentRestored(self,obj):
         """Method run when the document is restored. Re-adds the Arch component, and Arch wall properties."""
@@ -265,7 +269,7 @@ class _Wall(ArchComponent.Component):
             )
 
         if hasattr(obj,"ArchSketchData") and obj.ArchSketchData and Draft.getType(obj.Base) == "ArchSketch":
-            if hasattr(obj,"Width"):	# TODO Why test?  No need? ...
+            if hasattr(obj,"Width"):	# TODO need test?
                 obj.setEditorMode("Width", ["ReadOnly"])
             if hasattr(obj,"Align"):
                 obj.setEditorMode("Align", ["ReadOnly"])
@@ -277,13 +281,10 @@ class _Wall(ArchComponent.Component):
                 obj.setEditorMode("OverrideAlign", ["ReadOnly"])
             if hasattr(obj,"OverrideOffset"):
                 obj.setEditorMode("OverrideOffset", ["ReadOnly"])
-
-            # TODO By Paul 2024.9.15 - 2024.7.1
             if hasattr(obj,"ArchSketchEdges"):
                 obj.setEditorMode("ArchSketchEdges", ["ReadOnly"])
             if hasattr(obj,"ArchSketchPropertySet"):
                 obj.setEditorMode("ArchSketchPropertySet", 0)
-
         else:
             if hasattr(obj,"Width"):
                 obj.setEditorMode("Width", 0)
@@ -297,8 +298,6 @@ class _Wall(ArchComponent.Component):
                 obj.setEditorMode("OverrideAlign", 0)
             if hasattr(obj,"OverrideOffset"):
                 obj.setEditorMode("OverrideOffset", 0)
-
-            # TODO By Paul 2024.9.15 - 2024.7.1
             if hasattr(obj,"ArchSketchEdges"):
                 obj.setEditorMode("ArchSketchEdges", 0)
             if hasattr(obj,"ArchSketchPropertySet"):
@@ -322,11 +321,10 @@ class _Wall(ArchComponent.Component):
         base = None
         pl = obj.Placement
 
-        # TODO By Paul Add propertySet 2024.9.22
         # PropertySet support
-        propSetPickedUuidPrev = self.ArchSkPropSetPickedUuid			# TODO needs .copy() ? - seems no needs
+        propSetPickedUuidPrev = self.ArchSkPropSetPickedUuid
         propSetListPrev = self.ArchSkPropSetListPrev
-        propSetSelectedNamePrev = obj.ArchSketchPropertySet			# Not using name but uuid, as the former should be changeable
+        propSetSelectedNamePrev = obj.ArchSketchPropertySet
         propSetSelectedNameCur = None
         propSetListCur = None
         if Draft.getType(obj.Base) == "ArchSketch":
@@ -347,7 +345,7 @@ class _Wall(ArchComponent.Component):
             # but if below, though (propSetListPrev == propSetListCur)
             elif propSetSelectedNamePrev != propSetSelectedNameCur:
                 obj.ArchSketchPropertySet = propSetSelectedNameCur
-        else:  # True if selection is deleted					# TODO Would really 'deleted' in the PropertySetDict, or 'marked' it as 'disabled' etc.?
+        else:  # True if selection is deleted
             if propSetListCur:
                 if propSetListPrev != propSetListCur:
                     obj.ArchSketchPropertySet = propSetListCur
@@ -588,7 +586,6 @@ class _Wall(ArchComponent.Component):
             if (obj.Base and obj.Length.Value
                     and hasattr(self,"oldLength") and (self.oldLength is not None)
                     and (self.oldLength != obj.Length.Value)):
-
                 if hasattr(obj.Base,'Shape'):
                     if len(obj.Base.Shape.Edges) == 1:
                         import DraftGeomUtils
@@ -611,7 +608,6 @@ class _Wall(ArchComponent.Component):
                                 else:
                                     FreeCAD.Console.PrintError(translate("Arch","Error: Unable to modify the base object of this wall")+"\n")
 
-        # TODO By Paul 2024.9.22
         if (prop == "ArchSketchPropertySet" 
             and Draft.getType(obj.Base) == "ArchSketch"):
             baseProxy = obj.Base.Proxy
@@ -633,13 +629,10 @@ class _Wall(ArchComponent.Component):
                 obj.setEditorMode("OverrideAlign", ["ReadOnly"])
             if hasattr(obj,"OverrideOffset"):
                 obj.setEditorMode("OverrideOffset", ["ReadOnly"])
-
-            # TODO By Paul 2024.9.15 - 2024.7.1
             if hasattr(obj,"ArchSketchEdges"):
                 obj.setEditorMode("ArchSketchEdges", ["ReadOnly"])
             if hasattr(obj,"ArchSketchPropertySet"):
                 obj.setEditorMode("ArchSketchPropertySet", 0)
-
         else:
             if hasattr(obj,"Width"):
                 obj.setEditorMode("Width", 0)
@@ -653,8 +646,6 @@ class _Wall(ArchComponent.Component):
                 obj.setEditorMode("OverrideAlign", 0)
             if hasattr(obj,"OverrideOffset"):
                 obj.setEditorMode("OverrideOffset", 0)
-
-            # TODO By Paul 2024.9.15 - 2024.7.1
             if hasattr(obj,"ArchSketchEdges"):
                 obj.setEditorMode("ArchSketchEdges", 0)
             if hasattr(obj,"ArchSketchPropertySet"):
@@ -681,9 +672,6 @@ class _Wall(ArchComponent.Component):
         return faces
 
     def getExtrusionData(self,obj):
-
-        # TODO Paul 2024.9.18 Need to add propSetUuid=None here?
-        #      Just check Wall.Proxy.ArchSkPropSetPickedUuid here?
 
         """Get data needed to extrude the wall from a base object.
 
@@ -723,15 +711,12 @@ class _Wall(ArchComponent.Component):
         # (Adding support in SketchFeaturePython, DWire...)
         widths = []  # [] or None are both False
         if hasattr(obj,"ArchSketchData") and obj.ArchSketchData and Draft.getType(obj.Base) == "ArchSketch":
-            if hasattr(obj.Base, 'Proxy'):  # TODO Paul 2024.9.18 : No need to test, as above test if ArchSketch ?
+            if hasattr(obj.Base, 'Proxy'):  # TODO Any need to test ?
                 if hasattr(obj.Base.Proxy, 'getWidths'):
                     # Return a list of Width corresponding to indexes of sorted
                     # edges of Sketch.
-
-                    # TODO By Paul 2024.9.13
                     widths = obj.Base.Proxy.getWidths(obj.Base,
                                                       propSetUuid=propSetUuid)
-
         # Get width of each edge/wall segment from ArchWall.OverrideWidth if
         # Base Object does not provide it
         if not widths:
@@ -774,11 +759,8 @@ class _Wall(ArchComponent.Component):
                 if hasattr(obj.Base.Proxy, 'getAligns'):
                     # Return a list of Align corresponds to indexes of sorted
                     # edges of Sketch.
-
-                    # TODO By Paul 2024.9.13
                     aligns = obj.Base.Proxy.getAligns(obj.Base,
                                                       propSetUuid=propSetUuid)
-
         # Get align of each edge/wall segment from ArchWall.OverrideAlign if
         # Base Object does not provide it
         if not aligns:
@@ -815,11 +797,8 @@ class _Wall(ArchComponent.Component):
                 if hasattr(obj.Base.Proxy, 'getOffsets'):
                     # Return a list of Offset corresponding to indexes of sorted
                     # edges of Sketch.
-
-                    # TODO Paul Testing 2024.9.13
                     offsets = obj.Base.Proxy.getOffsets(obj.Base,
                                                         propSetUuid=propSetUuid)
-
         # Get offset of each edge/wall segment from ArchWall.OverrideOffset if
         # Base Object does not provide it
         if not offsets:
@@ -918,11 +897,8 @@ class _Wall(ArchComponent.Component):
 
                     elif hasattr(obj.Base, 'Proxy') and obj.ArchSketchData and \
                     hasattr(obj.Base.Proxy, 'getWallBaseShapeEdgesInfo'):
-
-                        # TODO By Paul 2024.9.13
                         wallBaseShapeEdgesInfo = obj.Base.Proxy.getWallBaseShapeEdgesInfo(obj.Base,	
                                                  propSetUuid=propSetUuid)
-
                         #get wall edges (not wires); use original edges if getWallBaseShapeEdgesInfo() provided none
                         if wallBaseShapeEdgesInfo:
                             self.basewires = wallBaseShapeEdgesInfo.get('wallAxis')  # 'wallEdges'  # widths, aligns, offsets?
@@ -935,8 +911,6 @@ class _Wall(ArchComponent.Component):
                         skGeom = obj.Base.GeometryFacadeList
                         skGeomEdges = []
                         skPlacement = obj.Base.Placement  # Get Sketch's placement to restore later
-
-                        # TODO By Paul 2024.6.28 - 2024.9.18
                         # Get ArchSketch edges to construct ArchWall
                         # No need to test obj.ArchSketchData ...
                         for ig, geom  in enumerate(skGeom):
@@ -1430,6 +1404,10 @@ class _ViewProviderWall(ArchComponent.ViewProviderComponent):
         return ArchComponent.ViewProviderComponent.setDisplayMode(self,mode)
 
     def setupContextMenu(self, vobj, menu):
+
+        if FreeCADGui.activeWorkbench().name() != 'BIMWorkbench':
+            return
+
         super().contextMenuAddEdit(menu)
 
         actionFlipDirection = QtGui.QAction(QtGui.QIcon(":/icons/Arch_Wall_Tree.svg"),
