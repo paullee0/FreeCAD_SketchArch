@@ -745,16 +745,29 @@ class _Structure(ArchComponent.Component):
         if not hasattr(self,"ArchSkPropSetListPrev"):
             self.ArchSkPropSetListPrev = []
 
-
         self.Type = "Structure"
 
 
-    # TODO By Paul 2024.11.19
+    # TODO By Paul 2024.12.01, 2024.11.19
     def dumps(self):  # Supercede Arch.Component.dumps()
-        return self.ArchSkPropSetPickedUuid, self.ArchSkPropSetListPrev
+        dump = super().dumps()
+        if not isinstance(dump, tuple):
+           dump = (dump,)  #Python Tuple With One Item
+        dump = dump + (self.ArchSkPropSetPickedUuid, self.ArchSkPropSetListPrev)
+        return dump
+
     def loads(self,state):
-        self.ArchSkPropSetPickedUuid = state[0]
-        self.ArchSkPropSetListPrev = state[1]
+        super().loads(state)  # do nothing as of 2024.11.28
+        if state == None:
+            return
+        elif state[0] == 'S':  # state[1] == 't', behaviour before 2024.11.28 
+            return
+        elif state[0] == 'Structure':
+            self.ArchSkPropSetPickedUuid = state[1]
+            self.ArchSkPropSetListPrev = state[2]
+        elif state[0] != 'Structure':  # model before merging super.dumps/loads()
+            self.ArchSkPropSetPickedUuid = state[0]
+            self.ArchSkPropSetListPrev = state[1]
 
 
     def onDocumentRestored(self,obj):
