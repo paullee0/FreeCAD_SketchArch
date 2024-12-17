@@ -258,7 +258,7 @@ Models
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
-(Before 1.0 Onward)
+(Before 1.0)
 * Launch FreeCAD and start the [Addons Manager](https://wiki.freecadweb.org/Addon_manager) (Tools > Addon manager)
 * Press the Configure... button.
   * The Addon manager options dialog box opens.
