@@ -251,6 +251,14 @@ Models
 
 'Semi'- Automatic (recommended)
 
+(From 1.0 Onward)
+* Find the Edit menu, then Preference to call the dialog box
+  * Go to Add-on Manager, find the Custom Repositories section
+  * Press + to add the repository to the list - https://github.com/paullee0/FreeCAD_SketchArch
+* Restart FreeCAD
+* Locate the workbench dropdown list and switch to the 'SketchArch workbench'
+
+(Before 1.0 Onward)
 * Launch FreeCAD and start the [Addons Manager](https://wiki.freecadweb.org/Addon_manager) (Tools > Addon manager)
 * Press the Configure... button.
   * The Addon manager options dialog box opens.
@@ -259,6 +267,7 @@ Models
   * Press the OK button button to close the dialog box.
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
+
 
 Manual
 
