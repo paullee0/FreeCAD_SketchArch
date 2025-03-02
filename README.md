@@ -76,18 +76,23 @@ For better and more intuitive architectural modelling workflow, this workbench l
 
 ![alt text 4a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Wall_Toggle.svg) 
 ![alt text 4b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Structure_Toggle.svg) 
-![alt text 4c](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_CurtainWall_Toggle.svg) <br>
+![alt text 4c](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_CurtainWall_Toggle.svg)
+![alt text 4d](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Stairs_Toggle.svg)
+<br>
+
 ArchSketch + ArchWall = Wall Layout <br>
 ArchSketch + ArchStructure = Slab Layout <br>
 ArchSketch + ArchCurtainWall = CurtainWall Layout <br>
+ArchSketch + ArchStairs = ArchStairs Layout <br>
 
 Have your ever set out your building layout in a sketch like below, and wonder if -
 
 - ArchWall would build walls based on edges in the middle part
 - ArchStructure build slab based on the outermost one, with an opening in the middle
 - ArchCurtainWall build panels based on the outermost one edges
+- ArchCurtainWall build flights based on edges forming slab void
 
-So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you can select the Edges in ArchSketch you want for your Wall, Slab, or Curtain Wall separately though on same ArchSketch; and you just edit the same ArchSketch,  and you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
+So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you can select the Edges in ArchSketch you want for your Wall, Slab, Curtain Wall or Stairs separately though on same ArchSketch; and you just edit the same ArchSketch,  and you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
 
 [FreeCAD Forum Discussion Thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=73018&sid=ba2732dd08a70b09011f667ae874e322)
 
@@ -106,7 +111,11 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 
 - See YouTube Video adn FreeCAD Forum Discussion at the moment - https://forum.freecad.org/viewtopic.php?p=784622#p784622
 - (Click To PLAY VIDEO !)
+[![Youtub Video](https://youtu.be/N3OAd1ykAag?si=phtlBXa9CzZ9CVPZ)](https://youtu.be/N3OAd1ykAag?si=phtlBXa9CzZ9CVPZ "Click To PLAY VIDEO !")
 [![Youtub Video](https://i9.ytimg.com/vi/1rlPwVOXWKc/mq3.jpg?sqp=CNS1opQG&rs=AOn4CLBho4vSSl9OJ3Ce44ZdC-_zjwg10g)](https://youtu.be/_UERVIczKMY "Click To PLAY VIDEO !")
+[![Youtub Video](https://youtu.be/pYUG3FHiyw0?si=0kNtpGtnEByD9vRt)](https://youtu.be/pYUG3FHiyw0?si=0kNtpGtnEByD9vRt "Click To PLAY VIDEO !")
+[![Youtub Video](https://youtu.be/pIgYn1Pppmk?si=5bFSWOuIXXwTPjka)](https://youtu.be/pIgYn1Pppmk?si=5bFSWOuIXXwTPjka "Click To PLAY VIDEO !")
+[![Youtub Video](https://youtu.be/FMuiW3wNG3o?si=t0ZCZyNqBF6syCKm)](https://youtu.be/FMuiW3wNG3o?si=t0ZCZyNqBF6syCKm "Click To PLAY VIDEO !")
 
 
 #### 6. Floor Area Calculation + Room Dimension
