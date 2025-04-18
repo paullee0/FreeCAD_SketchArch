@@ -145,7 +145,7 @@ class ArchSketch(ArchSketchObject):
           fp.addProperty('Part::PropertyTopoShapeList', 'ShapeList',
                          ArchSkPropStr, QT_TRANSLATE_NOOP("App::Property",
                          sstr),8)
-          fp.addProperty("App::PropertyString","PlacementAxisBackupString",RefObjStr,"Placement Axis to Attach on_ Back Up_ String")
+
 
   def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):
       '''
