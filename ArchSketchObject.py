@@ -155,6 +155,7 @@ class ArchSketch(ArchSketchObject):
       mode='init', 'ODR' for different settings
       '''
 
+
       if linkFp:
           fp = linkFp
       else:
@@ -1337,7 +1338,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall  # maybe None
         self.targetArchSketch = targetBaseSketch  # maybe None
 
-        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid'):
             self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
         else:
             self.propSetUuid = None
@@ -1501,7 +1502,7 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall
         self.targetArchSketch = targetBaseSketch
 
-        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid'):
             self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
         else:
             self.propSetUuid = None
@@ -1657,7 +1658,7 @@ class GuiEditWallOffsetObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall
         self.targetArchSketch = targetBaseSketch
 
-        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid'):
             self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
         else:
             self.propSetUuid = None
@@ -1996,7 +1997,7 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
             self.propSetUuid = propSetUuid
         else:
             if targetStruc and hasattr(targetStruc.Proxy,
-                                       'ArchSkPropSetPickedUuid')
+                                       'ArchSkPropSetPickedUuid'):
                 self.propSetUuid = targetStruc.Proxy.ArchSkPropSetPickedUuid
             else:
                 self.propSetUuid = None
@@ -2137,7 +2138,8 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
         if propSetUuid:
             self.propSetUuid = propSetUuid
         else:
-            if targetCw0 and hasattr(targetCw0.Proxy,'ArchSkPropSetPickedUuid')
+            if targetCw0 and hasattr(targetCw0.Proxy,
+                                     'ArchSkPropSetPickedUuid'):
                 self.propSetUuid = targetCw0.Proxy.ArchSkPropSetPickedUuid
             else:
                 self.propSetUuid = None
@@ -2280,7 +2282,7 @@ class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):
             self.propSetUuid = propSetUuid
         else:
             if targetWall and hasattr(targetWall.Proxy,
-                                      'ArchSkPropSetPickedUuid')
+                                      'ArchSkPropSetPickedUuid'):
                 self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
             else:
                 self.propSetUuid = None
@@ -2418,7 +2420,7 @@ class GuiEditStairsObserver(SketchArchCommands.selectObjectObserver):
             self.propSetUuid = propSetUuid
         else:
             if targetStairs and hasattr(targetStairs.Proxy,
-                                        'ArchSkPropSetPickedUuid')
+                                        'ArchSkPropSetPickedUuid'):
                 self.propSetUuid = targetStairs.Proxy.ArchSkPropSetPickedUuid
             else:
                 self.propSetUuid = None
@@ -2565,7 +2567,7 @@ class _CommandPropertySet():
         if (sel0 != targetObjectBase) and (sel0.ArchSketchPropertySet
                                            != 'Default'):
             changeName = True
-            if hasattr(sel0.Proxy,'ArchSkPropSetPickedUuid')
+            if hasattr(sel0.Proxy,'ArchSkPropSetPickedUuid'):
                 psUuid = sel0.Proxy.ArchSkPropSetPickedUuid
             else:
                 psUuid = None
