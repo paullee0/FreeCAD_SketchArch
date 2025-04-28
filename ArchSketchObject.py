@@ -1337,7 +1337,10 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall  # maybe None
         self.targetArchSketch = targetBaseSketch  # maybe None
 
-        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+            self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        else:
+            self.propSetUuid = None
 
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency
         targetWall.ViewObject.Transparency = 60
@@ -1498,7 +1501,10 @@ class GuiEditWallWidthObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall
         self.targetArchSketch = targetBaseSketch
 
-        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+            self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        else:
+            self.propSetUuid = None
 
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency
         targetWall.ViewObject.Transparency = 60
@@ -1651,7 +1657,10 @@ class GuiEditWallOffsetObserver(SketchArchCommands.selectObjectObserver):
         self.targetWall = targetWall
         self.targetArchSketch = targetBaseSketch
 
-        self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        if targetWall and hasattr(targetWall.Proxy,'ArchSkPropSetPickedUuid')
+            self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+        else:
+            self.propSetUuid = None
 
         self.targetWallTransparentcy = targetWall.ViewObject.Transparency
         targetWall.ViewObject.Transparency = 60
@@ -1986,7 +1995,11 @@ class GuiEditStructureObserver(SketchArchCommands.selectObjectObserver):
         if propSetUuid:
             self.propSetUuid = propSetUuid
         else:
-            self.propSetUuid = targetStruc.Proxy.ArchSkPropSetPickedUuid
+            if targetStruc and hasattr(targetStruc.Proxy,
+                                       'ArchSkPropSetPickedUuid')
+                self.propSetUuid = targetStruc.Proxy.ArchSkPropSetPickedUuid
+            else:
+                self.propSetUuid = None
         if self.targetStruc:
             self.targetStrucTransparency = targetStruc.ViewObject.Transparency
             targetStruc.ViewObject.Transparency = 60
@@ -2124,7 +2137,10 @@ class GuiEditCurtainWallObserver(SketchArchCommands.selectObjectObserver):
         if propSetUuid:
             self.propSetUuid = propSetUuid
         else:
-            self.propSetUuid = targetCw0.Proxy.ArchSkPropSetPickedUuid
+            if targetCw0 and hasattr(targetCw0.Proxy,'ArchSkPropSetPickedUuid')
+                self.propSetUuid = targetCw0.Proxy.ArchSkPropSetPickedUuid
+            else:
+                self.propSetUuid = None
         if self.targetCwList:
             self.targetCwListTransparency = []
             for c in self.targetCwList:
@@ -2263,7 +2279,11 @@ class GuiEditWallObserver(SketchArchCommands.selectObjectObserver):
         if propSetUuid:
             self.propSetUuid = propSetUuid
         else:
-            self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+            if targetWall and hasattr(targetWall.Proxy,
+                                      'ArchSkPropSetPickedUuid')
+                self.propSetUuid = targetWall.Proxy.ArchSkPropSetPickedUuid
+            else:
+                self.propSetUuid = None
         if self.targetWall:
             self.targetWallTransparency = targetWall.ViewObject.Transparency
             targetWall.ViewObject.Transparency = 60
@@ -2397,7 +2417,11 @@ class GuiEditStairsObserver(SketchArchCommands.selectObjectObserver):
         if propSetUuid:
             self.propSetUuid = propSetUuid
         else:
-            self.propSetUuid = targetStairs.Proxy.ArchSkPropSetPickedUuid
+            if targetStairs and hasattr(targetStairs.Proxy,
+                                        'ArchSkPropSetPickedUuid')
+                self.propSetUuid = targetStairs.Proxy.ArchSkPropSetPickedUuid
+            else:
+                self.propSetUuid = None
         if self.targetStairs:
             self.targetStairsTransparency= targetStairs.ViewObject.Transparency
             targetStairs.ViewObject.Transparency = 60
@@ -2541,7 +2565,10 @@ class _CommandPropertySet():
         if (sel0 != targetObjectBase) and (sel0.ArchSketchPropertySet
                                            != 'Default'):
             changeName = True
-            psUuid = sel0.Proxy.ArchSkPropSetPickedUuid
+            if hasattr(sel0.Proxy,'ArchSkPropSetPickedUuid')
+                psUuid = sel0.Proxy.ArchSkPropSetPickedUuid
+            else:
+                psUuid = None
         # sel0 is only ArchSketch
         elif (sel0 == targetObjectBase) and (targetObjectBase.PropertySet
                                              != 'Default'):
