@@ -155,6 +155,10 @@ class ArchSketch(ArchSketchObject):
       mode='init', 'ODR' for different settings
       '''
 
+      if hasattr(FreeCAD, 'ArchSketchLock'):
+          if not FreeCAD.ArchSketchLock:  # If False
+              return  # Not doing anything
+
 
       if linkFp:
           fp = linkFp
