@@ -3230,7 +3230,8 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
 
 def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,
                    placementAxis_Or_masterSketch=None,copyFlag=None,
-                   visibility=None, ArchSketchLock='Check'):
+                   visibility=None, ArchSketchLock='Check', align=None,
+                   width=None, height=None):
     # Check if ArchSketchLock is checked before proceed further
     if ArchSketchLock=='Check':
         if hasattr(FreeCAD, 'ArchSketchLock'):
@@ -3245,6 +3246,21 @@ def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,
     archSketch.Label = label
     archSketchInsta=ArchSketch(archSketch)
     archSketch.AttachToAxisOrSketch = "Master Sketch"
+
+    from draftutils import params
+    if not align:
+        align = params.get_param_arch("WallAlignment")
+    if not width:
+        width = params.get_param_arch("WallWidth")
+    if not height:
+        height = params.get_param_arch("WallHeight")
+    if align:
+        archSketch.Align = align
+    if width:
+        archSketch.ArchSketchWidth = width
+    if height:
+        archSketch.WallHeight = height
+
     return archSketch
 
 
