@@ -3249,7 +3249,8 @@ def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,
 
     from draftutils import params
     if not align:
-        align = params.get_param_arch("WallAlignment")
+        align = ["Center","Left","Right"][params.get_param_arch(
+                                                 "WallAlignment")]
     if not width:
         width = params.get_param_arch("WallWidth")
     if not height:
@@ -3259,7 +3260,7 @@ def makeArchSketch(grp=None,label="ArchSketch__NAME",attachToAxisOrSketch=None,
     if width:
         archSketch.ArchSketchWidth = width
     if height:
-        archSketch.WallHeight = height
+        archSketch.FloorHeight = height
 
     return archSketch
 
