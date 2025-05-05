@@ -2770,9 +2770,14 @@ def attachToHost(subject,target=None,subelement=None,pl=None):
 
     # Setup point of attachement
     point = pl.Base
-    pv = FreeCAD.Vector(point.x, point.y, point.z)
+    ptv = FreeCAD.Vector(point.x, point.y, point.z)
+    r0 = App.Rotation(0,0,0)
+    ptPl = FreeCAD.Placement(ptv,r0)
+    hostPl = host.Placement
+    invHostPl = host.Placement.inverse()
+    invHostPlPtPl = invHostPl.multiply(ptPl)
     import Part
-    pointShape = Part.Vertex(pv)
+    pointShape = Part.Vertex(invHostPlPtPl.Base)
 
     # Get SketchArch attachment values by getMinDistInfo()
     archSkProxy = host.Base.Proxy
