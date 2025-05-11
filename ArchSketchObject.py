@@ -2797,12 +2797,24 @@ def attachToHost(subject,target=None,subelement=None,pl=None):
     # Check & set direction of target(Wall) face (Wall Left/Right) to attach
     test1a = round((eAng - plRAng),6)
     test1b = round((eAng - plRAng - math.pi*2),6)
-    if not ((test1a == 0) or (test1b == 0)):  # not same angle
-        test2 = round((abs(eAng - plRAng) - math.pi), 6)
-        if test2 == 0:  # opposite angle
+    if (test1a == 0) or (test1b == 0):  # same angle
+        if hasattr(subj, "AutoNormalReversed"):
+            subj.AutoNormalReversed = True
             subj.AttachmentAlignment = 'WallRight'
+            subj.Flip180Degree = True
         else:
-            print(' something wrong')
+            subj.AttachmentAlignment = 'WallLeft'
+            subj.Flip180Degree = False
+    elif round((abs(eAng - plRAng) - math.pi), 6)  == 0:  # opposite angle
+        if hasattr(subj, "AutoNormalReversed"):
+            subj.AutoNormalReversed = True
+            subj.AttachmentAlignment = 'WallLeft'
+            subj.Flip180Degree = True
+        else:
+            subj.AttachmentAlignment = 'WallRight'
+            subj.Flip180Degree = False
+    else:  # Not same nor opposite ange!
+        print(' something wrong')
 
 
 def attachToMasterSketch(subject, target=None, subelement=None,
