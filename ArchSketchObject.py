@@ -2768,7 +2768,7 @@ def attachToHost(subject,target=None,subelement=None,pl=None):
     else:
         print(' something wrong')
 
-    # Setup point of attachement
+    # Setup point of attachment
     point = pl.Base
     ptv = FreeCAD.Vector(point.x, point.y, point.z)
     r0 = App.Rotation(0,0,0)
@@ -3035,7 +3035,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             if msIntSubelementIndex != None:
                 fp.MasterSketchIntersectingSubelementIndex = (
                                                           msIntSubelementIndex)
-            else:  #  previous tag has no corresonding index
+            else:  #  previous tag has no corresponding index
                 if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)
                     if fp.Proxy.Type == "ArchSketch":
                         fp.Proxy.MasterSketchIntersectingSubelementTag =  ''
