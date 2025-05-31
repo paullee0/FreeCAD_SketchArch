@@ -2768,7 +2768,7 @@ def attachToHost(subject,target=None,subelement=None,pl=None):
     else:
         print(' something wrong')
 
-    # Setup point of attachment
+    # Setup point of attachement
     point = pl.Base
     ptv = FreeCAD.Vector(point.x, point.y, point.z)
     r0 = App.Rotation(0,0,0)
@@ -2813,7 +2813,7 @@ def attachToHost(subject,target=None,subelement=None,pl=None):
         else:
             subj.AttachmentAlignment = 'WallRight'
             subj.Flip180Degree = False
-    else:  # Not same nor opposite ange!
+    else:  # Not same nor opposite angle!
         print(' something wrong')
 
 
@@ -2861,12 +2861,17 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     hostSkProxy = None
     hostWall = None
     hostObject = None
+    hostPropSetUuid = None
     v0 = App.Vector(0,0,0)
     if fp.AttachToAxisOrSketch == "Host":
         if hasattr(fp, "Hosts") and fp.Hosts:
+            # fp.Hosts[0] The 1st host is addressed for this feature
             if isinstance(fp.Hosts[0].getLinkedObject().Proxy, ArchWall._Wall):
                 hostWall = fp.Hosts[0]  # Can just take 1st Host wall
                 hostBase = hostWall.Base
+                if (hasattr(hostWall.Proxy,"ArchSkPropSetPickedUuid") and
+                        hostWall.Proxy.ArchSkPropSetPickedUuid):
+                    hostPropSetUuid = hostWall.Proxy.ArchSkPropSetPickedUuid
             else:  # i.e. attaching to objects other than Wall
                 hostObject = fp.Hosts[0]  # Can just take 1st Host Object
                 hostBase = hostObject.Base
@@ -3035,7 +3040,7 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             if msIntSubelementIndex != None:
                 fp.MasterSketchIntersectingSubelementIndex = (
                                                           msIntSubelementIndex)
-            else:  #  previous tag has no corresponding index
+            else:  #  previous tag has no corresonding index
                 if hasattr(fp, "Proxy"):  # ArchSketch/ArchObjects (Win/Equip)
                     if fp.Proxy.Type == "ArchSketch":
                         fp.Proxy.MasterSketchIntersectingSubelementTag =  ''
@@ -3103,7 +3108,8 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                     if (hasattr(hostSkProxy, "getWidth")
                             and hasattr(hostSkProxy,"EdgeTagDictSync")):
                         msSubelementWidth = hostSkProxy.getWidth(hostSketch,
-                                            None, msSubelementIndex)
+                                            None, msSubelementIndex,
+                                            propSetUuid=hostPropSetUuid)
                         if msSubelementWidth != None:
                             msSubelementWidth = msSubelementWidth * MM
                 if msSubelementWidth in [zeroMM, None]:
