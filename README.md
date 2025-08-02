@@ -2,7 +2,7 @@
 
 ![alt text 2](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/SketchArchWorkbench.svg)  An experimental add-on module to augment Arch Objects with additional features <br>
  <br>
-(This Add-On is usually developed in conjunction with the stock FreeCAD development particularly BIM workbench, so use the latest development weekly build release {or even compile from latest source} if there is update in this add-on to ensure everything works, thanks!)
+(This Add-On is usually developed in conjunction with the stock FreeCAD development particularly BIM workbench, so use the latest development weekly build release {or even compile from latest source} if there is update in this add-on to ensure everything works. Thanks!)
 
 ### I. Description
 
