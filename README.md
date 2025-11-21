@@ -12,7 +12,7 @@ For better and more intuitive architectural modelling workflow, this workbench l
 ### II. Features
 
 #### 1. ArchSketch : Sketcher Capabilities - Enhanced with Smarter and Information-Rich Features
-![alt text 1](https://wiki.freecadweb.org/images/9/91/Workbench_Sketcher.svg)
+![alt text 1](https://wiki.freecad.org/images/9/91/Workbench_Sketcher.svg)
 
 - Leverage Sketch inherent features and capabilities
 - So [ArchSketch + Arch Wall + Structure + Curtain Wall etc. = Building Layout](https://github.com/paullee0/FreeCAD_SketchArch#4-arch-structure-curtain-wall-wall-etc---same-archsketch--building-layout)
@@ -23,9 +23,9 @@ For better and more intuitive architectural modelling workflow, this workbench l
 [![ Youtube Video](https://i9.ytimg.com/vi/uhf5TH3WKAc/mq2.jpg?sqp=CKy6opQG&rs=AOn4CLAvBRVX4w5_4ykpze3cDoRvkNEnZA)](https://youtu.be/uhf5TH3WKAc "Click To PLAY VIDEO !")
 [![ Youtube Video](https://i9.ytimg.com/vi/D7x-UCGlZy4/mq3.jpg?sqp=CKy6opQG&rs=AOn4CLCqVE1L0buawaqPVzXZK0zFX3o7vA)](https://youtu.be/D7x-UCGlZy4 "Click To PLAY VIDEO !")
 
-![alt text 1a](https://forum.freecadweb.org/download/file.php?id=102600)
+![alt text 1a](https://forum.freecad.org/download/file.php?id=102600)
 
-![alt text 1b](https://forum.freecadweb.org/download/file.php?id=102608)
+![alt text 1b](https://forum.freecad.org/download/file.php?id=102608)
 
 
 
@@ -37,7 +37,7 @@ For better and more intuitive architectural modelling workflow, this workbench l
 
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
 - Extend capability to Arch Objects, e.g. Window, Equipment (WIP: Linear Dimension) and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
-  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecad.org/viewtopic.php?t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
+  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecad.org/viewtopic.php?t=50802)) ([downloadable model](https://forum.freecad.org/download/file.php?id=137851))
 t=50802
   - Discussion (WIP/Proof of Concept : Parametric Attachment of Linear Dimension) ([forum thread](https://forum.freecad.org/viewtopic.php?style=2&p=841626#p841626))
   - **Note:** (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch)
@@ -53,7 +53,7 @@ t=50802
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/ozZ-jl-BSjU "Click To PLAY VIDEO - Placement of Arch Equipment!")
 
-![alt text 2a](https://forum.freecadweb.org/download/file.php?id=129408)
+![alt text 2a](https://forum.freecad.org/download/file.php?id=129408)
 ![alt text 2b](https://forum.freecad.org/download/file.php?style=4&id=191612)
 ![alt text 2c](https://forum.freecad.org/download/file.php?style=4&id=191611J)
 
@@ -71,7 +71,7 @@ t=50802
 [![ Youtube Video](https://i9.ytimg.com/vi/sHejQI3PxNg/mq2.jpg?sqp=CKSsopQG&rs=AOn4CLCQlFsdFh1t5kmKRwNjq0Z3bFCwlg)](https://www.youtube.com/watch?v=sHejQI3PxNg "Click To PLAY VIDEO - EDIT ALIGN!")
 [![ Youtube Video](https://i9.ytimg.com/vi/UZktE6BUIJ8/mq2.jpg?sqp=CNzDopQG&rs=AOn4CLAMkiBCktSwWA6H-9ImQx5X3ubaSQ)](https://youtu.be/UZktE6BUIJ8 "Click To PLAY VIDEO - EDIT WIDTH!")
 
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=104384)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=104384)
 
 
 
@@ -98,16 +98,16 @@ Have your ever set out your building layout in a sketch like below, and wonder i
 
 So you have just 1 simple ArchSketch, just like any architectural student start learning sketching building layout in school. Now, you can select the Edges in ArchSketch you want for your Wall, Slab, Curtain Wall or Stairs separately though on same ArchSketch; and you just edit the same ArchSketch,  and you have e.g. the shape / dimension of the slab and curtain wall changed at the same time. 
 
-[FreeCAD Forum Discussion Thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=73018&sid=ba2732dd08a70b09011f667ae874e322)
+[FreeCAD Forum Discussion Thread](https://forum.freecad.org/viewtopic.php?f=23&t=73018&sid=ba2732dd08a70b09011f667ae874e322)
 
 
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/ozZ-jl-BSjU/mq2.jpg?sqp=CIS_opQG&rs=AOn4CLDlLCx-Car66Bfg-UvVre1gT-DE3A)](https://youtu.be/DjxBXsw6z2I "Click To PLAY VIDEO - ArchSketch + ArchStructure = Slab Layout !")
 
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205759)
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205758)
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205755)
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=205754)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=205759)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=205758)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=205755)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=205754)
 
 
 #### 5. Variant PropertySets : Variant Arch Layout / Objects
@@ -124,10 +124,11 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 
 #### 6. Floor Area Calculation + Room Dimension
 
-- [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=47905&start=70#p485618))
+- [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=47905&start=70#p485618))
+- See above on [WIP/Proof of Concept : Parametric Attachment of Linear Dimension](https://github.com/paullee0/FreeCAD_SketchArch/edit/master/README.md#2-parametric-placementattachment-of-arch-objects-intuitively)
 - See below on CellComplex
 
-![alt text 3a](https://forum.freecadweb.org/download/file.php?style=10&id=150955)
+![alt text 3a](https://forum.freecad.org/download/file.php?style=10&id=150955)
 
 
 
@@ -135,15 +136,15 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/CellComplex.svg)
 
 - CellComplex is a Topologic concept and object : see ([OSArch discussion - Talk on Topologic: Redefining BIM through Spatial Topology, Information, and Grammars](https://community.osarch.org/discussion/131/talk-on-topologic-redefining-bim-through-spatial-topology-information-and-grammars#latest))
-- [Feature] CellComplex & ArchWall Creation on 1 ArchSketch ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=63920))
+- [Feature] CellComplex & ArchWall Creation on 1 ArchSketch ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=63920))
 - In addition to build ArchWall based on an ArchSketch, CellComplex can be created automatically also
 
 (Click To PLAY VIDEO !)
 [![Youtub Video](https://i9.ytimg.com/vi/1rlPwVOXWKc/mq3.jpg?sqp=CNS1opQG&rs=AOn4CLBho4vSSl9OJ3Ce44ZdC-_zjwg10g)](https://youtu.be/1rlPwVOXWKc "Click To PLAY VIDEO !")
 
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170539)
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170540)
-![alt text 3a](https://forum.freecadweb.org/download/file.php?id=170538)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=170539)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=170540)
+![alt text 3a](https://forum.freecad.org/download/file.php?id=170538)
 
 
 #### 8. Topological Naming Tolerant
@@ -159,7 +160,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
   3 main approaches :
 
     1.  Using sketch.Geometry[index].Tag
-        Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=28575))
+        Using `sketch.Geometry[index].Tag` == Unique identification survive changes? ([forum thread](https://forum.freecad.org/viewtopic.php?f=22&t=28575))
         <br>
         a. **Implemented** On-the-fly updating Index referencing `Sketch.Geometry[index].Tag` on `UpdateAttachmentOffset()` (**preferred approach**) [Need every object recompute() to keep in sync]
         <br>
@@ -169,13 +170,13 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
     2.  Using PartGeometryExtension / SketchGeometryExtension
         <br>
         **Being Implemented as of March 2024**
-        - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  ([forum thread](https://forum.freecadweb.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767))
-        - Sketcher Development - Integration of Extensions  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=51716#p444360))
+        - Part Geometry Extensions - Extension for 'Persistent UUID Tag'  ([forum thread](https://forum.freecad.org/viewtopic.php?style=10&f=10&t=33349&start=50#p374767))
+        - Sketcher Development - Integration of Extensions  ([forum thread](https://forum.freecad.org/viewtopic.php?f=10&t=51716#p444360))
     4.  Using @Realthunder's branch
 
 - Earlier Discussions : Unique and Persistent Sketch Edge Name
-  - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space ([forum thread](https://forum.freecadweb.org/viewtopic.php?t=25904#p204581))
-  - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=8&t=22277&start=520#p280716))
+  - Ability to (auto) give (unique) name each edges in a sketch which would not be repeated or reused  -  Sketcher: Virtual Space ([forum thread](https://forum.freecad.org/viewtopic.php?t=25904#p204581))
+  - Tag consistent (for Sketch geometries)  - Civil engineering feature implementation (Transportation Engineering)  ([forum thread](https://forum.freecad.org/viewtopic.php?f=8&t=22277&start=520#p280716))
 
 (Click To PLAY VIDEO !)
 [![ Youtube Video](https://i9.ytimg.com/vi/Sqt2rezgPZk/mq2.jpg?sqp=CIzNopQG&rs=AOn4CLC1cDMCGaulTNjBOEkRnu0fJNmyKw)](https://youtu.be/Sqt2rezgPZk "Click To PLAY VIDEO - 'TopoNaming Tolerant' Feature !")
@@ -185,7 +186,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 ![alt text 6](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Voxel.svg)
 
 
-- https://forum.freecadweb.org/viewtopic.php?f=23&t=61158&p=535506#p535506
+- https://forum.freecad.org/viewtopic.php?f=23&t=61158&p=535506#p535506
 - Current workflow for comment / suggestion: -
 
 1. Select the shape object to 'voxelise', click Voxel button
@@ -203,8 +204,8 @@ What's created ?
     - It creates a Box, or copy the shape of 'VoxelObj' (usecase:  point to a object with Shape, or to a Link to a Group containing a numbers of objects)
     - The  2nd Object App::Link actually create the array of Voxels according to VoxelPart calculation
 
-![alt text 6a](https://forum.freecadweb.org/download/file.php?id=165334)
-![alt text 6b](https://forum.freecadweb.org/download/file.php?id=165337)
+![alt text 6a](https://forum.freecad.org/download/file.php?id=165334)
+![alt text 6b](https://forum.freecad.org/download/file.php?id=165337)
 
 
 #### Features in Development, Other Remarks
@@ -256,8 +257,8 @@ What's created ?
 ### III. Examples
 
 Models
-- Villa Savoye Discussion ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=41836)) ([downloadable model](https://github.com/paullee0/FreeCAD_Villa-Savoye))
-- Carpenter Center Discussion ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10) ([downloadable model](https://github.com/paullee0/FreeCAD_Carpenter-Center)
+- Villa Savoye Discussion ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=41836)) ([downloadable model](https://github.com/paullee0/FreeCAD_Villa-Savoye))
+- Carpenter Center Discussion ([forum thread](https://forum.freecad.org/viewtopic.php?f=24&t=44186&hilit=carpenter&start=10) ([downloadable model](https://github.com/paullee0/FreeCAD_Carpenter-Center)
 
 
 ### IV. Install
@@ -272,7 +273,7 @@ Models
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
 (Before 1.0)
-* Launch FreeCAD and start the [Addons Manager](https://wiki.freecadweb.org/Addon_manager) (Tools > Addon manager)
+* Launch FreeCAD and start the [Addons Manager](https://wiki.freecad.org/Addon_manager) (Tools > Addon manager)
 * Press the Configure... button.
   * The Addon manager options dialog box opens.
   * Add the repository to the Custom repositories list - https://github.com/paullee0/FreeCAD_SketchArch
@@ -293,15 +294,15 @@ If necessary, this workbench can be installed manually. Example:
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
-For more general info see the general [instructions for manual install](https://wiki.freecadweb.org/Installing_more_workbenches) on the FreeCAD wiki.
+For more general info see the general [instructions for manual install](https://wiki.freecad.org/Installing_more_workbenches) on the FreeCAD wiki.
 
 
 ### V. Feedback / Discussion / Announcement
 
 There are a few discussion on FreeCAD discussion fourm with different topics:-
-  - Intuitive Automatic Windows/  Doors/ Equipment Placement ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802&sid=fd179d8d8b15b107a6c98eee7eaa88ec)) 
-  - PR / Discussion Thread - ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=39060))
-  - ArchSketch + ArchWall = Building Layout - ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=38703))
+  - Intuitive Automatic Windows/  Doors/ Equipment Placement ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=50802&sid=fd179d8d8b15b107a6c98eee7eaa88ec)) 
+  - PR / Discussion Thread - ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=39060))
+  - ArchSketch + ArchWall = Building Layout - ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=38703))
   - Auto-creating ArchSketch - ([forum thread](https://forum.freecad.org/viewtopic.php?t=71917))
   - Automatic Building Generator - ([forum thread](https://forum.freecad.org/viewtopic.php?t=81285))
 
