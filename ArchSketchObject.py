@@ -531,7 +531,8 @@ class ArchSketch(ArchSketchObject):
           if archObject.isDerivedFrom('App::Link'):
               linkedObj = archObject.getLinkedObject()
               linkedObjProxy = linkedObj.Proxy
-              ArchSketch.setPropertiesLinkCommon(linkedObjProxy, linkedObj, archObject, mode='ODR')
+              ArchSketch.setPropertiesLinkCommon(linkedObjProxy, linkedObj,
+                                                 archObject, mode='ODR')
               updatePropertiesLinkCommonODR(linkedObj, archObject)
           else:
               archObject.Proxy.onDocumentRestored(archObject)
@@ -1055,9 +1056,9 @@ class ArchSketch(ArchSketchObject):
       ''' Rebuilding Tags  '''
       self.rebuildEdgeTagDicts(fp)
       self.callParentToRebuildMasterSketchTags(fp) # "Master"
-      ''' Update to self.clEdgeDict Dict - For Backward Compatibility '''
       if not fp.ShapeList:
           self.updateShapeList(fp)
+      ''' Update to self.clEdgeDict Dict - For Backward Compatibility '''
       self.updateSortedClustersEdgesOrder(fp)
 
 
@@ -1749,7 +1750,7 @@ class _CommandEditWallAttach():
         return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Attach.svg',
                 'Accel'   : "E, T",
                 'MenuText': "Edit Attachment",
-                'ToolTip' : "Select ArchSketch or Arch Window/Equipment (and optional a target) change attachment edge / to attach to a target ",
+                'ToolTip' : "Select ArchSketch, Arch Window/Equipment (WIP: Linear Dimension) (and optional a target) change attachment edge / to attach to a target ",
                 'CmdType' : "ForEdit"}
 
     def IsActive(self):
@@ -1759,7 +1760,7 @@ class _CommandEditWallAttach():
         try:
             sel0 = Gui.Selection.getSelection()[0]
         except:
-            reply = QtGui.QMessageBox.information(None,"","Select an ArchSketch or Arch Window/Equipment, Click this Button, and select the edge to attach ")
+            reply = QtGui.QMessageBox.information(None,"","Select ArchSketch, Arch Window/Equipment (WIP: Linear Dimension), Click this Button, and select the edge to attach ")
             return
         try:
             sel1 = Gui.Selection.getSelection()[1]
@@ -1776,8 +1777,8 @@ class _CommandEditWallAttach():
         if "Touched" in sel0.State: #  == "Touched":  # State is a List
             sel0.recompute()
 
-        msg1 = ("Select an ArchSketch or Arch Window/Equipment, Click " +
-                "this Button, and select the edge to attach ")
+        msg1 = ("Select ArchSketch, Arch Window/Equipment (WIP: Linear " +
+                "Dimension), Click this Button, and select the edge to attach")
         msg2 =  "Target Object is Not Wall - Feature not supported 'Yet'"
         msg3 = ("Select a Window/Equipment with Host which is Arch Wall " +
                 "(or a Window/Equipment with an ArchWall as 2nd selection)")
@@ -1793,7 +1794,8 @@ class _CommandEditWallAttach():
         targetBaseSketch = None
 
         if Draft.getType(sel0.getLinkedObject()) not in ['ArchSketch',
-                                                         'Window','Equipment']:
+                                                        'Window','Equipment',
+                                                        'LinearDimension']:
             reply = QtGui.QMessageBox.information(None,"",msg1)
             return
         # check if targetHostWall is selected by user : which take precedence
@@ -2857,6 +2859,10 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     if fp.AttachToAxisOrSketch == "None":
         return
 
+    # Clone not supported at the moment
+    if hasattr(fp,"CloneOf") and fp.CloneOf:
+        return
+
     hostSketch = None
     hostSkProxy = None
     hostWall = None
@@ -3069,7 +3075,6 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
     if attachToSubelementOrOffset in ["Attach to Edge",
                                       "Attach To Edge & Alignment"]:
         if (msSubelementIndex != None) and (hostSketch):
-            gSkEdgePtV = getSketchEdgeOffsetPointVector
             offsetV = gSkEdgePtV(fp, hostSketch, msSubelementIndex,
                                  msSubelementSnapPreset,
                                  msSubelementSnapCustom, msSubelementOffset,
@@ -3079,6 +3084,17 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                                  msIntSubelementIndex,
                                  offsetFromIntersectingSubelement)
             tempAttachmentOffset.Base= offsetV
+            if hasattr(fp, "Proxy") and fp.Proxy.Type == 'LinearDimension':
+                tempAttachmentOffsetEnd = FreeCAD.Placement()
+                offsetEndV = gSkEdgePtV(fp, hostSketch, msSubelementIndex,
+                                        msSubelementSnapPreset,
+                                        msSubelementSnapCustom, msSubelementOffset,
+                                        attachmentOffsetXyzAndRotation,
+                                        True, flip180Degree,
+                                        attachToSubelementOrOffset,
+                                        msIntSubelementIndex,
+                                        offsetFromIntersectingSubelement)
+                tempAttachmentOffsetEnd.Base= offsetEndV
 
             # Calculate the rotation of the edge
             if attachToSubelementOrOffset == "Attach To Edge & Alignment":
@@ -3093,6 +3109,8 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                         ):
                     edgeAngle = edgeAngle + math.pi
                 tempAttachmentOffset.Rotation.Angle = edgeAngle
+                if hasattr(fp, "Proxy") and fp.Proxy.Type == 'LinearDimension':
+                    tempAttachmentOffsetEnd.Rotation.Angle = edgeAngle
             else:
                 ang = attachmentOffsetXyzAndRotation.Rotation.Angle
                 tempAttachmentOffset.Rotation.Angle = ang
@@ -3175,6 +3193,9 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
                 vOffsetH = DraftVecUtils.scaleTo(vCross, -offsetValue)
                 offBase = tempAttachmentOffset.Base
                 tempAttachmentOffset.Base = offBase.add(vOffsetH)
+                if hasattr(fp, "Proxy") and fp.Proxy.Type == 'LinearDimension':
+                    offEndBase = tempAttachmentOffsetEnd.Base
+                    tempAttachmentOffsetEnd.Base = offEndBase.add(vOffsetH)
 
     elif attachToSubelementOrOffset == "Follow Only Offset XYZ & Rotation":
         tempAttachmentOffset = attachmentOffsetXyzAndRotation
@@ -3231,6 +3252,9 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             tempBaseOffset = hostWallRotation.multiply(hostSketchPl)
             tempBaseOffset.Base= tempBaseOffset.Base.add(hostWallPl.Base)
             tempAttachmentOffset= tempBaseOffset.multiply(tempAttachmentOffset)
+            if hasattr(fp, "Proxy") and fp.Proxy.Type == 'LinearDimension':
+                tempAttachmentOffsetEnd= tempBaseOffset.multiply(
+                                                       tempAttachmentOffsetEnd)
         elif hostObject:
             hostObjectPl = hostObject.Placement
             hostObjectRotation = FreeCAD.Placement(App.Vector(0,0,0),
@@ -3241,6 +3265,9 @@ def updateAttachmentOffset(fp, linkFp=None, mode=None):
             tempAttachmentOffset= tempBaseOffset.multiply(tempAttachmentOffset)
         else:  # Attach to Master Sketch (only)
             tempAttachmentOffset= hostSketchPl.multiply(tempAttachmentOffset)
+    if hasattr(fp, "Proxy") and fp.Proxy.Type == 'LinearDimension':
+        fp.Start = tempAttachmentOffset.Base
+        fp.End = tempAttachmentOffsetEnd.Base
     if linkFp or not hasattr(fp, "AttachmentOffset"):
         fp.Placement = tempAttachmentOffset
     else:
@@ -3446,6 +3473,8 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex,
 
     edgeOffsetPoint.z = zOffset.Base.z
     return edgeOffsetPoint
+
+gSkEdgePtV = getSketchEdgeOffsetPointVector
 
 
 # For All Sketch, Not Only ArchSketch
