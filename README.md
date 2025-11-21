@@ -121,6 +121,11 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 [![Youtub Video](https://youtu.be/pIgYn1Pppmk?si=5bFSWOuIXXwTPjka)](https://youtu.be/pIgYn1Pppmk?si=5bFSWOuIXXwTPjka "Click To PLAY VIDEO !")
 [![Youtub Video](https://youtu.be/FMuiW3wNG3o?si=t0ZCZyNqBF6syCKm)](https://youtu.be/FMuiW3wNG3o?si=t0ZCZyNqBF6syCKm "Click To PLAY VIDEO !")
 
+![alt text 5a](https://forum.freecad.org/download/file.php?id=320376)
+![alt text 5b](https://forum.freecad.org/download/file.php?id=320377)
+![alt text 5c](https://forum.freecad.org/download/file.php?id=320375)
+![alt text 5d](https://forum.freecad.org/download/file.php?id=320374)
+
 
 #### 6. Floor Area Calculation + Room Dimension
 
