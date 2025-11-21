@@ -36,8 +36,10 @@ For better and more intuitive architectural modelling workflow, this workbench l
 
 
 - Sketch have Mapmode/Attachment Offset so sketch for each floor layout can be fixed at desired position 'mutually as a whole'
-- Extend capability to Arch Objects, e.g. Window, Equipment and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
-  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecadweb.org/viewtopic.php?f=23&t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
+- Extend capability to Arch Objects, e.g. Window, Equipment (WIP: Linear Dimension) and their Links could 'attach' to 'Wall Segment' /  'Layout Sketch' to fix its position
+  - Discussion (Intuitive Automatic Windows/Doors + Equipment Placement) ([forum thread](https://forum.freecad.org/viewtopic.php?t=50802)) ([downloadable model](https://forum.freecadweb.org/download/file.php?id=137851))
+t=50802
+  - Discussion (WIP/Proof of Concept : Parametric Attachment of Linear Dimension) ([forum thread](https://forum.freecad.org/viewtopic.php?style=2&p=841626#p841626))
   - **Note:** (Window Object also use Sketch; alternative use Window's Sketch to attach to Layout Sketch)
 
 [ Special Remarks :
