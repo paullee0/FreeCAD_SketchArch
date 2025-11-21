@@ -125,7 +125,7 @@ So you have just 1 simple ArchSketch, just like any architectural student start 
 #### 6. Floor Area Calculation + Room Dimension
 
 - [Feature] Floor Area Calculation + Room Dimension ([forum thread](https://forum.freecad.org/viewtopic.php?f=23&t=47905&start=70#p485618))
-- See above on [WIP/Proof of Concept : Parametric Attachment of Linear Dimension](https://github.com/paullee0/FreeCAD_SketchArch/edit/master/README.md#2-parametric-placementattachment-of-arch-objects-intuitively)
+- See above on [WIP/Proof of Concept : Parametric Attachment of Linear Dimension](https://github.com/paullee0/FreeCAD_SketchArch?tab=readme-ov-file#2-parametric-placementattachment-of-arch-objects-intuitively)
 - See below on CellComplex
 
 ![alt text 3a](https://forum.freecad.org/download/file.php?style=10&id=150955)
