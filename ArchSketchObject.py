@@ -973,13 +973,17 @@ class ArchSketch(ArchSketchObject):
       skGeomEdges = []
       skPlacement = fp.Placement  # Get Sketch's placement to restore later
       structureBaseShapeWires = []
-      for i in skGeom:
+      edgesSupportedShapeLst  = []
+      for c, i in enumerate(skGeom):
           if isinstance(i.Geometry, ArchSketch.GeomSupported):
               slabStatus = self.getEdgeTagDictSyncStructureStatus(fp,
                            tag=i.Tag, role='slab', propSetUuid=propSetUuid)
               if slabStatus:
-                  skGeomEdgesI = i.Geometry.toShape()
+                  skGeomEdgesI = Part.Shape(fp.ShapeList[c])
                   skGeomEdges.append(skGeomEdgesI)
+                  edgesSupportedShapeLst.append(fp.ShapeList[c])
+      tup = getSortedClEdgesOrder(edgesSupportedShapeLst, fp.ShapeList)
+      tupSameIndexLists = tup[1]
       # Sort Sketch edges consistently with below procedures same as ArchWall
       clusterTransformed = []
       for cluster in Part.getSortedClusters(skGeomEdges):
@@ -988,7 +992,9 @@ class ArchSketch(ArchSketchObject):
               edge.Placement = skPlacement.multiply(edge.Placement)
               edgesTransformed.append(edge)
           clusterTransformed.append(edgesTransformed)
-      for clusterT in clusterTransformed:
+      for clusterT, indexList in zip(clusterTransformed, tupSameIndexLists):
+          print (' Structure Edges (indexes) selected and connected - ',
+                 indexList)
           structureBaseShapeWires.append(Part.Wire(clusterT))
 
       return {'slabWires':structureBaseShapeWires, 'faceMaker':'Bullseye',
