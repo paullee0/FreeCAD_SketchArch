@@ -993,9 +993,14 @@ class ArchSketch(ArchSketchObject):
               edgesTransformed.append(edge)
           clusterTransformed.append(edgesTransformed)
       for clusterT, indexList in zip(clusterTransformed, tupSameIndexLists):
+          baseShapeWire = Part.Wire(clusterT)
+          if baseShapeWire.isClosed():
+              closedOrNot = ""
+          else:
+              closedOrNot = "Not"
           print (' Structure Edges (indexes) selected and connected - ',
-                 indexList)
-          structureBaseShapeWires.append(Part.Wire(clusterT))
+                 indexList, ', wire is', closedOrNot,' closed')
+          structureBaseShapeWires.append(baseShapeWire)
 
       return {'slabWires':structureBaseShapeWires, 'faceMaker':'Bullseye',
               'slabThickness' : 250}
