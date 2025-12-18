@@ -1282,10 +1282,10 @@ class _CommandEditWallAlign():
     '''Edit Align of Wall Segment (Underlying ArchSketch) Command Definition'''
 
     def GetResources(self):
-        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Align.svg',
+        return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Wall.svg',
                 'Accel'   : "E, A",
-                'MenuText': "Edit Wall Segment Align",
-                'ToolTip' : "Select Wall/ArchSketch to Flip Segment Align ",
+                'MenuText': "Edit Wall Segment",
+                'ToolTip' : "Select Wall/ArchSketch to Edit Segment Align ",
                 'CmdType' : "ForEdit"}
 
     def IsActive(self):
@@ -1340,7 +1340,6 @@ class _CommandEditWallAlign():
 
 FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())
 
-
 class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
 
     def __init__(self, targetWall, targetBaseSketch):
@@ -1372,16 +1371,115 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                                  for i in tempOverrideAlign]
             self.targetWall.OverrideAlign = tempOverrideAlign
 
+        # Make dialog box and get the scale size
+        self.dialog = QtGui.QDialog()
+        self.dialog.resize(250,100)
+        self.dialog.setWindowTitle("Edit Wall Segment")
+        la = QtGui.QVBoxLayout(self.dialog)
+
+        # Radio buttons to select Wall Segment Align
+        t1 = QtGui.QLabel("Align")
+        la.addWidget(t1)
+        self.radioL = QtGui.QRadioButton("Left")
+        self.radioC = QtGui.QRadioButton("Center")
+        self.radioR = QtGui.QRadioButton("Right")
+        self.radioL.clicked.connect(self.onRadioClickedLeft)
+        self.radioC.clicked.connect(self.onRadioClickedCenter)
+        self.radioR.clicked.connect(self.onRadioClickedRight)
+        #set default to radio buttons
+        la.addWidget(self.radioL)
+        la.addWidget(self.radioC)
+        la.addWidget(self.radioR)
+        t2 = QtGui.QLabel("(or press CTRL, click edge to cycle Align)")
+        la.addWidget(t2)
+        t3 = QtGui.QLabel("-------------------------------------------------")
+        la.addWidget(t3)
+
+        # Number Input Box for Wall Segment Width
+        t4 = QtGui.QLabel("Width")
+        la.addWidget(t4)
+        self.intSpinbox1 = QtGui.QSpinBox()
+        self.intSpinbox1.setRange(0, 100000)
+        self.intSpinbox1.editingFinished.connect(self.onIntSpinbox1Finished)
+        la.addWidget(self.intSpinbox1)
+        t5 = QtGui.QLabel("-------------------------------------------------")
+        la.addWidget(t5)
+
+        # Number Input Box for Wall Segment Offset
+        t6 = QtGui.QLabel("Offset")
+        la.addWidget(t6)
+        self.intSpinbox2 = QtGui.QSpinBox()
+        self.intSpinbox2.setRange(0, 100000)
+        la.addWidget(self.intSpinbox2)
+        self.intSpinbox2.setEnabled(False)
+        # Add OK box
+        #okbox = QtGui.QDialogButtonBox(self.dialog)
+        #okbox.setOrientation(QtCore.Qt.Horizontal)
+        #okbox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        #la.addWidget(okbox)
+
+        self.edge = None
+        self.edgeIndex = None
+        self.control = None
+
+        self.dialog.show()
+
+    def onRadioClickedLeft(self):
+        if self.edge: # self.edge start from 1, self.edgeIndex start from 0
+            self.updateEdgeTagDictSyncAlign('Left')
+    def onRadioClickedCenter(self):
+        if self.edge:
+            self.updateEdgeTagDictSyncAlign('Center')
+    def onRadioClickedRight(self):
+        if self.edge:
+            self.updateEdgeTagDictSyncAlign('Right')
+    def updateEdgeTagDictSyncAlign(self, curAlign):
+        subIndex = self.edgeIndex
+        targetArchSk = self.targetArchSketch
+        tempDict = targetArchSk.Proxy.EdgeTagDictSync
+        tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
+        if self.propSetUuid:
+            if not tempDictI.get(self.propSetUuid, None):
+                tempDictI[self.propSetUuid] = {}
+            tempDictI[self.propSetUuid]['align'] = curAlign
+        else:
+            tempDictI['align'] = curAlign
+        targetArchSk.Proxy.EdgeTagDictSync = tempDict
+        targetArchSk.recompute()
+        FreeCADGui.Selection.clearSelection()
+        if self.targetWall:
+            self.targetWall.recompute()
+
+    def onIntSpinbox1Finished(self):
+        self.updateEdgeTagDictSyncWidth(self.intSpinbox1.value())
+    def updateEdgeTagDictSyncWidth(self, curWidth):
+        subIndex = self.edgeIndex
+        targetArchSk = self.targetArchSketch
+        tempDict = targetArchSk.Proxy.EdgeTagDictSync
+        tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
+        if self.propSetUuid:
+            if not tempDictI.get(self.propSetUuid, None):
+                tempDictI[self.propSetUuid] = {}
+            tempDictI[self.propSetUuid]['width'] = curWidth
+        else:
+            tempDictI['width'] = curWidth
+        targetArchSk.Proxy.EdgeTagDictSync = tempDict
+        targetArchSk.recompute()
+        FreeCADGui.Selection.clearSelection()
+        if self.targetWall:
+            self.targetWall.recompute()
     def tasksSketchClose(self):
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy
         self.targetWall.recompute()
         FreeCADGui.Selection.removeObserver(self)
         self.av.removeEventCallback("SoKeyboardEvent",self.escape)
+        self.dialog.close()
 
     def proceed(self, doc, obj, sub, pnt):
         self.edge = sub
         self.pickedEdgePlacement = App.Vector(pnt)
         subIndex = int( sub.lstrip('Edge'))-1
+        self.edgeIndex = subIndex
         App.Console.PrintMessage("Click Edge to change its Align"+ "\n")
 
         targetArchSk = self.targetArchSketch
@@ -1390,14 +1488,37 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
             curAlign = targetArchSk.Proxy.getEdgeTagDictSyncAlign(self.
                                           targetArchSketch, None, subIndex,
                                           propSetUuid=self.propSetUuid)
+            # Set Radio button to Align status of the select wall segment
+            if curAlign in [None, 'Left']: # default (None) is Left
+                self.radioL.setChecked(True)
+            elif curAlign == 'Center':
+                self.radioC.setChecked(True)
+            elif curAlign == 'Right':
+                self.radioR.setChecked(True)
+            curWidth = targetArchSk.Proxy.getEdgeTagDictSyncWidth(self.
+                                          targetArchSketch, None, subIndex,
+                                          propSetUuid=self.propSetUuid)
+            # Set Spinbox to width of the select wall segment
+            if curWidth:
+                self.intSpinbox1.setValue(curWidth)
+            else:
+                self.intSpinbox1.setValue(0)
+
+            # Now, only user pressed CTRL initiate change
+            if not self.control:
+                return
             if curAlign == 'Left':
                 curAlign = 'Right'
+                self.radioR.setChecked(True)
             elif curAlign == 'Right':
                 curAlign = 'Center'
+                self.radioC.setChecked(True)
             elif curAlign == 'Center':
                 curAlign = 'Left'
+                self.radioL.setChecked(True)
             else:  # 'Center' or else?
                 curAlign = 'Right'
+                self.radioR.setChecked(True)
             tempDict = targetArchSk.Proxy.EdgeTagDictSync
             tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
             if self.propSetUuid:
@@ -1436,9 +1557,14 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
 
     def escape(self,info):
         k=info['Key']
+        s=info['State']
         if k=="ESCAPE":
-            self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy
+            self.targetWall.ViewObject.Transparency=self.targetWallTransparentcy
             SketchArchCommands.selectObjectObserver.escape(self,info)
+        elif k=="CONTROL" and s=="DOWN":
+            self.control = True
+        elif k=="CONTROL" and s=="UP":
+            self.control = False
 
 
 class _CommandEditWallWidth():
