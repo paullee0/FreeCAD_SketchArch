@@ -60,10 +60,12 @@ t=50802
 #### 3. Width, Align & Offset Per Edge
 ([Toponaming-Tolerant](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/README.md#7-topological-naming-tolerant))
 
+![alt text 3](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Wall.svg)
+(
 ![alt text 3a](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Width.svg)
 ![alt text 3b](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Align.svg)
 ![alt text 3ca](https://github.com/paullee0/FreeCAD_SketchArch/blob/master/icons/Edit_Offset.svg)
-
+)
 - ArchWall base on a ArchSketch / Sketch can have different Width, Align & Offset for each segment - per Sketch Edge
 - ArchWall base on a ArchSketch / Sketch  can then be treated / moved / edited as single floor layout object, the dimension of which, width of individual wall segment can be modified relatively easily
 
