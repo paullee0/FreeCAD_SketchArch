@@ -1331,6 +1331,8 @@ class _CommandEditWallAlign():
             Gui.ActiveDocument.setEdit(targetObjectBase)
             App.Console.PrintMessage(msg4 + "\n")
             FreeCADGui.Selection.clearSelection()
+            if sel0:  # Wall object
+                sel0.recompute()
             s=GuiEditWallAlignObserver(sel0, targetObjectBase)
             self.observer = s
             FreeCADGui.Selection.addObserver(s)
@@ -1371,11 +1373,12 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                                  for i in tempOverrideAlign]
             self.targetWall.OverrideAlign = tempOverrideAlign
 
-        # Make dialog box and get the scale size
+        # Make dialog box and get the scale size 2025.12.13
         self.dialog = QtGui.QDialog()
         self.dialog.resize(250,100)
-        self.dialog.setWindowTitle("Edit Wall Segment")
+        self.dialog.setWindowTitle("Edit Wall Segment:  ID --")
         la = QtGui.QVBoxLayout(self.dialog)
+        divider = "----------------------------------------------------"
 
         # Radio buttons to select Wall Segment Align
         t1 = QtGui.QLabel("Align")
@@ -1383,16 +1386,18 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.radioL = QtGui.QRadioButton("Left")
         self.radioC = QtGui.QRadioButton("Center")
         self.radioR = QtGui.QRadioButton("Right")
+        self.radioR.setEnabled(False)
+        self.radioC.setEnabled(False)
+        self.radioL.setEnabled(False)
         self.radioL.clicked.connect(self.onRadioClickedLeft)
         self.radioC.clicked.connect(self.onRadioClickedCenter)
         self.radioR.clicked.connect(self.onRadioClickedRight)
-        #set default to radio buttons
         la.addWidget(self.radioL)
         la.addWidget(self.radioC)
         la.addWidget(self.radioR)
         t2 = QtGui.QLabel("(or press CTRL, click edge to cycle Align)")
         la.addWidget(t2)
-        t3 = QtGui.QLabel("-------------------------------------------------")
+        t3 = QtGui.QLabel(divider)
         la.addWidget(t3)
 
         # Number Input Box for Wall Segment Width
@@ -1402,14 +1407,16 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.intSpinbox1.setRange(0, 100000)
         self.intSpinbox1.editingFinished.connect(self.onIntSpinbox1Finished)
         la.addWidget(self.intSpinbox1)
-        t5 = QtGui.QLabel("-------------------------------------------------")
+        self.intSpinbox1.setEnabled(False)
+        t5 = QtGui.QLabel(divider)
         la.addWidget(t5)
 
         # Number Input Box for Wall Segment Offset
         t6 = QtGui.QLabel("Offset")
         la.addWidget(t6)
         self.intSpinbox2 = QtGui.QSpinBox()
-        self.intSpinbox2.setRange(0, 100000)
+        self.intSpinbox2.setRange(-100000, 100000)
+        #self.intSpinbox2.editingFinished.connect(self.onIntSpinbox2Finished)
         la.addWidget(self.intSpinbox2)
         self.intSpinbox2.setEnabled(False)
         # Add OK box
@@ -1420,8 +1427,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
 
         self.edge = None
         self.edgeIndex = None
-        self.control = None
-
+        self.control = None # CTRL Key Status
         self.dialog.show()
 
     def onRadioClickedLeft(self):
@@ -1433,6 +1439,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
     def onRadioClickedRight(self):
         if self.edge:
             self.updateEdgeTagDictSyncAlign('Right')
+
     def updateEdgeTagDictSyncAlign(self, curAlign):
         subIndex = self.edgeIndex
         targetArchSk = self.targetArchSketch
@@ -1446,12 +1453,12 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
             tempDictI['align'] = curAlign
         targetArchSk.Proxy.EdgeTagDictSync = tempDict
         targetArchSk.recompute()
-        FreeCADGui.Selection.clearSelection()
         if self.targetWall:
             self.targetWall.recompute()
 
     def onIntSpinbox1Finished(self):
-        self.updateEdgeTagDictSyncWidth(self.intSpinbox1.value())
+        if self.edge:
+            self.updateEdgeTagDictSyncWidth(self.intSpinbox1.value())
     def updateEdgeTagDictSyncWidth(self, curWidth):
         subIndex = self.edgeIndex
         targetArchSk = self.targetArchSketch
@@ -1465,7 +1472,6 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
             tempDictI['width'] = curWidth
         targetArchSk.Proxy.EdgeTagDictSync = tempDict
         targetArchSk.recompute()
-        FreeCADGui.Selection.clearSelection()
         if self.targetWall:
             self.targetWall.recompute()
     def tasksSketchClose(self):
@@ -1483,26 +1489,44 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         App.Console.PrintMessage("Click Edge to change its Align"+ "\n")
 
         targetArchSk = self.targetArchSketch
+        self.dialog.setWindowTitle("Edit Wall Segment:  ID " + str(subIndex))
+
         if (self.targetWall.ArchSketchData and hasattr(targetArchSk.Proxy,
                                                "getEdgeTagDictSyncAlign")):
+
+            # Set Radio button to Align status of the selected wall segment
             curAlign = targetArchSk.Proxy.getEdgeTagDictSyncAlign(self.
                                           targetArchSketch, None, subIndex,
                                           propSetUuid=self.propSetUuid)
-            # Set Radio button to Align status of the select wall segment
+            self.radioR.setEnabled(True)
+            self.radioC.setEnabled(True)
+            self.radioL.setEnabled(True)
             if curAlign in [None, 'Left']: # default (None) is Left
                 self.radioL.setChecked(True)
             elif curAlign == 'Center':
                 self.radioC.setChecked(True)
             elif curAlign == 'Right':
                 self.radioR.setChecked(True)
-            curWidth = targetArchSk.Proxy.getEdgeTagDictSyncWidth(self.
-                                          targetArchSketch, None, subIndex,
+
+            # Set Spinbox to Width of the selected wall segment
+            curWidth = targetArchSk.Proxy.getWidth(self.targetArchSketch,
+                                          None, subIndex,
                                           propSetUuid=self.propSetUuid)
-            # Set Spinbox to width of the select wall segment
             if curWidth:
                 self.intSpinbox1.setValue(curWidth)
             else:
                 self.intSpinbox1.setValue(0)
+            self.intSpinbox1.setEnabled(True)
+
+            # Set Spinbox to Offset of the selected wall segment
+            curOffset = targetArchSk.Proxy.getEdgeTagDictSyncOffset(self.
+                                           targetArchSketch, None, subIndex,
+                                           propSetUuid=self.propSetUuid)
+            if curOffset:
+                self.intSpinbox2.setValue(curOffset)
+            else:
+                self.intSpinbox2.setValue(0)
+            #self.intSpinbox2.setEnabled(True)
 
             # Now, only user pressed CTRL initiate change
             if not self.control:
@@ -1551,10 +1575,22 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
                 tempOverrideAlign = self.targetWall.OverrideAlign
                 tempOverrideAlign[subIndex] = curAlign
                 self.targetWall.OverrideAlign = tempOverrideAlign
-        FreeCADGui.Selection.clearSelection()
         if self.targetWall:
             self.targetWall.recompute()
 
+    def clearSelection(self,doc):
+        App.Console.PrintMessage("clearSelection"+ "\n")
+        self.dialog.setWindowTitle("Edit Wall Segment:  ID --")
+        self.radioR.setEnabled(False)
+        self.radioC.setEnabled(False)
+        self.radioL.setEnabled(False)
+        self.radioR.setChecked(False)
+        self.radioC.setChecked(False)
+        self.radioL.setChecked(False)
+        self.intSpinbox1.setValue(0)
+        self.intSpinbox1.setEnabled(False)
+        self.intSpinbox2.setValue(0)
+        self.intSpinbox2.setEnabled(False)
     def escape(self,info):
         k=info['Key']
         s=info['State']
