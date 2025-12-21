@@ -1277,15 +1277,15 @@ class _CommandArchSketchLock():
 FreeCADGui.addCommand('ArchSketchLock', _CommandArchSketchLock())
 
 
-class _CommandEditWallAlign():
+class _CommandEditWallProperties():
 
-    '''Edit Align of Wall Segment (Underlying ArchSketch) Command Definition'''
+    '''Edit Wall Properties (Underlying ArchSketch) Command Definition'''
 
     def GetResources(self):
         return {'Pixmap':SketchArchIcon.getIconPath()+'/icons/Edit_Wall.svg',
-                'Accel'   : "E, A",
-                'MenuText': "Edit Wall Segment",
-                'ToolTip' : "Select Wall/ArchSketch to Edit Segment Align ",
+                'Accel'   : "E, E",
+                'MenuText': "Edit Wall Segment Properties",
+                'ToolTip' : "Select Wall/ArchSketch to Edit Segment Properties",
                 'CmdType' : "ForEdit"}
 
     def IsActive(self):
@@ -1298,7 +1298,7 @@ class _CommandEditWallAlign():
                 "This tool would update ArchWall's ArchSketchEdges " +
                 "but Not data in the underlying ArchSketch")
         msg4 = ("Select target Edge of the ArchSketch " +
-                "to Flip the corresponding Wall Segment Align")
+                "to change the corresponding Wall Segment Properties")
         msg5 = ("Gui to edit Arch Wall with a DWire Base is not " +
                 "implemented yet - Please directly edit ArchWall " +
                 "OverrideAlign attribute for the purpose.")
@@ -1333,16 +1333,17 @@ class _CommandEditWallAlign():
             FreeCADGui.Selection.clearSelection()
             if sel0:  # Wall object
                 sel0.recompute()
-            s=GuiEditWallAlignObserver(sel0, targetObjectBase)
+            s=GuiEditWallPropertiesObserver(sel0, targetObjectBase)
             self.observer = s
             FreeCADGui.Selection.addObserver(s)
 
         elif Draft.getType(targetObjectBase) == 'Wire':
             reply = QtGui.QMessageBox.information(None,"",msg5)
 
-FreeCADGui.addCommand('EditWallAlign', _CommandEditWallAlign())
+FreeCADGui.addCommand('EditWallProperties', _CommandEditWallProperties())
 
-class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
+#class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
+class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
 
     def __init__(self, targetWall, targetBaseSketch):
         SketchArchCommands.selectObjectObserver.__init__(self,None,None,None,
@@ -1416,18 +1417,13 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         la.addWidget(t6)
         self.intSpinbox2 = QtGui.QSpinBox()
         self.intSpinbox2.setRange(-100000, 100000)
-        #self.intSpinbox2.editingFinished.connect(self.onIntSpinbox2Finished)
+        self.intSpinbox2.editingFinished.connect(self.onIntSpinbox2Finished)
         la.addWidget(self.intSpinbox2)
         self.intSpinbox2.setEnabled(False)
-        # Add OK box
-        #okbox = QtGui.QDialogButtonBox(self.dialog)
-        #okbox.setOrientation(QtCore.Qt.Horizontal)
-        #okbox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
-        #la.addWidget(okbox)
 
         self.edge = None
         self.edgeIndex = None
-        self.control = None # CTRL Key Status
+        self.control = None  #CTRL Key Status
         self.dialog.show()
 
     def onRadioClickedLeft(self):
@@ -1459,6 +1455,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
     def onIntSpinbox1Finished(self):
         if self.edge:
             self.updateEdgeTagDictSyncWidth(self.intSpinbox1.value())
+
     def updateEdgeTagDictSyncWidth(self, curWidth):
         subIndex = self.edgeIndex
         targetArchSk = self.targetArchSketch
@@ -1474,6 +1471,14 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         targetArchSk.recompute()
         if self.targetWall:
             self.targetWall.recompute()
+
+    def onIntSpinbox2Finished(self):
+        if self.edge:
+            self.updateEdgeTagDictSyncOffset(self.intSpinbox2.value())
+
+    def updateEdgeTagDictSyncOffset(self, curOffset):
+        pass
+
     def tasksSketchClose(self):
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy
         self.targetWall.recompute()
@@ -1488,6 +1493,7 @@ class GuiEditWallAlignObserver(SketchArchCommands.selectObjectObserver):
         self.edgeIndex = subIndex
         App.Console.PrintMessage("Click Edge to change its Align"+ "\n")
 
+        FreeCADGui.Selection.removeSelection(doc, obj)
         targetArchSk = self.targetArchSketch
         self.dialog.setWindowTitle("Edit Wall Segment:  ID " + str(subIndex))
 
