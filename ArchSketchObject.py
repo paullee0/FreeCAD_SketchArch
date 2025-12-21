@@ -1477,7 +1477,20 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
             self.updateEdgeTagDictSyncOffset(self.intSpinbox2.value())
 
     def updateEdgeTagDictSyncOffset(self, curOffset):
-        pass
+        subIndex = self.edgeIndex
+        targetArchSk = self.targetArchSketch
+        tempDict = targetArchSk.Proxy.EdgeTagDictSync
+        tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
+        if self.propSetUuid:
+            if not tempDictI.get(self.propSetUuid, None):
+                tempDictI[self.propSetUuid] = {}
+            tempDictI[self.propSetUuid]['offset'] = curOffset
+        else:
+            tempDictI['offset'] = curOffset
+        targetArchSk.Proxy.EdgeTagDictSync = tempDict
+        targetArchSk.recompute()
+        if self.targetWall:
+            self.targetWall.recompute()
 
     def tasksSketchClose(self):
         self.targetWall.ViewObject.Transparency = self.targetWallTransparentcy
@@ -1494,6 +1507,8 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
         App.Console.PrintMessage("Click Edge to change its Align"+ "\n")
 
         FreeCADGui.Selection.removeSelection(doc, obj)
+        Gui.Selection.addSelection(doc,obj,'RootPoint',0,0,0,False)
+
         targetArchSk = self.targetArchSketch
         self.dialog.setWindowTitle("Edit Wall Segment:  ID " + str(subIndex))
 
@@ -1532,7 +1547,7 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
                 self.intSpinbox2.setValue(curOffset)
             else:
                 self.intSpinbox2.setValue(0)
-            #self.intSpinbox2.setEnabled(True)
+            self.intSpinbox2.setEnabled(True)
 
             # Now, only user pressed CTRL initiate change
             if not self.control:
