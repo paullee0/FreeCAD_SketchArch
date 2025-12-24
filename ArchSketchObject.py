@@ -758,7 +758,7 @@ class ArchSketch(ArchSketchObject):
       for i in clEdgeSameIndexFlat:
           curOffset = self.getEdgeTagDictSyncOffset(fp, None, i, propSetUuid)
           if not curOffset:
-              curOffset = fp.Offset
+              curOffset = fp.Offset.Value
           offsetsList.append(curOffset)
       return offsetsList
 
@@ -1429,54 +1429,36 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
     def onRadioClickedLeft(self):
         if self.edge: # self.edge start from 1, self.edgeIndex start from 0
             self.updateEdgeTagDictSyncAlign('Left')
+
     def onRadioClickedCenter(self):
         if self.edge:
             self.updateEdgeTagDictSyncAlign('Center')
+
     def onRadioClickedRight(self):
         if self.edge:
             self.updateEdgeTagDictSyncAlign('Right')
 
     def updateEdgeTagDictSyncAlign(self, curAlign):
-        subIndex = self.edgeIndex
-        targetArchSk = self.targetArchSketch
-        tempDict = targetArchSk.Proxy.EdgeTagDictSync
-        tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
-        if self.propSetUuid:
-            if not tempDictI.get(self.propSetUuid, None):
-                tempDictI[self.propSetUuid] = {}
-            tempDictI[self.propSetUuid]['align'] = curAlign
-        else:
-            tempDictI['align'] = curAlign
-        targetArchSk.Proxy.EdgeTagDictSync = tempDict
-        targetArchSk.recompute()
-        if self.targetWall:
-            self.targetWall.recompute()
+        self.updateEdgeTagDictSyncProp(curPropKey='align', curProp=curAlign)
+
 
     def onIntSpinbox1Finished(self):
         if self.edge:
             self.updateEdgeTagDictSyncWidth(self.intSpinbox1.value())
 
     def updateEdgeTagDictSyncWidth(self, curWidth):
-        subIndex = self.edgeIndex
-        targetArchSk = self.targetArchSketch
-        tempDict = targetArchSk.Proxy.EdgeTagDictSync
-        tempDictI = tempDict[targetArchSk.Geometry[subIndex].Tag]
-        if self.propSetUuid:
-            if not tempDictI.get(self.propSetUuid, None):
-                tempDictI[self.propSetUuid] = {}
-            tempDictI[self.propSetUuid]['width'] = curWidth
-        else:
-            tempDictI['width'] = curWidth
-        targetArchSk.Proxy.EdgeTagDictSync = tempDict
-        targetArchSk.recompute()
-        if self.targetWall:
-            self.targetWall.recompute()
+        self.updateEdgeTagDictSyncProp(curPropKey='width', curProp=curWidth)
+
 
     def onIntSpinbox2Finished(self):
         if self.edge:
             self.updateEdgeTagDictSyncOffset(self.intSpinbox2.value())
 
     def updateEdgeTagDictSyncOffset(self, curOffset):
+        self.updateEdgeTagDictSyncProp(curPropKey='offset', curProp=curOffset)
+
+
+    def updateEdgeTagDictSyncProp(self, curPropKey='align', curProp=None):
         subIndex = self.edgeIndex
         targetArchSk = self.targetArchSketch
         tempDict = targetArchSk.Proxy.EdgeTagDictSync
@@ -1484,9 +1466,9 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
         if self.propSetUuid:
             if not tempDictI.get(self.propSetUuid, None):
                 tempDictI[self.propSetUuid] = {}
-            tempDictI[self.propSetUuid]['offset'] = curOffset
+            tempDictI[self.propSetUuid][curPropKey] = curProp
         else:
-            tempDictI['offset'] = curOffset
+            tempDictI[curPropKey] = curProp
         targetArchSk.Proxy.EdgeTagDictSync = tempDict
         targetArchSk.recompute()
         if self.targetWall:
