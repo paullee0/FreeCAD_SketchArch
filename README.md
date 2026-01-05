@@ -275,7 +275,7 @@ Models
 (From 1.0 Onward)
 * Find the Edit menu, then Preference to call the dialog box
   * Go to Add-on Manager, find the Custom Repositories section
-  * Press + to add the repository to the list - https://github.com/paullee0/FreeCAD_SketchArch
+  **Press + to add the repository to the list - https://github.com/paullee0/FreeCAD_SketchArch and the Branch, "master".**
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
@@ -286,6 +286,7 @@ Models
   * Add the repository to the Custom repositories list - https://github.com/paullee0/FreeCAD_SketchArch
   * Optionally choose proxy settings.
   * Press the OK button button to close the dialog box.
+* Locate "SketchArch" in Addon Manager, and click "install" and than restart FreeCAD.
 * Restart FreeCAD
 * Locate the workbench dropdown list and switch to the 'SketchArch workbench'
 
