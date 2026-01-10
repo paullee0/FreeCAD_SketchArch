@@ -667,6 +667,46 @@ class ArchSketch(ArchSketchObject):
       return widthsList
 
 
+  def getEdgeTagDictSyncOffsetStart(self,fp,tag=None,index=None,
+                                    propSetUuid=None):
+      return self.getEdgeTagDictSyncProp(fp,tag=tag,prop='offsetStart',
+                                         index=index,propSetUuid=propSetUuid)
+
+  def getEdgeTagDictSyncOffsetEnd(self,fp,tag=None,index=None,
+                                  propSetUuid=None):
+      return self.getEdgeTagDictSyncProp(fp,tag=tag,prop='offsetEnd',
+                                         index=index,propSetUuid=propSetUuid)
+
+  def getEdgeTagDictSyncProp(self,fp,tag=None,prop=None,index=None,
+                             propSetUuid=None):
+
+      if not prop:
+          return
+
+      if tag is not None:
+          tagI = tag
+      elif index is not None:
+          try:  # Cases where self.EdgeTagDictSync not updated yet ?
+              tagI = fp.Geometry[index].Tag
+          except:
+              self.syncEdgeTagDictSync(fp)
+              try: # again
+                  tagI = fp.Geometry[index].Tag
+              except:
+                  return None
+      else:
+          return None  #pass
+      if propSetUuid:
+          dictI = self.EdgeTagDictSync[tagI].get(propSetUuid, None)
+      else:
+          dictI = self.EdgeTagDictSync[tagI]
+      if not dictI:
+          return None
+
+      propI = dictI.get(prop, None)
+      return propI
+
+
   def getEdgeTagDictSyncWidth(self,fp,tag=None,index=None,propSetUuid=None):
 
       if tag is not None:
@@ -1325,7 +1365,6 @@ class _CommandEditWallProperties():
                 sel0 = None
         if Draft.getType(targetObjectBase) in ['ArchSketch']:
             targetObjectBase.ViewObject.HideDependent = False
-            Gui.ActiveDocument.ActiveView.setCameraType("Orthographic")
             if not sel0.ArchSketchData:
                 reply = QtGui.QMessageBox.information(None,"",msg3)
             Gui.ActiveDocument.setEdit(targetObjectBase)
@@ -1339,6 +1378,7 @@ class _CommandEditWallProperties():
 
         elif Draft.getType(targetObjectBase) == 'Wire':
             reply = QtGui.QMessageBox.information(None,"",msg5)
+            return
 
 FreeCADGui.addCommand('EditWallProperties', _CommandEditWallProperties())
 
@@ -1376,8 +1416,8 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
 
         # Make dialog box and get the scale size 2025.12.13
         self.dialog = QtGui.QDialog()
-        self.dialog.resize(250,100)
-        self.dialog.setWindowTitle("Edit Wall Segment:  ID --")
+        self.dialog.resize(300,500)
+        self.dialog.setWindowTitle("Edit Wall Segment:  Edge --")
         la = QtGui.QVBoxLayout(self.dialog)
         divider = "----------------------------------------------------"
 
@@ -1420,6 +1460,26 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
         self.intSpinbox2.editingFinished.connect(self.onIntSpinbox2Finished)
         la.addWidget(self.intSpinbox2)
         self.intSpinbox2.setEnabled(False)
+        t7 = QtGui.QLabel(divider)
+        la.addWidget(t7)
+
+        # Number Input Box for Wall Segment Offset Start/End
+        tUD = QtGui.QLabel("(Under Development)")
+        la.addWidget(tUD)
+        tOS = QtGui.QLabel("Offset Start")
+        la.addWidget(tOS)
+        self.intSpinboxOS = QtGui.QSpinBox()
+        self.intSpinboxOS.setRange(-100000, 100000)
+        self.intSpinboxOS.editingFinished.connect(self.onIntSpinboxOSFinished)
+        la.addWidget(self.intSpinboxOS)
+        self.intSpinboxOS.setEnabled(False)
+        tOE = QtGui.QLabel("Offset End")
+        la.addWidget(tOE)
+        self.intSpinboxOE = QtGui.QSpinBox()
+        self.intSpinboxOE.setRange(-100000, 100000)
+        self.intSpinboxOE.editingFinished.connect(self.onIntSpinboxOEFinished)
+        la.addWidget(self.intSpinboxOE)
+        self.intSpinboxOE.setEnabled(False)
 
         self.edge = None
         self.edgeIndex = None
@@ -1458,6 +1518,27 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
         self.updateEdgeTagDictSyncProp(curPropKey='offset', curProp=curOffset)
 
 
+    def onIntSpinboxOSFinished(self):
+        if self.edge:
+            print(' 2025.12.27 testing')
+            #self.updateEdgeTagDictSyncOffsetStart(self.intSpinbox2.value())
+
+    def updateEdgeTagDictSyncOffsetStart(self, curOffset):
+        print(' 2025.12.27 testing')
+        #self.updateEdgeTagDictSyncProp(curPropKey='offsetStart',
+        #                               curProp=curOffset)
+
+    def onIntSpinboxOEFinished(self):
+        if self.edge:
+            print(' 2025.12.27 testing')
+            #self.updateEdgeTagDictSyncOffsetEnd(self.intSpinbox2.value())
+
+    def updateEdgeTagDictSyncOffsetEnd(self, curOffset):
+        print(' 2025.12.27 testing')
+        #self.updateEdgeTagDictSyncProp(curPropKey='offsetEnd',
+        #                               curProp=curOffset)
+
+
     def updateEdgeTagDictSyncProp(self, curPropKey='align', curProp=None):
         subIndex = self.edgeIndex
         targetArchSk = self.targetArchSketch
@@ -1486,24 +1567,32 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
         self.pickedEdgePlacement = App.Vector(pnt)
         subIndex = int( sub.lstrip('Edge'))-1
         self.edgeIndex = subIndex
-        App.Console.PrintMessage("Click Edge to change its Align"+ "\n")
+        App.Console.PrintMessage("Click Edge to change its Properties"+ "\n")
 
         FreeCADGui.Selection.removeSelection(doc, obj)
         Gui.Selection.addSelection(doc,obj,'RootPoint',0,0,0,False)
 
         targetArchSk = self.targetArchSketch
-        self.dialog.setWindowTitle("Edit Wall Segment:  ID " + str(subIndex))
+        self.dialog.setWindowTitle("Edit Wall Segment:  " + sub)
 
+        targetArchSkProxy = targetArchSk.Proxy
+        wallAxisStatus = targetArchSkProxy.getEdgeTagDictSyncWallStatus(
+                         targetArchSk, index=subIndex, role='wallAxis',
+                         propSetUuid=self.propSetUuid)
+        if not wallAxisStatus:
+            self.clearSelection(doc)
+            return
         if (self.targetWall.ArchSketchData and hasattr(targetArchSk.Proxy,
                                                "getEdgeTagDictSyncAlign")):
 
             # Set Radio button to Align status of the selected wall segment
-            curAlign = targetArchSk.Proxy.getEdgeTagDictSyncAlign(self.
-                                          targetArchSketch, None, subIndex,
-                                          propSetUuid=self.propSetUuid)
+            curAlign = targetArchSk.Proxy.getEdgeTagDictSyncAlign(
+                       self.targetArchSketch, None, subIndex,
+                       propSetUuid=self.propSetUuid)
             self.radioR.setEnabled(True)
             self.radioC.setEnabled(True)
             self.radioL.setEnabled(True)
+            #if curAlign in [None, 'Left']: # default (None) is Left
             if curAlign in [None, 'Left']: # default (None) is Left
                 self.radioL.setChecked(True)
             elif curAlign == 'Center':
@@ -1513,8 +1602,7 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
 
             # Set Spinbox to Width of the selected wall segment
             curWidth = targetArchSk.Proxy.getWidth(self.targetArchSketch,
-                                          None, subIndex,
-                                          propSetUuid=self.propSetUuid)
+                       None, subIndex, propSetUuid=self.propSetUuid)
             if curWidth:
                 self.intSpinbox1.setValue(curWidth)
             else:
@@ -1522,18 +1610,40 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
             self.intSpinbox1.setEnabled(True)
 
             # Set Spinbox to Offset of the selected wall segment
-            curOffset = targetArchSk.Proxy.getEdgeTagDictSyncOffset(self.
-                                           targetArchSketch, None, subIndex,
-                                           propSetUuid=self.propSetUuid)
+            curOffset = targetArchSk.Proxy.getEdgeTagDictSyncOffset(
+                        self.targetArchSketch, None, subIndex,
+                        propSetUuid=self.propSetUuid)
             if curOffset:
                 self.intSpinbox2.setValue(curOffset)
             else:
                 self.intSpinbox2.setValue(0)
             self.intSpinbox2.setEnabled(True)
 
+
+            # Set Spinbox to OffsetStart/End of the selected wall segment
+            curOffsetS = targetArchSk.Proxy.getEdgeTagDictSyncOffsetStart(
+                         self.targetArchSketch, None, subIndex,
+                         propSetUuid=self.propSetUuid)
+            if curOffsetS:
+                self.intSpinboxOS.setValue(curOffsetS)
+            else:
+                self.intSpinboxOS.setValue(0)
+            #self.intSpinboxOS.setEnabled(True)
+
+            curOffsetE = targetArchSk.Proxy.getEdgeTagDictSyncOffsetEnd(
+                         self.targetArchSketch, None, subIndex,
+                         propSetUuid=self.propSetUuid)
+            if curOffsetE:
+                self.intSpinboxOE.setValue(curOffsetE)
+            else:
+                self.intSpinboxOE.setValue(0)
+            #self.intSpinboxOE.setEnabled(True)
+
+
             # Now, only user pressed CTRL initiate change
             if not self.control:
                 return
+
             if curAlign == 'Left':
                 curAlign = 'Right'
                 self.radioR.setChecked(True)
@@ -1583,17 +1693,22 @@ class GuiEditWallPropertiesObserver(SketchArchCommands.selectObjectObserver):
 
     def clearSelection(self,doc):
         App.Console.PrintMessage("clearSelection"+ "\n")
-        self.dialog.setWindowTitle("Edit Wall Segment:  ID --")
-        self.radioR.setEnabled(False)
-        self.radioC.setEnabled(False)
-        self.radioL.setEnabled(False)
-        self.radioR.setChecked(False)
-        self.radioC.setChecked(False)
+        self.dialog.setWindowTitle("Edit Wall Segment:  Edge --")
         self.radioL.setChecked(False)
+        self.radioC.setChecked(False)
+        self.radioR.setChecked(False)
+        self.radioL.setEnabled(False)
+        self.radioC.setEnabled(False)
+        self.radioR.setEnabled(False)
         self.intSpinbox1.setValue(0)
         self.intSpinbox1.setEnabled(False)
         self.intSpinbox2.setValue(0)
         self.intSpinbox2.setEnabled(False)
+        self.intSpinboxOS.setValue(0)
+        self.intSpinboxOS.setEnabled(False)
+        self.intSpinboxOE.setValue(0)
+        self.intSpinboxOE.setEnabled(False)
+
     def escape(self,info):
         k=info['Key']
         s=info['State']
@@ -3654,7 +3769,6 @@ gSkEdgePtV = getSketchEdgeOffsetPointVector
 
 
 # For All Sketch, Not Only ArchSketch
-
 def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,
                                 propSetUuid=None):
 
@@ -3672,7 +3786,18 @@ def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,
 
       skGeom = sketch.Geometry
       skGeomEdgesSet = []
+      if hasattr(sketch, 'ShapeList') and sketch.ShapeList:
+          skGeomEdgesFullSet = sketch.ShapeList
+          archSketchShape = True
+      else:
+          skGeomEdgesFullSet = []
+          archSketchShape = False
+
       for c, i in enumerate(skGeom):
+          if not archSketchShape:
+              skGeomEdge = i.toShape()
+              skGeomEdgesFullSet.append(skGeomEdge)
+
           if isinstance(i, ArchSketch.GeomSupported):
               wallAxisStatus = None
               if archSketchEdges is not None:
@@ -3691,8 +3816,8 @@ def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,
                   if not construction:
                       wallAxisStatus = True
               if wallAxisStatus:
-                  skGeomEdgesSet.append(sketch.ShapeList[c])
-      return getSortedClEdgesOrder(skGeomEdgesSet, sketch.ShapeList)
+                  skGeomEdgesSet.append(skGeomEdgesFullSet[c])
+      return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)
 
 
 def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):
