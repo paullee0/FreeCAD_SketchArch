@@ -199,10 +199,18 @@ class ArchSketch(ArchSketchObject):
       # "Hosts" for Window
       else:
           if "Hosts" not in prop:
-              fp.addProperty("App::PropertyLinkList","Hosts","Window",
-                             QT_TRANSLATE_NOOP("App::Property",
-                             "The objects that host this window"))
-                             # Arch Window's code
+              # inherited properties of Link are not in PropertiesList:
+              old_hosts = getattr(fp, "Hosts", [])
+              fp.addProperty(
+                  "App::PropertyLinkList",
+                  "Hosts",
+                  "Window",
+                  QT_TRANSLATE_NOOP("App::Property",
+                      "The objects that host this window"))
+              fp.Hosts = old_hosts
+              for host in old_hosts:
+                  host.touch()
+              # Arch Window's code
 
       if "MasterSketch" not in prop:
           fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")
