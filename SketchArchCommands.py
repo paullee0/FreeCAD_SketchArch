@@ -50,6 +50,8 @@ class selectObjectObserver:
         if self.filterSub:
             if self.filterSub in sub:
                 self.proceed(doc, obj, sub, pnt)
+            elif self.filterSub == 'None':
+                self.proceed(doc, obj, sub, pnt)
 
     def removeSelection(self,doc,obj,sub):
         App.Console.PrintMessage("removeSelection"+ "\n")

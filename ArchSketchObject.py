@@ -547,6 +547,7 @@ class ArchSketch(ArchSketchObject):
 
   def getPropertySet(self, fp, propSetUuid=None, propSetName=None):
 
+      uuid = None
       if not propSetUuid and not propSetName:
           setDicts = list(self.PropertySetDict.values())
           setNames = [ d.get('name',None) for d in setDicts ]
@@ -2832,16 +2833,14 @@ class _CommandPropertySet():
                 "the new set.  Input PropertySet name here. ")
         msg3b= ("Create extra PropertySet to base ArchSketch.  Input " +
                 "PropertySet name here. ")
-        msg3c= ("PropertySet Not set to Default.  Could change the selected " +
-                "PropertySet name by inputting new name here.  Canel to " +
-                "skip and to create new PropertySet.")
         msg4 = ("Select target Edge of the ArchSketch to turn it on/off " +
                 "as Wall/CurtainWall/Structure (Slab)/Stairs Segment")
         try:
             sel0 = Gui.Selection.getSelection()[0]
         except:
-            reply = QtGui.QMessageBox.information(None,"",msg1)
+            ps = propertySetViews(show='toggle')
             return
+        targetObject = None
         targetObjectBase = None
         # Verify selection type and find ArchSkech/Arch Objects
         supportedObjects = ['Wall', 'CurtainWall', 'Structure', 'ArchSketch',
@@ -2851,42 +2850,13 @@ class _CommandPropertySet():
             return
         elif hasattr(sel0, "Base"):  # (Curtain)Wall, Stairs can have no Base
             if Draft.getType(sel0.Base) in ['ArchSketch']:
+                targetObject = sel0
                 targetObjectBase = sel0.Base
             else:
                 reply = QtGui.QMessageBox.information(None,"",msg2)
                 return
         else:  # ArchSketch
             targetObjectBase = sel0
-        # If selected ArchSketch/ArcObjects has PropertySet set to one other
-        # than Default, may change PropertyName rather than creating one.
-        changeName = False
-        # sel0 is Wall, CurtainWall, Structure (Slab), Stairs
-        if (sel0 != targetObjectBase) and (sel0.ArchSketchPropertySet
-                                           != 'Default'):
-            changeName = True
-            if hasattr(sel0.Proxy,'ArchSkPropSetPickedUuid'):
-                psUuid = sel0.Proxy.ArchSkPropSetPickedUuid
-            else:
-                psUuid = None
-        # sel0 is only ArchSketch
-        elif (sel0 == targetObjectBase) and (targetObjectBase.PropertySet
-                                             != 'Default'):
-            changeName = True
-            psUuid = targetObjectBase.Proxy.PropSetPickedUuid
-        if changeName:
-            psn = targetObjectBase.Proxy.getPropertySet(targetObjectBase,
-                                                        propSetUuid=psUuid)
-            reply = QtGui.QInputDialog.getText(None, "Input PropertySet Name",
-                                               msg3c, text=psn)
-            if reply[1]:  # user clicked OK
-                psn = reply[0]
-                targetObjectBase.Proxy.PropertySetDict[psUuid]['name'] = psn
-                targetObjectBase.recompute()
-                if sel0 != targetObjectBase:  # Wall/ CurtainWall/ Structure
-                    sel0.recompute()
-                return  # No more action
-            #else:  # user clicked Cancel, reply [0] will be ""
-            #    pass # Cancel changing name
         u = uuid.uuid4()
         us = str(u)
         psn = 'PropetrySet-' + us
@@ -2903,6 +2873,7 @@ class _CommandPropertySet():
             return
         targetObjectBase.Proxy.PropertySetDict[us] = {'name':psn}
         targetObjectBase.recompute()
+        targetObject.recompute()
         if sel0 == targetObjectBase:  # i.e. sel0 is ArchSketch
             return  # No more action
         newWall = newCurtainWall = newStructure = newStairs = None
@@ -2927,9 +2898,10 @@ class _CommandPropertySet():
             newObj.ArchSketchPropertySet = ['Default', psn]
             newObj.ArchSketchPropertySet = psn
             newObj.Proxy.ArchSkPropSetPickedUuid = us
+            #triggerGuiPropertySetViewsObserver to update PropertySet list
+            Gui.Selection.addSelection(newObj)
             Gui.ActiveDocument.setEdit(targetObjectBase)
             App.Console.PrintMessage(msg4 + "\n")
-            FreeCADGui.Selection.clearSelection()
             if newWall:
                 s=GuiEditWallObserver(newWall,targetObjectBase,propSetUuid=us)
             elif newCurtainWall:
@@ -2943,8 +2915,160 @@ class _CommandPropertySet():
                                            propSetUuid=us)
             self.observer = s
             FreeCADGui.Selection.addObserver(s)
+            Gui.Selection.addSelection(newObj)
 
 FreeCADGui.addCommand('PropertySet', _CommandPropertySet())
+
+
+def propertySetViews(show=True):  #or show='toggle'
+    from PySide import QtGui
+
+    def findWidget(wName=None):
+        "finds the manager widget, if present"
+        from PySide import QtGui
+        mw = FreeCADGui.getMainWindow()
+        vm = mw.findChild(QtGui.QDockWidget, wName)
+        if vm:
+            return vm
+        return None
+
+    # Setup PropertySet Editor Panel
+    dwObjName = 'QDockWidget Object PropertySet'
+    vm = findWidget(dwObjName)  # vm = findWidget()
+    if vm:
+        if vm.isVisible():
+            if show == 'toggle':
+                vm.hide()
+        else:
+            vm.show()
+    else:
+        s = GuiPropertySetViewsObserver()  #Install itself in Gui.Selection
+        FreeCAD.GuiPropertySetViewsObserver = s
+
+
+class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
+
+    dwObjName = 'QDockWidget Object PropertySet'
+
+    def __init__(self):
+
+        filterDoc = filterObj = filterSub = None
+        self.filterDoc=str(filterDoc)
+        self.filterObj=str(filterObj)
+        self.filterSub=str(filterSub)
+
+        # Create the panel
+        self.editor()
+        FreeCADGui.Selection.addObserver(self)
+
+    def proceed(self, doc, obj, sub, pnt):
+        testObj = FreeCAD.ActiveDocument.getObject(obj)
+        targetObject = None
+        targetObjectBase = None
+        # Verify selection type and find ArchSkech/Arch Objects
+        supportedObjects = ['Wall', 'CurtainWall', 'Structure', 'ArchSketch',
+                            'Stairs']
+        if Draft.getType(testObj) not in supportedObjects:
+            return
+        elif hasattr(testObj, "Base"):  #(Curtain)Wall, Stairs can have no Base
+            if Draft.getType(testObj.Base) in ['ArchSketch']:
+                targetObject = testObj
+                targetObjectBase = testObj.Base
+            else:
+                return
+        else:  # ArchSketch
+            targetObjectBase = testObj
+        self.updateEditor(targetObject,targetObjectBase)
+
+    def clearSelection(self,doc):  # parent method does nothing
+        App.Console.PrintMessage("clearSelection"+ "\n")
+        self.updateEditor(None,None)
+
+    def editor(self):
+        # Create QDockWidget PopertySet editor
+        mw = FreeCADGui.getMainWindow()
+        dwTitle = ('Variant PropertySet')
+        dw = QtGui.QDockWidget(dwTitle)
+        dw.setObjectName(GuiPropertySetViewsObserver.dwObjName)
+        mw.addDockWidget(QtCore.Qt.RightDockWidgetArea, dw)
+        # Applying a layout to a QDockWidget
+        w = QtGui.QWidget()
+        dw.setWidget(w)
+        la = QtGui.QVBoxLayout()
+        w.setLayout(la)
+        divider = "----------------------------------------------------------"
+        targetObjLabel = targetObjBaseLabel = '- - -'
+        self.qLbTarObj = QtGui.QLabel("Arch Object :   "+targetObjLabel)
+        la.addWidget(self.qLbTarObj)
+        self.qLbTarObjBase= QtGui.QLabel("ArchSketch  :   "+targetObjBaseLabel)
+        la.addWidget(self.qLbTarObjBase)
+        td1 = QtGui.QLabel(divider)
+        la.addWidget(td1)
+        qLbPropset = QtGui.QLabel("ArchSketch PropertySet")
+        la.addWidget(qLbPropset)
+        self.lstWPropset = QtGui.QListWidget()
+        la.addWidget(self.lstWPropset)
+        msg1="Press ENTER after editing name"
+        msg2="(Select item, press F2/ double-click to edit)"
+        qLbMsg1 = QtGui.QLabel(msg1)
+        la.addWidget(qLbMsg1)
+        qLbMsg2 = QtGui.QLabel(msg2)
+        la.addWidget(qLbMsg2)
+        td2 = QtGui.QLabel(divider)
+        la.addWidget(td2)
+        self.widgetLayout = la
+        self.dockwidget = dw
+        la.addStretch()
+        self.updateEditor()
+
+    def updateEditor(self,targetObj=None,targetObjBase=None):
+        la = self.widgetLayout
+        dw = self.dockwidget
+        divider = "----------------------------------------------------"
+        targetObjLabel = targetObjBaseLabel = '- - -'
+        if targetObj and targetObj.Label:
+            targetObjLabel = targetObj.Label
+        if targetObjBase and targetObjBase.Label:
+            targetObjBaseLabel = targetObjBase.Label
+        self.qLbTarObj.setText("Arch Object :   " + targetObjLabel)
+        self.qLbTarObjBase.setText("ArchSketch  :   " + targetObjBaseLabel)
+        self.lstWPropset.clear()
+        # get full list of PropertySet
+        if not targetObjBase:
+            return
+        self.targetObj = targetObj
+        targetArSketch = self.targetObjBase = targetObjBase
+        targetArSkProxy = targetArSketch.Proxy
+        propSetListCur = targetArSkProxy.getPropertySet(targetArSketch)
+        self.propSetListCur = propSetListCur
+        self.lstWPropset.clear()
+        for i, t in enumerate(propSetListCur):
+            item = QtGui.QListWidgetItem(t)
+            if i != 0:  # 'default' (index 0) should not be
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            self.lstWPropset.addItem(item)
+        self.lstWPropset.itemChanged.connect(self.itemChanged)
+        la.addStretch()
+        dw.show()
+
+    def itemChanged(self, current=None, previous=None):
+        if current:
+            psn = current.text()
+            if psn == 'Default':
+                return
+            targetArSk = self.targetObjBase
+            targetArSkProxy = targetArSk.Proxy
+            # find index of item in self.propSetListCur changed
+            index = self.lstWPropset.row(current) # -1  # 'Default' excluded
+            # find uuid of item in self.propSetListCur changed
+            psnOrg = self.propSetListCur[index]
+            psUuid = targetArSkProxy.getPropertySet(targetArSk,
+                                                    propSetName=psnOrg)
+            if psUuid:
+                targetArSkProxy.PropertySetDict[psUuid]['name'] = psn
+                targetArSk.recompute()
+                if self.targetObj:
+                    self.targetObj.recompute()
 
 
 class _Command_ArchSketch():
