@@ -55,7 +55,9 @@ class SketchArchWorkbench(Workbench):
 
     def Deactivated(self):
         ''' This function is executed when the workbench is deactivated '''
-        pass
+        # Hide the panel when the add-on is deactivated
+        from ArchSketchObject import propertySetViews
+        propertySetViews(show=False)
 
     def ContextMenu(self, recipient):
         ''' This is executed whenever the user right-clicks on screen '''

@@ -2931,27 +2931,29 @@ FreeCADGui.addCommand('PropertySet', _CommandPropertySet())
 def propertySetViews(show=True):  #or show='toggle'
     from PySide import QtGui
 
-    def findWidget(wName=None):
-        "finds the manager widget, if present"
-        from PySide import QtGui
-        mw = FreeCADGui.getMainWindow()
-        vm = mw.findChild(QtGui.QDockWidget, wName)
-        if vm:
-            return vm
-        return None
-
     # Setup PropertySet Editor Panel
     dwObjName = 'QDockWidget Object PropertySet'
     vm = findWidget(dwObjName)  # vm = findWidget()
     if vm:
         if vm.isVisible():
-            if show == 'toggle':
+            if (show == 'toggle' or show == False):
                 vm.hide()
         else:
-            vm.show()
+            if show:
+                vm.show()
     else:
         s = GuiPropertySetViewsObserver()  #Install itself in Gui.Selection
         FreeCAD.GuiPropertySetViewsObserver = s
+
+
+def findWidget(wName=None):
+    "finds the manager widget, if present"
+    from PySide import QtGui
+    mw = FreeCADGui.getMainWindow()
+    vm = mw.findChild(QtGui.QDockWidget, wName)
+    if vm:
+        return vm
+    return None
 
 
 class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
@@ -2970,6 +2972,10 @@ class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
         FreeCADGui.Selection.addObserver(self)
 
     def proceed(self, doc, obj, sub, pnt):
+        dwObjName = 'QDockWidget Object PropertySet'
+        vm = findWidget(dwObjName)
+        if not vm.isVisible():
+            return
         testObj = FreeCAD.ActiveDocument.getObject(obj)
         targetObject = None
         targetObjectBase = None
@@ -3057,7 +3063,6 @@ class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
             self.lstWPropset.addItem(item)
         self.lstWPropset.itemChanged.connect(self.itemChanged)
         la.addStretch()
-        dw.show()
 
     def itemChanged(self, current=None, previous=None):
         if current:
