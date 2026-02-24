@@ -1297,7 +1297,14 @@ class _CommandArchSketchLock():
     """GuiCommand for the ArchSketch Lock tool."""
 
     def __init__(self):
-        FreeCAD.ArchSketchLock = True  #Assumed default checkable status
+        k = "User parameter:BaseApp/WorkBench/SketchArchWorkbench"
+        p = FreeCAD.ParamGet(k)
+        l = p.GetString('ArchSketchLock')
+        if not l or (l and l == 'checked'):
+            FreeCAD.ArchSketchLock = True  #Assumed default checkable status
+        elif l == 'unchecked':
+            FreeCAD.ArchSketchLock = False
+        #FreeCAD.ArchSketchLock = True  #Assumed default checkable status
 
     def GetResources(self):
         return {'Pixmap' :   SketchArchIcon.getIconPath() +
@@ -1315,10 +1322,15 @@ class _CommandArchSketchLock():
         return True
 
     def Activated(self, status=0):
+        k = "User parameter:BaseApp/WorkBench/SketchArchWorkbench"
+        p = FreeCAD.ParamGet(k)
         if not status:  #if FreeCAD.ArchSketchLock:
             FreeCAD.ArchSketchLock = False
+            l = p.SetString('ArchSketchLock', 'unchecked')
         else:
             FreeCAD.ArchSketchLock = True
+            l = p.SetString('ArchSketchLock', 'checked')
+        l = p.GetString('ArchSketchLock')
 
     def isChecked(self):
         return FreeCAD.ArchSketchLock
