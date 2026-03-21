@@ -1304,7 +1304,6 @@ class _CommandArchSketchLock():
             FreeCAD.ArchSketchLock = True  #Assumed default checkable status
         elif l == 'unchecked':
             FreeCAD.ArchSketchLock = False
-        #FreeCAD.ArchSketchLock = True  #Assumed default checkable status
 
     def GetResources(self):
         return {'Pixmap' :   SketchArchIcon.getIconPath() +
@@ -3949,7 +3948,7 @@ def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,
 
           if isinstance(i, ArchSketch.GeomSupported):
               wallAxisStatus = None
-              if archSketchEdges is not None:
+              if archSketchEdges:
                   wallAxisStatus = str(c) in archSketchEdges
               elif hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy,
                                             'getEdgeTagDictSyncWallStatus'):
