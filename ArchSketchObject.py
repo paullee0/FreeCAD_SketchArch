@@ -22,7 +22,7 @@
 
 import FreeCAD, FreeCADGui, Sketcher, Part, Draft, DraftVecUtils
 import ArchWindow
-import Arch, ArchWall, ArchCurtainWall
+import Arch, ArchComponent, ArchWall, ArchCurtainWall
 from FreeCAD import Vector
 
 import SketchArchIcon
@@ -436,6 +436,7 @@ class ArchSketch(ArchSketchObject):
            partnerIndexFlat,sameIndexFlat,equalIndexFlat) = tupUuid
           if not self.clEdgeDict.get(key,None):
               self.clEdgeDict[key] = {}
+          self.clEdgeDict[key]['clEdgeSameIndex'] = sameIndex
           self.clEdgeDict[key]['clEdgeSameIndexFlat'] = sameIndexFlat
 
 
@@ -3041,6 +3042,14 @@ class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
         la.addWidget(qLbMsg2)
         td2 = QtGui.QLabel(divider)
         la.addWidget(td2)
+        msg3="PropertySet  : Default"
+        msg4="WallAxis \n  [Connected Edges Numbers] - "
+        qLbMsg3 = QtGui.QLabel(msg3)
+        qLbMsg4 = QtGui.QLabel(msg4)
+        la.addWidget(qLbMsg3)
+        la.addWidget(qLbMsg4)
+        self.qLbMsgDefWallaxisNum = QtGui.QLabel("   - - - ")
+        la.addWidget(self.qLbMsgDefWallaxisNum)
         self.widgetLayout = la
         self.dockwidget = dw
         la.addStretch()
@@ -3060,18 +3069,23 @@ class GuiPropertySetViewsObserver(SketchArchCommands.selectObjectObserver):
         self.lstWPropset.clear()
         # get full list of PropertySet
         if not targetObjBase:
+            self.qLbMsgDefWallaxisNum.setText("   - - - ")
             return
         self.targetObj = targetObj
         targetArSketch = self.targetObjBase = targetObjBase
         targetArSkProxy = targetArSketch.Proxy
         propSetListCur = targetArSkProxy.getPropertySet(targetArSketch)
         self.propSetListCur = propSetListCur
-        self.lstWPropset.clear()
         for i, t in enumerate(propSetListCur):
             item = QtGui.QListWidgetItem(t)
             if i != 0:  # 'default' (index 0) should not be
                 item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
             self.lstWPropset.addItem(item)
+        clEdgeSameIndexLst = targetObjBase.Proxy.clEdgeSameIndex.copy()
+        clEdgeSameEdgeNumLst = [[y+1 for y in lst]
+                                for lst in clEdgeSameIndexLst]
+        clEdgeSameIndexText = "  " + str(clEdgeSameEdgeNumLst)[1:-1]
+        self.qLbMsgDefWallaxisNum.setText(clEdgeSameIndexText)
         self.lstWPropset.itemChanged.connect(self.itemChanged)
         la.addStretch()
 
@@ -4223,4 +4237,5 @@ def selfCutEdges(edges):
     return cutEdgesList
 
 #***************************************************************************
+propertySetViews()
 #from ArchSketchObjectExt import ArchSketch  # Doesn't work
