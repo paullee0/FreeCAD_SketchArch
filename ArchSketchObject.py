@@ -609,11 +609,27 @@ class ArchSketch(ArchSketchObject):
       return self.getSortedClustersEdgesAlign(fp, propSetUuid)
 
 
+  def getAlign(self,fp,tag=None,index=None,propSetUuid=None):
+
+      curAlign = self.getEdgeTagDictSyncAlign(fp, tag, index, propSetUuid)
+      if not curAlign:
+          curAlign = fp.Align # default Align
+      return curAlign
+
+
   def getOffsets(self, fp , propSetUuid=None):
 
       ''' wrapper function for uniform format '''
 
       return self.getSortedClustersEdgesOffset(fp, propSetUuid)
+
+
+  def getOffset(self,fp,tag=None,index=None,propSetUuid=None):
+
+      curOffset = self.getEdgeTagDictSyncOffset(fp, tag, index, propSetUuid)
+      if not curOffset:
+          curOffset = fp.Offset.Value
+      return curOffset
 
 
   def getUnsortedEdgesWidth(self, fp, propSetUuid=None):
@@ -995,7 +1011,7 @@ class ArchSketch(ArchSketchObject):
 
 
   def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):
-
+      import DraftGeomUtils
       edgesSortedClusters = []
       skGeom = fp.GeometryFacadeList
       skGeomEdges = []
@@ -1014,7 +1030,58 @@ class ArchSketch(ArchSketchObject):
               edge.Placement = skPlacement.multiply(edge.Placement)
               clusterTransformed.append(edge)
           edgesSortedClusters.append(clusterTransformed)
-      return {'wallAxis' : edgesSortedClusters}
+      id = getConstraintsIDsByType(fp, 'PointOnObject')
+      pointOnObject = []
+      trimEdges = []
+      for i in id:
+          ci = fp.Constraints[i]
+          ciFirst = ci.First
+          ciFirstPos = ci.FirstPos
+          ciSecond = ci.Second
+          ciSecondPos = ci.SecondPos
+          ci2int = int(ciSecond)
+          trimShape = Part.Shape(fp.ShapeList[ci2int])
+          trimEdge = trimShape.Edges  # Only 1 edge (trimEdges reserved)
+          trimEdge[0].Placement = skPlacement.multiply(trimEdge[0].Placement)
+          e = trimEdge[0]
+          normal = DraftGeomUtils.get_shape_normal(fp.Shape)
+          if isinstance(e.Curve, (Part.Circle, Part.Ellipse)):
+              dvec = e.Vertexes[0].Point.sub(e.Curve.Center)
+          else:
+              dvec = DraftGeomUtils.vec(e).cross(normal)
+          if not DraftVecUtils.isNull(dvec):
+              dvec.normalize()
+          w = [self.getWidth(fp,None,index=ciSecond,propSetUuid=None)]
+          a = [self.getAlign(fp,None,index=ciSecond,propSetUuid=None)]
+          o = [self.getOffset(fp,None,index=ciSecond,propSetUuid=None)]
+          curAligns = a[0]
+          if curAligns == "Right":
+              dvec = dvec.negative()
+          wNe2 = DraftGeomUtils.offsetWire(trimEdge, dvec, bind=False,
+                                           occ=False, widthList=w,
+                                           offsetMode=None, alignList=a,
+                                           normal=normal,
+                                           basewireOffset=o,
+                                           wireNedge=True,
+          )
+          wNe1 = DraftGeomUtils.offsetWire(trimEdge, dvec, bind=False,
+                                           occ=False, widthList=w,
+                                           offsetMode="BasewireMode",
+                                           alignList=a,
+                                           normal=normal,
+                                           basewireOffset=o,
+                                           wireNedge=True,
+          )
+          w2 = wNe2[0]
+          w1 = wNe1[0]
+          pointOnObjectI = [(ciFirst,ciFirstPos),(ciSecond,ciSecondPos)]
+          pointOnObject.append(pointOnObjectI)
+          trimEdgesI = (w2,w1)
+          trimEdges.append(trimEdgesI)
+      clEdgeSameIndex = self.clEdgeSameIndex
+      return {'wallAxis' : edgesSortedClusters,
+              'pointOnObject' : pointOnObject,
+              'trimEdges' : trimEdges}
 
 
   def getStructureBaseShapeWires(self, fp, role='slab', propSetUuid=None):
@@ -3928,6 +3995,22 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex,
     return edgeOffsetPoint
 
 gSkEdgePtV = getSketchEdgeOffsetPointVector
+
+
+def getConstraintsIDsByType(sketch, type=None):
+    constraintsType = ["Block", "Coincident", "DistanceX", "DistanceY",
+                       "PointOnObject"]
+
+    if type not in constraintsType:
+        return None
+    constraintsIDsList = []
+    skConstraints = sketch.Constraints
+    i = 0
+    for skConstraintsI in skConstraints:
+        if skConstraintsI.Type == type:
+            constraintsIDsList.append(i)
+        i += 1
+    return constraintsIDsList
 
 
 # For All Sketch, Not Only ArchSketch
