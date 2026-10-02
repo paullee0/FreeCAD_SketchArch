@@ -42,6 +42,48 @@ MM = FreeCAD.Units.Quantity('1mm')
 tolerance = 0.000000001
 
 
+def getSketchDefiningEdges(sketch, selected_edges=[], supported_geometry=None):
+    import Part
+    import Sketcher
+
+    if supported_geometry is None:
+        supported_geometry = (Part.LineSegment, Part.Circle, Part.ArcOfCircle, Part.Ellipse)
+
+    edges = []
+
+    for index, facade in enumerate(sketch.GeometryFacadeList):
+        if selected_edges:
+            if str(index) not in selected_edges:
+                continue
+        elif facade.Construction:
+            continue
+
+        if isinstance(facade.Geometry, supported_geometry):
+            edges.append(facade.Geometry.toShape())
+
+    external_geometry = sketch.ExternalGeo
+    for index, geometry in enumerate(external_geometry[2:], start=2):
+        facade = Sketcher.ExternalGeometryFacade(geometry)
+        geo_id = -index - 1
+
+        if not facade.Ref:
+            continue
+
+        if facade.testFlag("Missing"):
+            continue
+
+        if selected_edges:
+            if str(geo_id) not in selected_edges:
+                continue
+        elif not facade.testFlag("Defining"):
+            continue
+
+        if isinstance(facade.Geometry, supported_geometry):
+            edges.append(facade.Geometry.toShape())
+
+    return edges
+
+
 #--------------------------------------------------------------------------#
 #                           Class Definition                               #
 #--------------------------------------------------------------------------#
@@ -55,31 +97,30 @@ class ArchSketchObject:
 
 class ArchSketch(ArchSketchObject):
 
-  ''' ArchSketch - Sketcher::SketchObjectPython for Architectural Layout '''
+    ''' ArchSketch - Sketcher::SketchObjectPython for Architectural Layout '''
 
-  MasterSketchSubelementTags = ['MasterSketchSubelementTag',
-                                'MasterSketchIntersectingSubelementTag' ]
-  SnapPresetDict = {'AxisStart':0.0, '1/4':0.25, '1/3':1/3, 'MidPoint':0.5,
-                    '2/3':2/3, '3/4':3/4, 'AxisEnd':1.0}
-  EdgeTagDicts=['EdgeTagDictArchive', 'EdgeTagDictInitial', 'EdgeTagDictSync']
-  GeomSupported = (Part.LineSegment, Part.Circle, Part.ArcOfCircle,
-                   Part.Ellipse)
-
-
-  def __init__(self, obj):
-      pass
-      ArchSketchObject.__init__(self, obj)
-
-      ''' call self.setProperties '''
-
-      self.setProperties(obj)
-      self.setPropertiesLinkCommon(obj)
-      self.initEditorMode(obj)
-      obj.ViewObject.Proxy=0
-      return None
+    MasterSketchSubelementTags = ['MasterSketchSubelementTag',
+                                  'MasterSketchIntersectingSubelementTag' ]
+    SnapPresetDict = {'AxisStart':0.0, '1/4':0.25, '1/3':1/3, 'MidPoint':0.5,
+                      '2/3':2/3, '3/4':3/4, 'AxisEnd':1.0}
+    EdgeTagDicts=['EdgeTagDictArchive', 'EdgeTagDictInitial', 'EdgeTagDictSync']
+    GeomSupported = (Part.LineSegment, Part.Circle, Part.ArcOfCircle,
+                     Part.Ellipse)
 
 
-  def initEditorMode(self, obj):
+    def __init__(self, obj):
+        ArchSketchObject.__init__(self, obj)
+
+        ''' call self.setProperties '''
+
+        self.setProperties(obj)
+        self.setPropertiesLinkCommon(obj)
+        self.initEditorMode(obj)
+        obj.ViewObject.Proxy=0
+        return None
+
+
+    def initEditorMode(self, obj):
 
       ''' Set DispayMode for Data Properties in Combo View Editor '''
 
@@ -88,7 +129,7 @@ class ArchSketch(ArchSketchObject):
       obj.setEditorMode("Placement",1)
 
 
-  def setProperties(self, fp):
+    def setProperties(self, fp):
 
       ''' Add self.properties '''
 
@@ -147,163 +188,164 @@ class ArchSketch(ArchSketchObject):
                          sstr),8)
 
 
-  def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):
-      '''
-      Set properties which are :
-          1. common to ArchSketchObject & Arch Objects, and
-          2. required for Link of Arch Objects
-      mode='init', 'ODR' for different settings
-      '''
+    def setPropertiesLinkCommon(self, orgFp, linkFp=None, mode=None):
+        '''
+        Set properties which are :
+            1. common to ArchSketchObject & Arch Objects, and
+            2. required for Link of Arch Objects
+        mode='init', 'ODR' for different settings
+        '''
 
-      if hasattr(FreeCAD, 'ArchSketchLock'):
-          if not FreeCAD.ArchSketchLock:  # If False
-              return  # Not doing anything
-
-
-      if linkFp:
-          fp = linkFp
-      else:
-          fp = orgFp
-
-      prop = fp.PropertiesList
-
-      for i in ArchSketch.MasterSketchSubelementTags:
-          if linkFp:  # no Proxy
-              if i not in prop:
-                  linkFp.addProperty("App::PropertyPythonObject", i)
-                  setattr(linkFp, i, str())
-          else:  # either ArchSketch or ArchObjects, should have Proxy
-              if isinstance(orgFp.Proxy, ArchSketch):
-                  if not hasattr(fp.Proxy, i):
-                      setattr(orgFp.Proxy, i, str())
-              else:  # i.e. other ArchObjects
-                  if i not in prop:
-                      orgFp.addProperty("App::PropertyPythonObject", i)
-                      setattr(orgFp, i, str())
-      if "MasterSketchSubelementIndex" not in prop:
-          fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)
-          fp.setEditorMode("MasterSketchSubelementIndex",1)
-      if "MasterSketchIntersectingSubelementIndex" not in prop:
-          fp.addProperty("App::PropertyInteger","MasterSketchIntersectingSubelementIndex","Referenced Object","Index of MasterSketchInteresctingSubelement to be synced on the fly. For output only.", 8)
-          fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)
-
-      ''' Referenced Object '''
-
-      # "Host" for ArchSketch and Arch Equipment
-      # (currently all Objects calls except Window which has "Hosts")
-      if not isinstance(fp.getLinkedObject().Proxy, ArchWindow._Window):
-          pass
-          if "Host" not in prop:
-              fp.addProperty("App::PropertyLink","Host","Referenced Object",
-                  "The object that host this object / this object attach to")
-      # "Hosts" for Window
-      else:
-          if "Hosts" not in prop:
-              # inherited properties of Link are not in PropertiesList:
-              old_hosts = getattr(fp, "Hosts", [])
-              fp.addProperty(
-                  "App::PropertyLinkList",
-                  "Hosts",
-                  "Window",
-                  QT_TRANSLATE_NOOP("App::Property",
-                      "The objects that host this window"))
-              fp.Hosts = old_hosts
-              for host in old_hosts:
-                  host.touch()
-              # Arch Window's code
-
-      if "MasterSketch" not in prop:
-          fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")
-      if "MasterSketchSubelement" not in prop:
-          fp.addProperty("App::PropertyString","MasterSketchSubelement","Referenced Object","Master Sketch Sub-Element to Attach on")
-      if "MasterSketchSubelementOffset" not in prop:
-          fp.addProperty("App::PropertyDistance","MasterSketchSubelementOffset","Referenced Object","Master Sketch Sub-Element Attached Offset from Startpoint")
-      if "MasterSketchSubelementSnapPreset" not in prop:
-          fp.addProperty("App::PropertyEnumeration","MasterSketchSubelementSnapPreset","Referenced Object","Preset Snap Offset from Axis Startpoint; will add ms-SubelementOffset Distance (mm)")
-          fp.MasterSketchSubelementSnapPreset = [ "AxisStart", "1/4", "1/3", "MidPoint", "2/3", "3/4", "AxisEnd", "CustomValue" ]
-      if "MasterSketchSubelementSnapCustom" not in prop:
-          fp.addProperty("App::PropertyFloatConstraint", "MasterSketchSubelementSnapCustom", "Referenced Object", "Custom Value: 0 to 1, Start/EndPoint of Axis (Use formula for fraction e.g 2/11")
-          fp.MasterSketchSubelementSnapCustom = (0.0, 0.0, 1.0, 0.001) # (Default, Start, Finish, Step)
-      if "MasterSketchIntersectingSubelement" not in prop:
-          fp.addProperty("App::PropertyString","MasterSketchIntersectingSubelement",
-                         "Referenced Object","Master Sketch Subelement Intersecting the Sub-Element Attached on")
-      if "AttachToSubelementOrOffset" not in prop:
-          fp.addProperty("App::PropertyEnumeration","AttachToSubelementOrOffset","Referenced Object","Select MasterSketch Subelement or Specify Offset to Attach")
-          fp.AttachToSubelementOrOffset = [ "Attach To Edge & Alignment", "Attach to Edge", "Follow Only Offset XYZ & Rotation" ]
-      if "AttachmentOffsetXyzAndRotation" not in prop:
-          fp.addProperty("App::PropertyPlacement","AttachmentOffsetXyzAndRotation","Referenced Object","Specify XYZ and Rotation Offset")
-      if "AttachmentOffsetExtraRotation" not in prop:
-          fp.addProperty("App::PropertyEnumeration","AttachmentOffsetExtraRotation","Referenced Object","Extra Rotation about X, Y or Z Axis")
-          fp.AttachmentOffsetExtraRotation = [ "None", "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", "Y-Axis CW90", "Y-Axis CCW90", "Y-Axis CW180","Z-Axis CW90", "Z-Axis CCW90", "Z-Axis CW180"]
-      if "OriginOffsetXyzAndRotation" not in prop:
-          fp.addProperty("App::PropertyPlacement","OriginOffsetXyzAndRotation","Referenced Object","Specify Origin's XYZ and Rotation Offset")
-      if "FlipOffsetOriginToOtherEnd" not in prop:
-          fp.addProperty("App::PropertyBool","FlipOffsetOriginToOtherEnd","Referenced Object","Flip Offset Origin to Other End of Edge / Wall ")
-      if "Flip180Degree" not in prop:
-          fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Object","Flip Orientation 180 Degree / Inside-Outside / Front-Back")
-      if "OffsetFromIntersectingSubelement" not in prop:
-          fp.addProperty("App::PropertyBool","OffsetFromIntersectingSubelement",
-                         "Referenced Object","Offset from the Master Sketch Subelement Intersecting the Sub-Element to Attached on")
-      if "AttachmentAlignment" not in prop:
-          fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set (Wall)Left/Right to align to Edge of Wall")
-          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]
-          if isinstance(fp.getLinkedObject().Proxy, ArchWindow._Window):
-              fp.AttachmentAlignment = "WallLeft"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows (updated from to 'left' after orientation of 'left/right' changed )
-          else:
-              fp.AttachmentAlignment = "WallLeft"  # default for cases other than Windows
-      if fp.AttachmentAlignment in [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]:
-          curAlign = fp.AttachmentAlignment
-          fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]
-          if curAlign == "Edge":
-              fp.AttachmentAlignment = "Left"
-          elif curAlign == "EdgeGroupWidthLeft":
-              fp.AttachmentAlignment = "WallLeft"
-          elif curAlign == "EdgeGroupWidthRight":
-              fp.AttachmentAlignment = "WallRight"
-          else:  # Should not happen
-              fp.AttachmentAlignment = "Left"
-      if "AttachmentAlignmentOffset" not in prop:
-          fp.addProperty("App::PropertyDistance","AttachmentAlignmentOffset","Referenced Object","Set Offset from Edge / EdgeGroupWidth +ve Right / -ve Left")
-
-      attachToAxisOrSketchExisting = None
-      fpLinkedObject = fp.getLinkedObject()
-      if "AttachToAxisOrSketch" in prop:
-          attachToAxisOrSketchExisting = fp.AttachToAxisOrSketch
-      else:  # elif "AttachToAxisOrSketch" not in prop:
-          fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Object","Select Object Type to Attach on ")
-      if isinstance(fpLinkedObject.Proxy, ArchSketch):
-          fp.AttachToAxisOrSketch = [ "Host", "Master Sketch", "Placement Axis" ]
-      else:  # i.e. other ArchObjects
-          fp.AttachToAxisOrSketch = [ "None", "Host", "Master Sketch"]
-
-      # has existing selection
-      if attachToAxisOrSketchExisting is not None:
-          if attachToAxisOrSketchExisting == "Hosts":
-              attachToAxisOrSketchExisting = "Host"  # Can attach to only 1 host
-          fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting
-
-      # No existing selection, ie. newly added "AttachToAxisOrSketch" attribute
-      elif isinstance(fpLinkedObject.Proxy, ArchSketch):
-          fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch + Link to ArchSketch
-
-      else:  # other Arch Objects  # elif fpLinkedObject.Proxy.Type != "ArchSketch":
-          # currently only if fp is Window and mode is 'ODR', not to attach to Host or otherwise it would relocate to 1st edge
-          if mode == 'ODR':
-              #if isinstance(fp.Proxy, ArchWindow._Window):
-              if isinstance(fpLinkedObject.Proxy, ArchWindow._Window):
-                  fp.AttachToAxisOrSketch = "None"
-              else:
-                  pass  # currently no other ArchObjects use 'ODR'
-          else:  # default 'ODR' (or None), i.e. if
-              fp.AttachToAxisOrSketch = "Host"  # default option for Arch Objects in general
+        if hasattr(FreeCAD, 'ArchSketchLock'):
+            if not FreeCAD.ArchSketchLock:  # If False
+                return  # Not doing anything
 
 
-  def appLinkExecute(self, fp, linkFp, index, linkElement):
+        if linkFp:
+            fp = linkFp
+        else:
+            fp = orgFp
+
+        prop = fp.PropertiesList
+
+        for i in ArchSketch.MasterSketchSubelementTags:
+            if linkFp:  # no Proxy
+                if i not in prop:
+                    linkFp.addProperty("App::PropertyPythonObject", i)
+                    setattr(linkFp, i, str())
+            else:  # either ArchSketch or ArchObjects, should have Proxy
+                if isinstance(orgFp.Proxy, ArchSketch):
+                    if not hasattr(fp.Proxy, i):
+                        setattr(orgFp.Proxy, i, str())
+                else:  # i.e. other ArchObjects
+                    if i not in prop:
+                        orgFp.addProperty("App::PropertyPythonObject", i)
+                        setattr(orgFp, i, str())
+        if "MasterSketchSubelementIndex" not in prop:
+            fp.addProperty("App::PropertyInteger","MasterSketchSubelementIndex","Referenced Object","Index of MasterSketchSubelement to be synced on the fly.  For output only.", 8)
+            fp.setEditorMode("MasterSketchSubelementIndex",1)
+        if "MasterSketchIntersectingSubelementIndex" not in prop:
+            fp.addProperty("App::PropertyInteger",
+                           "MasterSketchIntersectingSubelementIndex","Referenced Object","Index of MasterSketchInteresctingSubelement to be synced on the fly. For output only.", 8)
+            fp.setEditorMode("MasterSketchIntersectingSubelementIndex",2)
+
+        ''' Referenced Object '''
+
+        # "Host" for ArchSketch and Arch Equipment
+        # (currently all Objects calls except Window which has "Hosts")
+        if not isinstance(fp.getLinkedObject().Proxy, ArchWindow._Window):
+            pass
+            if "Host" not in prop:
+                fp.addProperty("App::PropertyLink","Host","Referenced Object",
+                    "The object that host this object / this object attach to")
+        # "Hosts" for Window
+        else:
+            if "Hosts" not in prop:
+                # inherited properties of Link are not in PropertiesList:
+                old_hosts = getattr(fp, "Hosts", [])
+                fp.addProperty(
+                    "App::PropertyLinkList",
+                    "Hosts",
+                    "Window",
+                    QT_TRANSLATE_NOOP("App::Property",
+                        "The objects that host this window"))
+                fp.Hosts = old_hosts
+                for host in old_hosts:
+                    host.touch()
+                # Arch Window's code
+
+        if "MasterSketch" not in prop:
+            fp.addProperty("App::PropertyLink","MasterSketch","Referenced Object","Master Sketch to Attach on")
+        if "MasterSketchSubelement" not in prop:
+            fp.addProperty("App::PropertyString","MasterSketchSubelement","Referenced Object","Master Sketch Sub-Element to Attach on")
+        if "MasterSketchSubelementOffset" not in prop:
+            fp.addProperty("App::PropertyDistance","MasterSketchSubelementOffset","Referenced Object","Master Sketch Sub-Element Attached Offset from Startpoint")
+        if "MasterSketchSubelementSnapPreset" not in prop:
+            fp.addProperty("App::PropertyEnumeration","MasterSketchSubelementSnapPreset","Referenced Object","Preset Snap Offset from Axis Startpoint; will add ms-SubelementOffset Distance (mm)")
+            fp.MasterSketchSubelementSnapPreset = [ "AxisStart", "1/4", "1/3", "MidPoint", "2/3", "3/4", "AxisEnd", "CustomValue" ]
+        if "MasterSketchSubelementSnapCustom" not in prop:
+            fp.addProperty("App::PropertyFloatConstraint", "MasterSketchSubelementSnapCustom", "Referenced Object", "Custom Value: 0 to 1, Start/EndPoint of Axis (Use formula for fraction e.g 2/11")
+            fp.MasterSketchSubelementSnapCustom = (0.0, 0.0, 1.0, 0.001) # (Default, Start, Finish, Step)
+        if "MasterSketchIntersectingSubelement" not in prop:
+            fp.addProperty("App::PropertyString","MasterSketchIntersectingSubelement",
+                           "Referenced Object","Master Sketch Subelement Intersecting the Sub-Element Attached on")
+        if "AttachToSubelementOrOffset" not in prop:
+            fp.addProperty("App::PropertyEnumeration","AttachToSubelementOrOffset","Referenced Object","Select MasterSketch Subelement or Specify Offset to Attach")
+            fp.AttachToSubelementOrOffset = [ "Attach To Edge & Alignment", "Attach to Edge", "Follow Only Offset XYZ & Rotation" ]
+        if "AttachmentOffsetXyzAndRotation" not in prop:
+            fp.addProperty("App::PropertyPlacement","AttachmentOffsetXyzAndRotation","Referenced Object","Specify XYZ and Rotation Offset")
+        if "AttachmentOffsetExtraRotation" not in prop:
+            fp.addProperty("App::PropertyEnumeration","AttachmentOffsetExtraRotation","Referenced Object","Extra Rotation about X, Y or Z Axis")
+            fp.AttachmentOffsetExtraRotation = [ "None", "X-Axis CW90", "X-Axis CCW90", "X-Axis CW180", "Y-Axis CW90", "Y-Axis CCW90", "Y-Axis CW180","Z-Axis CW90", "Z-Axis CCW90", "Z-Axis CW180"]
+        if "OriginOffsetXyzAndRotation" not in prop:
+            fp.addProperty("App::PropertyPlacement","OriginOffsetXyzAndRotation","Referenced Object","Specify Origin's XYZ and Rotation Offset")
+        if "FlipOffsetOriginToOtherEnd" not in prop:
+            fp.addProperty("App::PropertyBool","FlipOffsetOriginToOtherEnd","Referenced Object","Flip Offset Origin to Other End of Edge / Wall ")
+        if "Flip180Degree" not in prop:
+            fp.addProperty("App::PropertyBool","Flip180Degree","Referenced Object","Flip Orientation 180 Degree / Inside-Outside / Front-Back")
+        if "OffsetFromIntersectingSubelement" not in prop:
+            fp.addProperty("App::PropertyBool","OffsetFromIntersectingSubelement",
+                           "Referenced Object","Offset from the Master Sketch Subelement Intersecting the Sub-Element to Attached on")
+        if "AttachmentAlignment" not in prop:
+            fp.addProperty("App::PropertyEnumeration","AttachmentAlignment","Referenced Object","If AttachToEdge&Alignment, Set (Wall)Left/Right to align to Edge of Wall")
+            fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]
+            if isinstance(fp.getLinkedObject().Proxy, ArchWindow._Window):
+                fp.AttachmentAlignment = "WallLeft"  # default for Windows which have normal 0,1,0 so somehow set to ArchWindows (updated from to 'left' after orientation of 'left/right' changed )
+            else:
+                fp.AttachmentAlignment = "WallLeft"  # default for cases other than Windows
+        if fp.AttachmentAlignment in [ "Edge", "EdgeGroupWidthLeft", "EdgeGroupWidthRight" ]:
+            curAlign = fp.AttachmentAlignment
+            fp.AttachmentAlignment = [ "WallLeft", "WallRight", "Left", "Right" ]
+            if curAlign == "Edge":
+                fp.AttachmentAlignment = "Left"
+            elif curAlign == "EdgeGroupWidthLeft":
+                fp.AttachmentAlignment = "WallLeft"
+            elif curAlign == "EdgeGroupWidthRight":
+                fp.AttachmentAlignment = "WallRight"
+            else:  # Should not happen
+                fp.AttachmentAlignment = "Left"
+        if "AttachmentAlignmentOffset" not in prop:
+            fp.addProperty("App::PropertyDistance","AttachmentAlignmentOffset","Referenced Object","Set Offset from Edge / EdgeGroupWidth +ve Right / -ve Left")
+
+        attachToAxisOrSketchExisting = None
+        fpLinkedObject = fp.getLinkedObject()
+        if "AttachToAxisOrSketch" in prop:
+            attachToAxisOrSketchExisting = fp.AttachToAxisOrSketch
+        else:  # elif "AttachToAxisOrSketch" not in prop:
+            fp.addProperty("App::PropertyEnumeration","AttachToAxisOrSketch","Referenced Object","Select Object Type to Attach on ")
+        if isinstance(fpLinkedObject.Proxy, ArchSketch):
+            fp.AttachToAxisOrSketch = [ "Host", "Master Sketch", "Placement Axis" ]
+        else:  # i.e. other ArchObjects
+            fp.AttachToAxisOrSketch = [ "None", "Host", "Master Sketch"]
+
+        # has existing selection
+        if attachToAxisOrSketchExisting is not None:
+            if attachToAxisOrSketchExisting == "Hosts":
+                attachToAxisOrSketchExisting = "Host"  # Can attach to only 1 host
+            fp.AttachToAxisOrSketch = attachToAxisOrSketchExisting
+
+        # No existing selection, ie. newly added "AttachToAxisOrSketch" attribute
+        elif isinstance(fpLinkedObject.Proxy, ArchSketch):
+            fp.AttachToAxisOrSketch = "Master Sketch"  # default option for ArchSketch + Link to ArchSketch
+
+        else:  # other Arch Objects  # elif fpLinkedObject.Proxy.Type != "ArchSketch":
+            # currently only if fp is Window and mode is 'ODR', not to attach to Host or otherwise it would relocate to 1st edge
+            if mode == 'ODR':
+                #if isinstance(fp.Proxy, ArchWindow._Window):
+                if isinstance(fpLinkedObject.Proxy, ArchWindow._Window):
+                    fp.AttachToAxisOrSketch = "None"
+                else:
+                    pass  # currently no other ArchObjects use 'ODR'
+            else:  # default 'ODR' (or None), i.e. if
+                fp.AttachToAxisOrSketch = "Host"  # default option for Arch Objects in general
+
+
+    def appLinkExecute(self, fp, linkFp, index, linkElement):
       self.setPropertiesLinkCommon(fp, linkFp)
       updateAttachmentOffset(fp, linkFp)
 
 
-  def execute(self, fp):
+    def execute(self, fp):
 
       ''' Features to Run in Addition to Sketcher.execute() '''
 
@@ -375,7 +417,7 @@ class ArchSketch(ArchSketchObject):
           fp.CellComplexElements = solidsCmpd
 
 
-  def updateShapeList(self, fp):
+    def updateShapeList(self, fp):
       skGeom = fp.Geometry
       skGeomEdgesFullSet = []
       for c, i in enumerate(skGeom):
@@ -384,7 +426,7 @@ class ArchSketch(ArchSketchObject):
       fp.ShapeList = skGeomEdgesFullSet
 
 
-  def getMinDistInfo(self, fp, pointShape=None):
+    def getMinDistInfo(self, fp, pointShape=None):
       shapeListCmpd = Part.Compound(fp.ShapeList)
       shapeListCmpd.Placement = fp.Placement
       info = shapeListCmpd.distToShape(pointShape)
@@ -416,31 +458,31 @@ class ArchSketch(ArchSketchObject):
       return dict  # return info
 
 
-  def updateSortedClustersEdgesOrder(self, fp):
+    def updateSortedClustersEdgesOrder(self, fp):
 
-      tup = getSketchSortedClEdgesOrder(fp)
-      (clEdgePartnerIndex,clEdgeSameIndex,clEdgeEqualIndex,
-       clEdgePartnerIndexFlat,clEdgeSameIndexFlat,clEdgeEqualIndexFlat) = tup
+        tup = getSketchSortedClEdgesOrder(fp)
+        (clEdgePartnerIndex,clEdgeSameIndex,clEdgeEqualIndex,
+         clEdgePartnerIndexFlat,clEdgeSameIndexFlat,clEdgeEqualIndexFlat) = tup
 
-      self.clEdgeDict['clEdgeSameIndexFlat'] = clEdgeSameIndexFlat
-      self.clEdgePartnerIndex = clEdgePartnerIndex
-      self.clEdgeSameIndex = clEdgeSameIndex
-      self.clEdgeEqualIndex = clEdgeEqualIndex
-      self.clEdgePartnerIndexFlat = clEdgePartnerIndexFlat
-      self.clEdgeSameIndexFlat = clEdgeSameIndexFlat
-      self.clEdgeEqualIndexFlat = clEdgeEqualIndexFlat
+        self.clEdgeDict['clEdgeSameIndexFlat'] = clEdgeSameIndexFlat
+        self.clEdgePartnerIndex = clEdgePartnerIndex
+        self.clEdgeSameIndex = clEdgeSameIndex
+        self.clEdgeEqualIndex = clEdgeEqualIndex
+        self.clEdgePartnerIndexFlat = clEdgePartnerIndexFlat
+        self.clEdgeSameIndexFlat = clEdgeSameIndexFlat
+        self.clEdgeEqualIndexFlat = clEdgeEqualIndexFlat
 
-      for key, value in iter(fp.Proxy.PropertySetDict.items()):
-          tupUuid = getSketchSortedClEdgesOrder(fp, propSetUuid=key)
-          (partnerIndex,sameIndex,equalIndex,
-           partnerIndexFlat,sameIndexFlat,equalIndexFlat) = tupUuid
-          if not self.clEdgeDict.get(key,None):
-              self.clEdgeDict[key] = {}
-          self.clEdgeDict[key]['clEdgeSameIndex'] = sameIndex
-          self.clEdgeDict[key]['clEdgeSameIndexFlat'] = sameIndexFlat
+        for key, value in iter(fp.Proxy.PropertySetDict.items()):
+            tupUuid = getSketchSortedClEdgesOrder(fp, propSetUuid=key)
+            (partnerIndex,sameIndex,equalIndex,
+             partnerIndexFlat,sameIndexFlat,equalIndexFlat) = tupUuid
+            if not self.clEdgeDict.get(key,None):
+                self.clEdgeDict[key] = {}
+            self.clEdgeDict[key]['clEdgeSameIndex'] = sameIndex
+            self.clEdgeDict[key]['clEdgeSameIndexFlat'] = sameIndexFlat
 
 
-  def onChanged(self, fp, prop):
+    def onChanged(self, fp, prop):
       if prop in ["MasterSketch", "PlacementAxis", "AttachToAxisOrSketch"]:
           changeAttachMode(fp, prop)
 
@@ -448,7 +490,7 @@ class ArchSketch(ArchSketchObject):
           uuid = self.getPropertySet(fp, propSetName=fp.PropertySet)
           self.PropSetPickedUuid = uuid
 
-  def rebuildEdgeTagDicts(self, fp):  # To be called by Local
+    def rebuildEdgeTagDicts(self, fp):  # To be called by Local
 
       self.EdgeTagDictArchive = dict(self.EdgeTagDictSync)
       self.EdgeTagDictInitial = {}
@@ -478,7 +520,7 @@ class ArchSketch(ArchSketchObject):
       self.EdgeTagDictSync = self.EdgeTagDictInitial.copy()
 
 
-  def callParentToRebuildMasterSketchTags(self, fp):
+    def callParentToRebuildMasterSketchTags(self, fp):
       foundParentArchSketchNames = []
       foundParentLnkArchSketchesNames = []
       foundParentLnkArchSketches = []
@@ -548,13 +590,13 @@ class ArchSketch(ArchSketchObject):
               updatePropertiesLinkCommonODR(archObject, None)
 
 
-  #**************************************************************************#
+    #**************************************************************************#
 
 
-  ''' Property Set Dict (self.PropertySetDict) related method()  '''
+    ''' Property Set Dict (self.PropertySetDict) related method()  '''
 
 
-  def getPropertySet(self, fp, propSetUuid=None, propSetName=None):
+    def getPropertySet(self, fp, propSetUuid=None, propSetName=None):
 
       uuid = None
       if not propSetUuid and not propSetName:
@@ -578,20 +620,20 @@ class ArchSketch(ArchSketchObject):
           return uuid
 
 
-  #**************************************************************************#
+    #**************************************************************************#
 
 
-  ''' edge Tag Dict (self.syncEdgeTagDictSync) related method()  '''
+    ''' edge Tag Dict (self.syncEdgeTagDictSync) related method()  '''
 
 
-  def getWidths(self, fp, propSetUuid=None):
+    def getWidths(self, fp, propSetUuid=None):
 
       ''' wrapper function for uniform format '''
 
       return self.getSortedClustersEdgesWidth(fp, propSetUuid)
 
 
-  def getWidth(self,fp,tag=None,index=None,propSetUuid=None):
+    def getWidth(self,fp,tag=None,index=None,propSetUuid=None):
 
       curWidth = self.getEdgeTagDictSyncWidth(fp, tag, index, propSetUuid)
       if not curWidth:
@@ -602,14 +644,14 @@ class ArchSketch(ArchSketchObject):
       return curWidth
 
 
-  def getAligns(self, fp, propSetUuid=None):
+    def getAligns(self, fp, propSetUuid=None):
 
       ''' wrapper function for uniform format '''
 
       return self.getSortedClustersEdgesAlign(fp, propSetUuid)
 
 
-  def getAlign(self,fp,tag=None,index=None,propSetUuid=None):
+    def getAlign(self,fp,tag=None,index=None,propSetUuid=None):
 
       curAlign = self.getEdgeTagDictSyncAlign(fp, tag, index, propSetUuid)
       if not curAlign:
@@ -617,14 +659,14 @@ class ArchSketch(ArchSketchObject):
       return curAlign
 
 
-  def getOffsets(self, fp , propSetUuid=None):
+    def getOffsets(self, fp , propSetUuid=None):
 
       ''' wrapper function for uniform format '''
 
       return self.getSortedClustersEdgesOffset(fp, propSetUuid)
 
 
-  def getOffset(self,fp,tag=None,index=None,propSetUuid=None):
+    def getOffset(self,fp,tag=None,index=None,propSetUuid=None):
 
       curOffset = self.getEdgeTagDictSyncOffset(fp, tag, index, propSetUuid)
       if not curOffset:
@@ -632,7 +674,7 @@ class ArchSketch(ArchSketchObject):
       return curOffset
 
 
-  def getUnsortedEdgesWidth(self, fp, propSetUuid=None):
+    def getUnsortedEdgesWidth(self, fp, propSetUuid=None):
 
       widthsList = []
       for j in range(0, len(fp.Geometry)):
@@ -642,7 +684,7 @@ class ArchSketch(ArchSketchObject):
       return widthsList
 
 
-  def getUnsortedEdgesAlign(self, fp, propSetUuid=None):
+    def getUnsortedEdgesAlign(self, fp, propSetUuid=None):
 
       alignsList = []
       for j in range(0, len(fp.Geometry)):
@@ -652,7 +694,7 @@ class ArchSketch(ArchSketchObject):
       return alignsList
 
 
-  def getSortedClustersEdgesWidth(self, fp, propSetUuid=None):
+    def getSortedClustersEdgesWidth(self, fp, propSetUuid=None):
 
       '''  This method check the SortedClusters-isSame-(flat)List (omitted
            construction geometry), find the corresponding edgesWidth and make
@@ -693,18 +735,18 @@ class ArchSketch(ArchSketchObject):
       return widthsList
 
 
-  def getEdgeTagDictSyncOffsetStart(self,fp,tag=None,index=None,
-                                    propSetUuid=None):
+    def getEdgeTagDictSyncOffsetStart(self,fp,tag=None,index=None,
+                                      propSetUuid=None):
       return self.getEdgeTagDictSyncProp(fp,tag=tag,prop='offsetStart',
                                          index=index,propSetUuid=propSetUuid)
 
-  def getEdgeTagDictSyncOffsetEnd(self,fp,tag=None,index=None,
-                                  propSetUuid=None):
-      return self.getEdgeTagDictSyncProp(fp,tag=tag,prop='offsetEnd',
-                                         index=index,propSetUuid=propSetUuid)
+    def getEdgeTagDictSyncOffsetEnd(self,fp,tag=None,index=None,
+                                    propSetUuid=None):
+        return self.getEdgeTagDictSyncProp(fp,tag=tag,prop='offsetEnd',
+                                           index=index,propSetUuid=propSetUuid)
 
-  def getEdgeTagDictSyncProp(self,fp,tag=None,prop=None,index=None,
-                             propSetUuid=None):
+    def getEdgeTagDictSyncProp(self,fp,tag=None,prop=None,index=None,
+                               propSetUuid=None):
 
       if not prop:
           return
@@ -733,7 +775,7 @@ class ArchSketch(ArchSketchObject):
       return propI
 
 
-  def getEdgeTagDictSyncWidth(self,fp,tag=None,index=None,propSetUuid=None):
+    def getEdgeTagDictSyncWidth(self,fp,tag=None,index=None,propSetUuid=None):
 
       if tag is not None:
           tagI = tag
@@ -758,7 +800,7 @@ class ArchSketch(ArchSketchObject):
       return widthI
 
 
-  def getSortedClustersEdgesAlign(self, fp, propSetUuid):
+    def getSortedClustersEdgesAlign(self, fp, propSetUuid):
       '''
            This method check the SortedClusters-isSame-(flat)List
            find the corresponding edgesAlign ...
@@ -785,7 +827,7 @@ class ArchSketch(ArchSketchObject):
       return alignsList
 
 
-  def getEdgeTagDictSyncAlign(self,fp,tag=None,index=None,propSetUuid=None):
+    def getEdgeTagDictSyncAlign(self,fp,tag=None,index=None,propSetUuid=None):
       if tag is not None:
           tagI = tag
       elif index is not None:
@@ -809,7 +851,7 @@ class ArchSketch(ArchSketchObject):
       return alignI
 
 
-  def getSortedClustersEdgesOffset(self, fp, propSetUuid=None):
+    def getSortedClustersEdgesOffset(self, fp, propSetUuid=None):
       offsetsList = []
       if not propSetUuid:
           clEdgeSameIndexFlat = self.clEdgeDict.get('clEdgeSameIndexFlat',None)
@@ -829,7 +871,7 @@ class ArchSketch(ArchSketchObject):
       return offsetsList
 
 
-  def getEdgeTagDictSyncOffset(self,fp,tag=None,index=None,propSetUuid=None):
+    def getEdgeTagDictSyncOffset(self,fp,tag=None,index=None,propSetUuid=None):
       if tag is not None:
           tagI = tag
       elif index is not None:
@@ -853,7 +895,7 @@ class ArchSketch(ArchSketchObject):
       return OffsetI
 
 
-  def getEdgeTagDictSyncRoleStatus(self, fp, tag=None, index=None,
+    def getEdgeTagDictSyncRoleStatus(self, fp, tag=None, index=None,
                                    role='wallAxis', propSetUuid=None):
 
       if tag is not None:
@@ -870,7 +912,7 @@ class ArchSketch(ArchSketchObject):
               return None
 
 
-  def getEdgeTagDictSyncWallStatus(self,fp,tag=None,index=None,role='wallAxis',
+    def getEdgeTagDictSyncWallStatus(self,fp,tag=None,index=None,role='wallAxis',
                                    propSetUuid=None):
 
       roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role,
@@ -891,7 +933,7 @@ class ArchSketch(ArchSketchObject):
       return wallAxisStatus
 
 
-  def getEdgeTagDictSyncStructureStatus(self, fp, tag=None, index=None,
+    def getEdgeTagDictSyncStructureStatus(self, fp, tag=None, index=None,
                                         role='slab', propSetUuid=None):
       roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role,
                                                      propSetUuid)
@@ -905,7 +947,7 @@ class ArchSketch(ArchSketchObject):
       return slabStatus
 
 
-  def getEdgeTagDictSyncCurtainWallStatus(self, fp, tag=None, index=None,
+    def getEdgeTagDictSyncCurtainWallStatus(self, fp, tag=None, index=None,
                                 role='curtainWallAxis', propSetUuid=None):
 
       roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role,
@@ -920,7 +962,7 @@ class ArchSketch(ArchSketchObject):
       return cwAxisStatus
 
 
-  def getEdgeTagDictSyncStairsStatus(self, fp, tag=None, index=None,
+    def getEdgeTagDictSyncStairsStatus(self, fp, tag=None, index=None,
                                 role='flightAxis', propSetUuid=None):
 
       roleStatus = self.getEdgeTagDictSyncRoleStatus(fp, tag, index, role,
@@ -935,7 +977,7 @@ class ArchSketch(ArchSketchObject):
       return stairsStatus
 
 
-  def syncEdgeTagDictSync(self, fp):
+    def syncEdgeTagDictSync(self, fp):
       edgeTagDictTemp = {}
 
       i = 0
@@ -955,62 +997,62 @@ class ArchSketch(ArchSketchObject):
       return
 
 
-  def getEdgeTagDictArchiveTagIndex(self, fp, tag=None, index=None):
-    if tag and index is None:
-        try:
-            return fp.Proxy.EdgeTagDictArchive[tag]['index'], None
-        except:
-            return None, None
-    elif not tag and index is not None:
-        try:
-            for key, value in iter(fp.Proxy.EdgeTagDictArchive.items()):
-                if value['index'] == index:
-                    return None, key  # i.e. tagArchive
-            return None, None
-        except:
-            return None, None
+    def getEdgeTagDictArchiveTagIndex(self, fp, tag=None, index=None):
+      if tag and index is None:
+          try:
+              return fp.Proxy.EdgeTagDictArchive[tag]['index'], None
+          except:
+              return None, None
+      elif not tag and index is not None:
+          try:
+              for key, value in iter(fp.Proxy.EdgeTagDictArchive.items()):
+                  if value['index'] == index:
+                      return None, key  # i.e. tagArchive
+              return None, None
+          except:
+              return None, None
 
 
-  def getEdgeTagIndex(self, fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False):
-    ''' Arguments	: fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False
-        Return		: index, tagSync (not tagInitial nor tagArchive...yet) '''
+    def getEdgeTagIndex(self, fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False):
+      ''' Arguments	: fp, tag=None, index=None, useEdgeTagDictSyncFindIndex=False
+          Return		: index, tagSync (not tagInitial nor tagArchive...yet) '''
 
-    if tag and index is None:
+      if tag and index is None:
 
-        if useEdgeTagDictSyncFindIndex == False:
-            i = 0
-            while True:
-                try:
-                    if tag == fp.Geometry[i].Tag:
-                        return i, None
-                except:
-                    print (" Debug - Tag does not (/no longer) exist " + "\n")
-                    return None, None
-                i += 1
+          if useEdgeTagDictSyncFindIndex == False:
+              i = 0
+              while True:
+                  try:
+                      if tag == fp.Geometry[i].Tag:
+                          return i, None
+                  except:
+                      print (" Debug - Tag does not (/no longer) exist " + "\n")
+                      return None, None
+                  i += 1
 
-    elif not tag and index is not None:
-        try:
-            tagSync = fp.Geometry[index].Tag
-        except:
-            print("DEBUG - Index does not (or no longer?) exist ")
-            return None, None
+      elif not tag and index is not None:
+          try:
+              tagSync = fp.Geometry[index].Tag
+          except:
+              print("DEBUG - Index does not (or no longer?) exist ")
+              return None, None
 
-        return None, tagSync
-
-
-  def getEdgeGeom(self, fp, index):
-    return fp.Geometry[index]
+          return None, tagSync
 
 
-  #***************************************************************************#
+    def getEdgeGeom(self, fp, index):
+        return fp.Geometry[index]
 
 
-  '''  ArchWall-related          '''
-  '''  ArchStructure-related     '''
-  '''  ArchCurtainWall-related   '''
+    #*************************************************************************#
 
 
-  def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):
+    '''  ArchWall-related          '''
+    '''  ArchStructure-related     '''
+    '''  ArchCurtainWall-related   '''
+
+
+    def getWallBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):
       import DraftGeomUtils
       edgesSortedClusters = []
       skGeom = fp.GeometryFacadeList
@@ -1030,15 +1072,11 @@ class ArchSketch(ArchSketchObject):
               edge.Placement = skPlacement.multiply(edge.Placement)
               clusterTransformed.append(edge)
           edgesSortedClusters.append(clusterTransformed)
-      id = getConstraintsIDsByType(fp, 'PointOnObject')
-      pointOnObject = []
+      pooIds = getSketchConstraintsIDsByType(fp, 'PointOnObject')
       trimEdges = []
-      for i in id:
+      for i in pooIds:
           ci = fp.Constraints[i]
-          ciFirst = ci.First
-          ciFirstPos = ci.FirstPos
           ciSecond = ci.Second
-          ciSecondPos = ci.SecondPos
           ci2int = int(ciSecond)
           trimShape = Part.Shape(fp.ShapeList[ci2int])
           trimEdge = trimShape.Edges  # Only 1 edge (trimEdges reserved)
@@ -1074,8 +1112,6 @@ class ArchSketch(ArchSketchObject):
           )
           w2 = wNe2[0]
           w1 = wNe1[0]
-          pointOnObjectI = [(ciFirst,ciFirstPos),(ciSecond,ciSecondPos)]
-          pointOnObject.append(pointOnObjectI)
           trimEdgesI = (w2,w1)
           trimEdges.append(trimEdgesI)
       clEdgeSameIndex = self.clEdgeSameIndex
@@ -1084,7 +1120,7 @@ class ArchSketch(ArchSketchObject):
               'trimEdges' : trimEdges}
 
 
-  def getStructureBaseShapeWires(self, fp, role='slab', propSetUuid=None):
+    def getStructureBaseShapeWires(self, fp, role='slab', propSetUuid=None):
 
       skGeom = fp.GeometryFacadeList
       skGeomEdges = []
@@ -1123,7 +1159,7 @@ class ArchSketch(ArchSketchObject):
               'slabThickness' : 250}
 
 
-  def getCurtainWallBaseShapeEdgesInfo(self, fp, role='curtainWallAxis',
+    def getCurtainWallBaseShapeEdgesInfo(self, fp, role='curtainWallAxis',
                                        propSetUuid=None):
 
       skGeom = fp.GeometryFacadeList
@@ -1147,7 +1183,7 @@ class ArchSketch(ArchSketchObject):
       return {'curtainWallEdges':curtainWallBaseShapeEdges}
 
 
-  def getStairsBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):
+    def getStairsBaseShapeEdgesInfo(self,fp,role='wallAxis',propSetUuid=None):
 
       edgesSortedClusters = []
       skGeom = fp.GeometryFacadeList
@@ -1169,13 +1205,13 @@ class ArchSketch(ArchSketchObject):
       return {'flightAxis' : edgesTransformed}
 
 
-  #*************************************************************************#
+    #*************************************************************************#
 
 
-  ''' onDocumentRestored '''
+    ''' onDocumentRestored '''
 
 
-  def onDocumentRestored(self, fp):
+    def onDocumentRestored(self, fp):
 
       self.setProperties(fp)
       self.setPropertiesLinkCommon(fp)
@@ -3997,7 +4033,9 @@ def getSketchEdgeOffsetPointVector(subject, masterSketch, subelementIndex,
 gSkEdgePtV = getSketchEdgeOffsetPointVector
 
 
-def getConstraintsIDsByType(sketch, type=None):
+'''--------------------- Sketch Constraints-Related -----------------------'''
+
+def getSketchConstraintsIDsByType(sketch, type=None):
     constraintsType = ["Block", "Coincident", "DistanceX", "DistanceY",
                        "PointOnObject"]
 
@@ -4011,58 +4049,59 @@ def getConstraintsIDsByType(sketch, type=None):
             constraintsIDsList.append(i)
         i += 1
     return constraintsIDsList
+getConstraintsIDsByType = getSketchConstraintsIDsByType
 
 
 # For All Sketch, Not Only ArchSketch
 def getSketchSortedClEdgesOrder(sketch, archSketchEdges=None,
                                 propSetUuid=None):
 
-      ''' Call getSortedClEdgesOrder() -
-          To do Part.getSortedClusters() on geometry of a Sketch (omit
-          construction geometry if no 'wallAxis' role), check the order of
-          edges to return lists of indexes in the order of sorted edges.
+    ''' Call getSortedClEdgesOrder() -
+        To do Part.getSortedClusters() on geometry of a Sketch (omit
+        construction geometry if no 'wallAxis' role), check the order of
+        edges to return lists of indexes in the order of sorted edges.
 
-          Supported role='wallAxis'
+        Supported role='wallAxis'
 
-          return:
+        return:
             clEdgePartnerIndex, clEdgeSameIndex, clEdgeEqualIndex, and
             clEdgePartnerIndexFlat, clEdgeSameIndexFlat, clEdgeEqualIndexFlat
-      '''
+    '''
 
-      skGeom = sketch.Geometry
-      skGeomEdgesSet = []
-      if hasattr(sketch, 'ShapeList') and sketch.ShapeList:
-          skGeomEdgesFullSet = sketch.ShapeList
-          archSketchShape = True
-      else:
-          skGeomEdgesFullSet = []
-          archSketchShape = False
+    skGeom = sketch.Geometry
+    skGeomEdgesSet = []
+    if hasattr(sketch, 'ShapeList') and sketch.ShapeList:
+        skGeomEdgesFullSet = sketch.ShapeList
+        archSketchShape = True
+    else:
+        skGeomEdgesFullSet = []
+        archSketchShape = False
 
-      for c, i in enumerate(skGeom):
-          if not archSketchShape:
-              skGeomEdge = i.toShape()
-              skGeomEdgesFullSet.append(skGeomEdge)
+    for c, i in enumerate(skGeom):
+        if not archSketchShape:
+            skGeomEdge = i.toShape()
+            skGeomEdgesFullSet.append(skGeomEdge)
 
-          if isinstance(i, ArchSketch.GeomSupported):
-              wallAxisStatus = None
-              if archSketchEdges:
-                  wallAxisStatus = str(c) in archSketchEdges
-              elif hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy,
-                                            'getEdgeTagDictSyncWallStatus'):
-                  skProxy = sketch.Proxy
-                  wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch,
-                                           tag=i.Tag, role='wallAxis',
-                                           propSetUuid=propSetUuid)
-              else:
-                  if hasattr(i, 'Construction'):
-                      construction = i.Construction
-                  elif hasattr(sketch, 'getConstruction'):
-                      construction = sketch.getConstruction(c)
-                  if not construction:
-                      wallAxisStatus = True
-              if wallAxisStatus:
-                  skGeomEdgesSet.append(skGeomEdgesFullSet[c])
-      return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)
+        if isinstance(i, ArchSketch.GeomSupported):
+            wallAxisStatus = None
+            if archSketchEdges:
+                wallAxisStatus = str(c) in archSketchEdges
+            elif hasattr(sketch, 'Proxy') and hasattr(sketch.Proxy,
+                                          'getEdgeTagDictSyncWallStatus'):
+                skProxy = sketch.Proxy
+                wallAxisStatus = skProxy.getEdgeTagDictSyncWallStatus(sketch,
+                                         tag=i.Tag, role='wallAxis',
+                                         propSetUuid=propSetUuid)
+            else:
+                if hasattr(i, 'Construction'):
+                    construction = i.Construction
+                elif hasattr(sketch, 'getConstruction'):
+                    construction = sketch.getConstruction(c)
+                if not construction:
+                    wallAxisStatus = True
+            if wallAxisStatus:
+                skGeomEdgesSet.append(skGeomEdgesFullSet[c])
+    return getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet)
 
 
 def getSortedClEdgesOrder(skGeomEdgesSet, skGeomEdgesFullSet=None):
@@ -4321,4 +4360,4 @@ def selfCutEdges(edges):
 
 #***************************************************************************
 propertySetViews()
-#from ArchSketchObjectExt import ArchSketch  # Doesn't work
+# from ArchSketchObjectExt import ArchSketch  # Doesn't work
