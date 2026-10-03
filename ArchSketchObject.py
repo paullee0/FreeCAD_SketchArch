@@ -1073,6 +1073,13 @@ class ArchSketch(ArchSketchObject):
               clusterTransformed.append(edge)
           edgesSortedClusters.append(clusterTransformed)
       pooIds = getSketchConstraintsIDsByType(fp, 'PointOnObject')
+      if pooIds:
+          pointOnObjectInfo = getSketchConstraintsInfo(fp, idList=pooIds)
+          pointOnObject = pointOnObjectInfo[0]
+          IDsEdges = pointOnObjectInfo[3]  # sketch.Constraints[I].Second
+      else:
+          pointOnObject = None
+          IDsEdges = None
       trimEdges = []
       for i in pooIds:
           ci = fp.Constraints[i]
@@ -4034,6 +4041,35 @@ gSkEdgePtV = getSketchEdgeOffsetPointVector
 
 
 '''--------------------- Sketch Constraints-Related -----------------------'''
+
+def getSketchConstraintsInfo(sk,idList=None,type=None):  # 'PointOnObject'
+      if idList:
+          id = idList
+      elif type:
+          id = getSketchConstraintsIDsByType(sk, type)
+      else:
+          return (None, None, None, None, None)
+      constraintsInfo = None
+      constraintsContent = []
+      constraintsFirstLst = []
+      constraintsFirstPosLst = []
+      constraintsSecondLst = []
+      constraintsSecondPosLst = []
+      for i in id:
+          ci = sk.Constraints[i]
+          ciFirst = ci.First
+          ciFirstPos = ci.FirstPos
+          ciSecond = ci.Second
+          ciSecondPos = ci.SecondPos
+          constraintsContentI = [(ciFirst,ciFirstPos),(ciSecond,ciSecondPos)]
+          constraintsContent.append(constraintsContentI)
+          constraintsFirstLst.append(ciFirst)
+          constraintsFirstPosLst.append(ciFirstPos)
+          constraintsSecondLst.append(ciSecond)
+          constraintsSecondPosLst.append(ciSecondPos)
+      return (constraintsContent, constraintsFirstLst, constraintsFirstPosLst,
+              constraintsSecondLst, constraintsSecondPosLst)
+
 
 def getSketchConstraintsIDsByType(sketch, type=None):
     constraintsType = ["Block", "Coincident", "DistanceX", "DistanceY",
